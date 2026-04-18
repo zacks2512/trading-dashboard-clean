@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Trading Journal Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0d0f12;--bg2:#13161b;--bg3:#1a1e26;--border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.14);--text:#e8eaf0;--text2:#8891a4;--text3:#5a6070;--green:#2ecc71;--gdim:rgba(46,204,113,.12);--red:#e74c3c;--rdim:rgba(231,76,60,.12);--blue:#3498db;--bdim:rgba(52,152,219,.12);--amber:#f39c12;--r:8px;--f:'IBM Plex Sans',sans-serif;--m:'IBM Plex Mono',monospace;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--f);font-size:14px;}
+.hdr{background:var(--bg2);border-bottom:1px solid var(--border);padding:13px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:8px;}
+.logo{font-family:var(--m);font-size:13px;font-weight:500;color:var(--green);}
+.logo span{color:var(--text2);}
+.badge{font-size:11px;color:var(--text3);font-family:var(--m);margin-left:14px;}
+.btn{background:transparent;border:1px solid var(--border2);border-radius:var(--r);padding:6px 14px;color:var(--text);font-family:var(--f);font-size:12px;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.btn:hover{background:var(--bg3);border-color:var(--blue);color:var(--blue);}
+.btn.p{border-color:var(--green);color:var(--green);}
+.btn.p:hover{background:var(--gdim);}
+.btn.sm{padding:4px 10px;font-size:11px;}
+.btn.active-tog{background:var(--bdim);border-color:var(--blue);color:var(--blue);}
+.ibar{background:var(--bg2);border-bottom:1px solid var(--border);padding:9px 24px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.ibar label{font-size:12px;color:var(--text2);white-space:nowrap;}
+.ibar input[type=text]{flex:1;min-width:220px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:6px 10px;color:var(--text);font-family:var(--m);font-size:12px;outline:none;}
+.ibar input[type=text]:focus{border-color:var(--blue);}
+#jf{display:none;}
+.tabs{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;display:flex;overflow-x:auto;}
+.tab{padding:11px 18px;font-size:13px;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;}
+.tab:hover{color:var(--text);}
+.tab.active{color:var(--green);border-bottom-color:var(--green);}
+.page{display:none;padding:24px;max-width:1200px;margin:0 auto;}
+.page.active{display:block;}
+.empty{text-align:center;padding:48px;color:var(--text3);font-family:var(--m);font-size:13px;line-height:2;}
+.mgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:20px;}
+.mc{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;}
+.ml{font-size:11px;color:var(--text3);margin-bottom:4px;font-family:var(--m);text-transform:uppercase;letter-spacing:.5px;}
+.mv{font-size:21px;font-weight:500;font-family:var(--m);}
+.mv.pos{color:var(--green);}.mv.neg{color:var(--red);}
+.msub{font-size:10px;color:var(--text3);margin-top:3px;}
+.cgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+.cc{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px;}
+.cc.wide{grid-column:span 2;}
+.ct{font-size:11px;color:var(--text3);font-family:var(--m);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;}
+.hmwrap{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:20px;overflow-x:auto;}
+.hmtitle{font-size:11px;color:var(--text3);font-family:var(--m);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+.hmleg{display:flex;gap:12px;font-size:11px;color:var(--text3);align-items:center;}
+.hmsw{width:10px;height:10px;border-radius:2px;display:inline-block;margin-right:4px;vertical-align:middle;}
+table.hm{border-collapse:separate;border-spacing:3px;}
+table.hm th{font-size:10px;font-weight:400;color:var(--text3);padding:4px 6px;text-align:center;white-space:nowrap;}
+table.hm th.rl{text-align:left;min-width:110px;}
+table.hm td.rl{font-size:12px;color:var(--text2);padding:4px 8px;white-space:nowrap;text-align:left;}
+table.hm td.cell{width:82px;height:46px;border-radius:5px;text-align:center;vertical-align:middle;font-family:var(--m);}
+table.hm td.emp{background:var(--bg3);border:1px solid var(--border);}
+.ca{font-size:12px;font-weight:500;}.cn{font-size:9px;opacity:.65;margin-top:1px;}
+.igrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
+.ins{padding:10px 14px;border-radius:var(--r);font-size:12px;line-height:1.5;display:flex;gap:8px;}
+.ins.pos{background:var(--gdim);border-left:2px solid var(--green);}
+.ins.neg{background:var(--rdim);border-left:2px solid var(--red);}
+.ins.neu{background:var(--bdim);border-left:2px solid var(--blue);}
+.srchbar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
+.srchbar input{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:7px 12px;color:var(--text);font-family:var(--f);font-size:12px;outline:none;min-width:180px;}
+.srchbar input:focus{border-color:var(--blue);}
+.srchbar select{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:7px 10px;color:var(--text);font-family:var(--f);font-size:12px;outline:none;cursor:pointer;}
+.ttbl{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:20px;}
+.thd{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 70px 80px 66px;font-size:11px;color:var(--text3);padding:8px 14px;background:var(--bg3);border-bottom:1px solid var(--border);font-family:var(--m);}
+.thd span{cursor:pointer;user-select:none;}
+.thd span:hover{color:var(--text);}
+.tbdy{max-height:400px;overflow-y:auto;}
+.trow{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 70px 80px 66px;padding:8px 14px;border-bottom:1px solid var(--border);align-items:center;font-size:11px;transition:background .1s;}
+.trow:hover{background:var(--bg3);}
+.tfoot{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 70px 80px 66px;padding:9px 14px;background:var(--bg3);border-top:2px solid var(--border2);font-size:11px;font-family:var(--m);font-weight:500;}
+.tn{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ts{font-size:10px;color:var(--text3);margin-top:1px;}
+.et{display:inline-block;font-size:9px;padding:1px 5px;border-radius:10px;margin:1px;}
+.et.gd{background:rgba(46,204,113,.15);color:#27ae60;}
+.et.bd{background:rgba(231,76,60,.15);color:#c0392b;}
+.et.nu{background:rgba(52,152,219,.12);color:#2980b9;}
+.pp{color:var(--green);font-family:var(--m);font-weight:500;}
+.np{color:var(--red);font-family:var(--m);font-weight:500;}
+.stt{font-size:11px;color:var(--text3);font-family:var(--m);text-transform:uppercase;letter-spacing:.5px;margin:0 0 10px;}
+.sbox{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:20px;max-width:640px;}
+.cgr{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.cgr label{font-size:11px;color:var(--text3);display:block;margin-bottom:3px;}
+.cgr input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 8px;color:var(--text);font-family:var(--m);font-size:11px;outline:none;}
+.steps{font-size:12px;color:var(--text3);padding-left:18px;line-height:2.3;margin:8px 0;}
+.hint{background:var(--bg3);border-radius:var(--r);padding:10px 12px;font-family:var(--m);font-size:11px;color:var(--text3);word-break:break-all;margin-top:8px;}
+.goal-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;margin-bottom:12px;}
+.goal-header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:10px;}
+.goal-label{font-size:12px;color:var(--text2);}
+.goal-val{font-family:var(--m);font-size:13px;}
+.pbar-wrap{height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;}
+.pbar{height:100%;border-radius:4px;transition:width .6s ease;}
+.pbar.green{background:var(--green);}
+.pbar.amber{background:var(--amber);}
+.pbar.red{background:var(--red);}
+.goal-sub{font-size:10px;color:var(--text3);margin-top:6px;}
+.goal-input-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.goal-input-row label{font-size:11px;color:var(--text3);min-width:180px;}
+.goal-input-row input{background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 8px;color:var(--text);font-family:var(--m);font-size:12px;outline:none;width:110px;}
+.comp-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+.comp-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px;}
+.comp-title{font-size:11px;color:var(--text3);font-family:var(--m);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;}
+.delta-badge{display:inline-block;font-family:var(--m);font-size:11px;padding:2px 8px;border-radius:4px;}
+.delta-badge.pos{background:var(--gdim);color:var(--green);}
+.delta-badge.neg{background:var(--rdim);color:var(--red);}
+.delta-badge.neu{background:var(--bdim);color:var(--blue);}
+.period-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;}
+.period-row:last-child{border-bottom:none;}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <div style="display:flex;align-items:center">
+    <div class="logo">TRADING<span>/</span>JOURNAL</div>
+    <div class="badge" id="badge">— No data loaded</div>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn" onclick="document.getElementById('jf').click()">📂 Load File</button>
+    <input type="file" id="jf" accept=".json,.csv" onchange="loadFile(event)">
+    <button class="btn p" onclick="exportJSON()">⬇ Export JSON</button>
+  </div>
+</div>
+<div class="ibar">
+  <label>Google Sheets URL:</label>
+  <input type="text" id="surl" value="https://docs.google.com/spreadsheets/d/e/2PACX-1vTh2dnp3672kD-hOW8pS31Qz1kAUvh-ewVIrNWfeXXCALyYepDeUOItDbBxECzd1H-wfaLQaqi3tt6W/pub?gid=311531105&single=true&output=csv">
+  <button class="btn p" onclick="loadSheets()">⟳ Refresh from Sheets</button>
+  <button class="btn" onclick="loadFromJSON()">📊 Load Data</button>
+  <span id="loadStatus" style="font-size:12px;display:none;"></span>
+</div>
+<div class="tabs">
+  <div class="tab active" onclick="sw('overview')">Overview</div>
+  <div class="tab" onclick="sw('emotions')">Emotion Analysis</div>
+  <div class="tab" onclick="sw('perf')">Performance</div>
+  <div class="tab" onclick="sw('goals')">Goals</div>
+  <div class="tab" onclick="sw('log')">Trade Log</div>
+  <div class="tab" onclick="sw('settings')">Settings</div>
+</div>
+
+<div class="page active" id="page-overview">
+  <div id="ov0" class="empty">Loading data...</div>
+  <div id="ov1" style="display:none">
+    <div class="mgrid" id="metrics"></div>
+    <div id="expectancy-card"></div>
+    <div class="cgrid"><div class="cc wide"><div class="ct">Cumulative Net P&L</div><div style="position:relative;height:160px"><canvas id="cumulChart"></canvas></div></div></div>
+    <div class="cgrid">
+      <div class="cc"><div class="ct">P&L by Strategy</div><div style="position:relative;height:210px"><canvas id="stratChart"></canvas></div></div>
+      <div class="cc"><div class="ct">P&L by Trade Type</div><div style="position:relative;height:210px"><canvas id="typeChart"></canvas></div></div>
+    </div>
+    <div class="cgrid">
+      <div class="cc"><div class="ct">Mistakes Breakdown</div><div style="position:relative;height:220px"><canvas id="mistakeChart"></canvas></div></div>
+      <div class="cc"><div class="ct">P&L by Symbol</div><div style="position:relative;height:220px"><canvas id="symChart"></canvas></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="page" id="page-emotions">
+  <div id="em0" class="empty">⬆ Load data first</div>
+  <div id="em1" style="display:none">
+    <div class="mgrid" id="emometrics"></div>
+    <div class="cgrid">
+      <div class="cc"><div class="ct">Avg P&L — Entry Emotion</div><div style="position:relative;height:220px"><canvas id="entryAvg"></canvas></div></div>
+      <div class="cc"><div class="ct">Win Rate — Entry Emotion</div><div style="position:relative;height:220px"><canvas id="entryWR"></canvas></div></div>
+    </div>
+    <div class="cgrid">
+      <div class="cc"><div class="ct">Avg P&L — Exit Emotion</div><div style="position:relative;height:220px"><canvas id="exitAvg"></canvas></div></div>
+      <div class="cc"><div class="ct">Cost of Negative Emotions (Total P&L)</div><div style="position:relative;height:220px"><canvas id="negEmo"></canvas></div></div>
+    </div>
+    <div class="hmwrap">
+      <div class="hmtitle">Heatmap — Entry Emotion × Trade Type (Avg P&L)
+        <div class="hmleg">
+          <span><span class="hmsw" style="background:rgba(46,204,113,.75)"></span>Profit</span>
+          <span><span class="hmsw" style="background:rgba(231,76,60,.75)"></span>Loss</span>
+          <span><span class="hmsw" style="background:#1a1e26;border:1px solid rgba(255,255,255,.08)"></span>No data</span>
+        </div>
+      </div>
+      <div id="heatmap"></div>
+    </div>
+    <div class="stt">Automatic Insights</div>
+    <div class="igrid" id="insights"></div>
+  </div>
+</div>
+
+<div class="page" id="page-perf">
+  <div id="pf0" class="empty">⬆ Load data first</div>
+  <div id="pf1" style="display:none">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+      <span style="font-size:12px;color:var(--text2);">View:</span>
+      <button class="btn sm active-tog" id="tog-monthly" onclick="setPeriod('monthly')">Monthly</button>
+      <button class="btn sm" id="tog-weekly" onclick="setPeriod('weekly')">Weekly</button>
+      <span style="font-size:12px;color:var(--text2);margin-left:16px;">Compare:</span>
+      <select id="cmp-a" style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:5px 10px;color:var(--text);font-size:12px;outline:none;"></select>
+      <span style="font-size:12px;color:var(--text2);">vs</span>
+      <select id="cmp-b" style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:5px 10px;color:var(--text);font-size:12px;outline:none;"></select>
+    </div>
+    <div class="cgrid">
+      <div class="cc"><div class="ct">Net P&L by Period</div><div style="position:relative;height:220px"><canvas id="perfPnl"></canvas></div></div>
+      <div class="cc"><div class="ct">Win Rate by Period</div><div style="position:relative;height:220px"><canvas id="perfWR"></canvas></div></div>
+    </div>
+    <div class="cgrid">
+      <div class="cc"><div class="ct">Trade Count by Period</div><div style="position:relative;height:200px"><canvas id="perfCount"></canvas></div></div>
+      <div class="cc"><div class="ct">Time Efficiency — % Time Used vs P&L</div><div style="position:relative;height:200px"><canvas id="perfScatter"></canvas></div></div>
+    </div>
+    <div class="stt">Period Comparison</div>
+    <div class="comp-grid" id="compCards"></div>
+  </div>
+</div>
+
+<div class="page" id="page-goals">
+  <div id="gl0" class="empty">⬆ Load data first</div>
+  <div id="gl1" style="display:none">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+      <div>
+        <div class="stt" style="margin-bottom:16px;">Set Goals</div>
+        <div class="goal-input-row"><label>Monthly P&L Target ($)</label><input type="number" id="g-monthly-pnl" value="500"></div>
+        <div class="goal-input-row"><label>Win Rate Target (%)</label><input type="number" id="g-wr" value="60"></div>
+        <div class="goal-input-row"><label>Max Loss per Trade ($)</label><input type="number" id="g-max-loss" value="200"></div>
+        <div class="goal-input-row"><label>Annual P&L Target ($)</label><input type="number" id="g-annual-pnl" value="6000"></div>
+        <div class="goal-input-row"><label>Minimum R:R Target</label><input type="number" id="g-rr" value="1.5" step="0.1"></div>
+        <button class="btn p" style="margin-top:12px" onclick="renderGoals()">Update Goals</button>
+      </div>
+      <div>
+        <div class="stt" style="margin-bottom:16px;">Progress — Current Month</div>
+        <div id="goalCards"></div>
+      </div>
+    </div>
+    <div style="margin-top:24px;">
+      <div class="stt" style="margin-bottom:16px;">Overall Progress</div>
+      <div id="goalCardsAll"></div>
+    </div>
+  </div>
+</div>
+
+<div class="page" id="page-log">
+  <div id="lg0" class="empty">⬆ Load data first</div>
+  <div id="lg1" style="display:none">
+    <div class="srchbar">
+      <input type="text" id="srch-text" placeholder="Free search — name, symbol, strategy..." oninput="renderLogT()">
+      <select id="srch-sym" onchange="renderLogT()"><option value="">All Symbols</option></select>
+      <select id="srch-strat" onchange="renderLogT()"><option value="">All Strategies</option></select>
+      <select id="srch-result" onchange="renderLogT()">
+        <option value="">All Results</option>
+        <option value="win">Winners Only</option>
+        <option value="loss">Losers Only</option>
+      </select>
+      <select id="srch-emo" onchange="renderLogT()"><option value="">All Emotions</option></select>
+      <button class="btn sm" onclick="clearSearch()">Clear</button>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
+      <div style="font-size:11px;color:var(--text3);" id="srch-count"></div>
+      <div id="log-sum" style="display:none;font-family:var(--m);font-size:12px;font-weight:500;padding:4px 12px;border-radius:var(--r);border:1px solid var(--border2);"></div>
+    </div>
+    <div class="ttbl">
+      <div class="thd">
+        <span onclick="sortLog('name')">Trade ↕</span>
+        <span onclick="sortLog('strategy')">Strategy ↕</span>
+        <span>Entry</span><span>Exit</span>
+        <span onclick="sortLog('days')">Days ↕</span>
+        <span onclick="sortLog('pnl')">Net P&L ↕</span>
+        <span onclick="sortLog('pct')">% ↕</span>
+      </div>
+      <div class="tbdy" id="tlog"></div>
+      <div class="tfoot" id="tfoot"></div>
+    </div>
+  </div>
+</div>
+
+<div class="page" id="page-settings">
+  <div class="sbox">
+    <div class="stt">CSV / Google Sheets Column Mapping</div>
+    <p style="font-size:12px;color:var(--text3);margin-bottom:14px;line-height:1.7">Set the exact column names as they appear in your sheet. Click Save after any changes.</p>
+    <div class="cgr" id="colset"></div>
+    <div style="display:flex;gap:8px;margin-bottom:20px">
+      <button class="btn p" onclick="saveCols()">Save</button>
+      <button class="btn" onclick="resetCols()">Reset</button>
+    </div>
+    <div style="border-top:1px solid var(--border);padding-top:16px">
+      <div class="stt">Google Sheets Instructions</div>
+      <ol class="steps">
+        <li>Open Google Sheets → <b style="color:var(--text)">File → Share → Publish to Web</b></li>
+        <li>Select your sheet + <b style="color:var(--text)">CSV</b> format → Publish</li>
+        <li>Copy the generated URL and paste it in the field above</li>
+        <li>Click <b style="color:var(--green)">Refresh from Sheets</b> to reload</li>
+      </ol>
+      <div class="hint">https://docs.google.com/spreadsheets/d/<span style="color:var(--amber)">SHEET_ID</span>/pub?output=csv</div>
+    </div>
+  </div>
+</div>
+
+<script>
+var DEFS={name:{l:'Full Name',d:'Full name'},symbol:{l:'Symbol',d:'Symbol'},type:{l:'Trade Type',d:'trade type'},strategy:{l:'Strategy',d:'strategy'},entry_date:{l:'Entry Date',d:'Entry Date'},exit_date:{l:'Exit Date',d:'Exit Date'},expiry:{l:'Expiry Date',d:'Expiry'},pnl:{l:'Net P&L',d:'Net P&L'},pct:{l:'Net P&L (%)',d:'Net P&L (%)'},days:{l:'Days in Trade',d:'Days in Trade'},mistakes:{l:'Mistakes',d:'Mistakes'},emotion_entry:{l:'Entry Emotion',d:'Emotion (Entry)'},emotion_exit:{l:'Exit Emotion',d:'Emotion (Exite)'}};
+var COL={};Object.entries(DEFS).forEach(function(e){COL[e[0]]=e[1].d;});
+var trades=[],CX={},sortKey='',sortDir=1,perfPeriod='monthly';
+var G='#2ecc71',R='#e74c3c',B='#3498db',AM='#f39c12',GC='rgba(255,255,255,.04)',TC='#5a6070';
+
+function buildColUI(){document.getElementById('colset').innerHTML=Object.entries(DEFS).map(function(e){return'<div><label>'+e[1].l+'</label><input id="col-'+e[0]+'" value="'+COL[e[0]]+'"></div>';}).join('');}
+function saveCols(){Object.keys(DEFS).forEach(function(k){var el=document.getElementById('col-'+k);if(el)COL[k]=el.value.trim();});if(trades.length)renderAll();alert('Saved!');}
+function resetCols(){Object.entries(DEFS).forEach(function(e){COL[e[0]]=e[1].d;});buildColUI();}
+function pm(s){var str=String(s||'').trim();var neg=str.charAt(0)==='('&&str.charAt(str.length-1)===')';var n=parseFloat(str.replace(/[$,%\s()]/g,'').replace(/,/g,'').replace(/[^0-9.\-]/g,''))||0;return neg?-Math.abs(n):n;}
+function avg(a){return a.length?a.reduce(function(s,v){return s+v;},0)/a.length:0;}
+function semo(s){return(s||'').split(',').map(function(x){return x.trim();}).filter(function(x){return x&&x!=='—'&&x.toLowerCase()!=='no emotion';});}
+function bc(v){return v>=0?G:R;}
+function dc(id){if(CX[id]){CX[id].destroy();delete CX[id];}}
+function parseDate(s){if(!s)return null;var p=s.split('/');if(p.length!==3)return null;var day=+p[0],mon=+p[1]-1,yr=+p[2];if(yr<100)yr+=2000;return new Date(yr,mon,day);}
+function fmtMonth(d){if(!d)return'?';return d.getFullYear()+'-'+(d.getMonth()+1<10?'0':'')+(d.getMonth()+1);}
+function weekStart(d){var s=new Date(d);s.setDate(s.getDate()-s.getDay());return s;}
+function fmtWeek(d){if(!d)return'?';var s=weekStart(d);var y=s.getFullYear(),mo=s.getMonth()+1,da=s.getDate();return y+'-'+(mo<10?'0':'')+mo+'-'+(da<10?'0':'')+da;}
+function weekLabel(key){if(!key||key==='?')return key;var p=key.split('-');if(p.length!==3)return key;return p[2]+'.'+p[1];}
+
+function parseCSV(txt){
+  var lines=txt.trim().split(/\r?\n/);
+  function splitRow(line){var r=[],cur='',inQ=false;for(var i=0;i<line.length;i++){var c=line[i];if(c==='"'){if(inQ&&line[i+1]==='"'){cur+='"';i++;}else inQ=!inQ;}else if(c===','&&!inQ){r.push(cur.trim());cur='';}else cur+=c;}r.push(cur.trim());return r;}
+  var hdr=splitRow(lines[0]).map(function(h){return h.replace(/^"|"$/g,'').trim();});
+  var rows=[];for(var i=1;i<lines.length;i++){var vals=splitRow(lines[i]);if(vals.every(function(v){return!v;}))continue;var obj={};hdr.forEach(function(h,k){obj[h]=(vals[k]||'').replace(/^"|"$/g,'').trim();});rows.push(obj);}
+  return rows;
+}
+
+function rtt(row){
+  var g=function(k){return(row[COL[k]]||'').trim();};
+  if(!g('name')&&!g('symbol'))return null;
+  var pnlVal=pm(g('pnl'));if(isNaN(pnlVal))return null;
+  var entryD=parseDate(g('entry_date')),exitD=parseDate(g('exit_date')),expiryD=parseDate(g('expiry'));
+  var timeEff=null;
+  if(entryD&&exitD&&expiryD){var maxDays=(expiryD-entryD)/(1000*60*60*24),usedDays=(exitD-entryD)/(1000*60*60*24);if(maxDays>0)timeEff=Math.min(Math.round(usedDays/maxDays*100),100);}
+  return{name:g('name')||g('symbol'),symbol:g('symbol'),type:g('type')||'—',strategy:g('strategy')||'—',pnl:pnlVal,pct:pm(g('pct')),days:parseInt(g('days'))||0,mistakes:g('mistakes')||'—',entry:g('emotion_entry')||'—',exit:g('emotion_exit')||'—',entryDate:entryD,exitDate:exitD,timeEff:timeEff};
+}
+
+function showStatus(msg,isErr){var el=document.getElementById('loadStatus');if(!el)return;el.textContent=msg;el.style.color=isErr?R:G;el.style.display=msg?'inline':'none';}
+
+function ingest(rows,src){
+  var parsed=rows.map(rtt).filter(Boolean);
+  if(!parsed.length){showStatus('No trades found — check column names',true);return;}
+  trades=parsed;
+  document.getElementById('badge').textContent='— '+src+' · '+trades.length+' trades';
+  showStatus('');renderAll();
+}
+
+function loadSheets(){
+  var url=document.getElementById('surl').value.trim();if(!url){showStatus('Enter a URL',true);return;}
+  showStatus('Loading...',false);
+  var btns=document.querySelectorAll('.btn.p');btns.forEach(function(b){b.disabled=true;});
+  var proxies=[url,'https://corsproxy.io/?'+encodeURIComponent(url),'https://api.allorigins.win/raw?url='+encodeURIComponent(url)];
+  var idx=0;
+  function tryNext(){if(idx>=proxies.length){showStatus('CORS error',true);btns.forEach(function(b){b.disabled=false;});return;}fetch(proxies[idx++]).then(function(r){if(!r.ok)throw new Error(r.status);return r.text();}).then(function(t){var rows=parseCSV(t);if(!rows.length)throw new Error('empty');ingest(rows,'Google Sheets');btns.forEach(function(b){b.disabled=false;});}).catch(function(){tryNext();});}
+  tryNext();
+}
+
+function loadFile(evt){
+  var f=evt.target.files[0];if(!f)return;
+  var reader=new FileReader();
+  reader.onload=function(e){var txt=e.target.result;if(f.name.endsWith('.json')){try{var d=JSON.parse(txt);var arr=Array.isArray(d)?d:d.trades||[];ingest(arr,f.name);}catch(ex){showStatus('JSON error: '+ex.message,true);}}else{ingest(parseCSV(txt),f.name);}};
+  reader.readAsText(f);
+}
+function exportJSON(){var b=new Blob([JSON.stringify(trades,null,2)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='trading_journal.json';a.click();}
+
+function renderAll(){
+  ['ov0','em0','pf0','gl0','lg0'].forEach(function(id){document.getElementById(id).style.display='none';});
+  ['ov1','em1','pf1','gl1','lg1'].forEach(function(id){document.getElementById(id).style.display='block';});
+  renderOV();renderEM();renderPerf();renderGoals();renderLog();
+}
+
+function renderOV(){
+  var total=trades.reduce(function(s,t){return s+t.pnl;},0);
+  var wins=trades.filter(function(t){return t.pnl>0;}),losses=trades.filter(function(t){return t.pnl<=0;});
+  var wr=trades.length?(wins.length/trades.length):0;
+  var aW=wins.length?avg(wins.map(function(t){return t.pnl;})):0;
+  var aL=losses.length?avg(losses.map(function(t){return t.pnl;})):0;
+  var wrPct=wr*100;
+  var rr=aL!==0?Math.abs(aW/aL).toFixed(2):'—';
+  var best=trades.length?Math.max.apply(null,trades.map(function(t){return t.pnl;})):0;
+  var worst=trades.length?Math.min.apply(null,trades.map(function(t){return t.pnl;})):0;
+  var expectancy=wins.length&&losses.length?(wr*aW)+((1-wr)*aL):0;
+  var expRounded=Math.round(expectancy*100)/100;
+
+  document.getElementById('metrics').innerHTML=[
+    {l:'Net P&L',v:(total>=0?'+':'')+'$'+Math.round(total),c:total>=0?'pos':'neg',s:trades.length+' trades'},
+    {l:'Win Rate',v:wrPct.toFixed(1)+'%',c:'',s:wins.length+'W / '+losses.length+'L'},
+    {l:'Avg Win / Loss',v:'$'+Math.round(aW)+' / $'+Math.round(aL),c:'',s:'R:R '+rr},
+    {l:'Best / Worst',v:'$'+best,c:'pos',s:'worst: $'+worst}
+  ].map(function(m){return'<div class="mc"><div class="ml">'+m.l+'</div><div class="mv '+m.c+'">'+m.v+'</div><div class="msub">'+m.s+'</div></div>';}).join('');
+
+  var expColor=expRounded>=0?G:R,expBg=expRounded>=0?'rgba(46,204,113,.06)':'rgba(231,76,60,.06)',expBorder=expRounded>=0?'rgba(46,204,113,.35)':'rgba(231,76,60,.35)';
+  var expSign=expRounded>=0?'+':'';
+  var expLabel=expRounded>=50?'🔥 Strong edge':expRounded>=0?'✅ Positive edge':expRounded>=-20?'⚠️ Marginal negative':'❌ Negative edge';
+  document.getElementById('expectancy-card').innerHTML='<div style="background:'+expBg+';border:1px solid '+expBorder+';border-radius:var(--r);padding:14px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;"><div><div style="font-size:11px;color:var(--text3);font-family:var(--m);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Expectancy per Trade</div><div style="font-size:28px;font-weight:500;font-family:var(--m);color:'+expColor+';">'+expSign+'$'+Math.abs(expRounded).toFixed(2)+'</div></div><div style="font-size:12px;font-weight:500;color:'+expColor+';font-family:var(--m);padding:6px 16px;border-radius:20px;border:1px solid '+expBorder+';background:var(--bg2);">'+expLabel+'</div></div>';
+
+  var cum=0,cLabels=[],cData=[],cNames=[];
+  trades.forEach(function(t,i){cum+=t.pnl;cLabels.push('#'+(i+1));cData.push(Math.round(cum));cNames.push(t.name);});
+  dc('cum');
+  CX.cum=new Chart(document.getElementById('cumulChart'),{type:'line',data:{labels:cLabels,datasets:[{data:cData,fill:true,borderColor:cum>=0?G:R,backgroundColor:cum>=0?'rgba(46,204,113,.07)':'rgba(231,76,60,.07)',borderWidth:2,pointRadius:4,pointHoverRadius:7,tension:.3}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{title:function(items){return cNames[items[0].dataIndex];},label:function(c){var idx=c.dataIndex;var tpnl=trades[idx].pnl;return'Trade P&L: '+(tpnl>=0?'+':'')+'$'+tpnl+'   |   Cumulative: $'+c.raw;}}}},scales:{x:{ticks:{color:TC,font:{size:10},maxTicksLimit:15},grid:{color:GC}},y:{ticks:{color:TC,callback:function(v){return'$'+v;}},grid:{color:GC}}}}});
+
+  function hbar(id,mapFn){var m={};trades.forEach(function(t){var k=mapFn(t);m[k]=(m[k]||0)+t.pnl;});var s=Object.entries(m).sort(function(a,b){return b[1]-a[1];});dc(id);CX[id]=new Chart(document.getElementById(id),{type:'bar',data:{labels:s.map(function(x){return x[0];}),datasets:[{data:s.map(function(x){return Math.round(x[1]);}),backgroundColor:s.map(function(x){return bc(x[1]);}),borderRadius:3}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return'$'+c.raw;}}}},scales:{x:{ticks:{color:TC,callback:function(v){return'$'+v;}},grid:{color:GC}},y:{ticks:{color:'#8891a4',font:{size:10}}}}}});}
+  hbar('stratChart',function(t){return t.strategy;});hbar('typeChart',function(t){return t.type;});
+
+  var sym={};trades.forEach(function(t){sym[t.symbol]=(sym[t.symbol]||0)+t.pnl;});var ss=Object.entries(sym).sort(function(a,b){return b[1]-a[1];});
+  dc('sym');CX.sym=new Chart(document.getElementById('symChart'),{type:'bar',data:{labels:ss.map(function(x){return x[0];}),datasets:[{data:ss.map(function(x){return Math.round(x[1]);}),backgroundColor:ss.map(function(x){return bc(x[1]);}),borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return'$'+c.raw;}}}},scales:{x:{ticks:{color:TC,font:{size:10}}},y:{ticks:{color:'#8891a4',callback:function(v){return'$'+v;}},grid:{color:GC}}}}});
+
+  var mk={};trades.forEach(function(t){mk[t.mistakes]=(mk[t.mistakes]||0)+1;});var me=Object.entries(mk).sort(function(a,b){return b[1]-a[1];});var mkC=[G,R,B,AM,'#9b59b6','#e67e22','#1abc9c','#d35400'];
+  dc('mk');CX.mk=new Chart(document.getElementById('mistakeChart'),{type:'doughnut',data:{labels:me.map(function(x){return x[0];}),datasets:[{data:me.map(function(x){return x[1];}),backgroundColor:mkC,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'right',labels:{color:'#8891a4',font:{size:10},boxWidth:10,padding:6}}}}});
+}
+
+function renderEM(){
+  var eM={},xM={};
+  trades.forEach(function(t){semo(t.entry).forEach(function(e){if(!eM[e])eM[e]={pnls:[],wins:0};eM[e].pnls.push(t.pnl);if(t.pnl>0)eM[e].wins++;});semo(t.exit).forEach(function(e){if(!xM[e])xM[e]={pnls:[],wins:0};xM[e].pnls.push(t.pnl);if(t.pnl>0)xM[e].wins++;});});
+  var cT=trades.filter(function(t){return semo(t.entry).indexOf('Confidence')>=0;});var cWR=cT.length?Math.round(cT.filter(function(t){return t.pnl>0;}).length/cT.length*100):0;
+  var fT=trades.filter(function(t){return semo(t.entry).indexOf('FOMO')>=0;});var fA=fT.length?Math.round(avg(fT.map(function(t){return t.pnl;}))):0;
+  var pT=trades.filter(function(t){return semo(t.entry).indexOf('Patience')>=0;});var pWR=pT.length?Math.round(pT.filter(function(t){return t.pnl>0;}).length/pT.length*100):0;
+  var dT=trades.filter(function(t){return semo(t.exit).indexOf('Discipline')>=0;});var dWR=dT.length?Math.round(dT.filter(function(t){return t.pnl>0;}).length/dT.length*100):0;
+  document.getElementById('emometrics').innerHTML=[{l:'Confidence WR',v:cWR+'%',c:''},{l:'FOMO Avg P&L',v:(fA>=0?'+':'')+'$'+fA,c:fA<0?'neg':'pos'},{l:'Patience WR',v:pWR+'%',c:''},{l:'Discipline Exit WR',v:dWR+'%',c:''}].map(function(m){return'<div class="mc"><div class="ml">'+m.l+'</div><div class="mv '+m.c+'">'+m.v+'</div></div>';}).join('');
+  function eavg(id,map){var ent=Object.entries(map).filter(function(e){return e[1].pnls.length>=2;}).sort(function(a,b){return avg(b[1].pnls)-avg(a[1].pnls);});var avgs=ent.map(function(e){return Math.round(avg(e[1].pnls));});dc(id);CX[id]=new Chart(document.getElementById(id),{type:'bar',data:{labels:ent.map(function(e){return e[0];}),datasets:[{data:avgs,backgroundColor:avgs.map(bc),borderRadius:3}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return'avg $'+c.raw;}}}},scales:{x:{ticks:{color:TC,callback:function(v){return'$'+v;}},grid:{color:GC}},y:{ticks:{color:'#8891a4',font:{size:10}}}}}});}
+  eavg('entryAvg',eM);eavg('exitAvg',xM);
+  var wE=Object.entries(eM).filter(function(e){return e[1].pnls.length>=2;}).sort(function(a,b){return(b[1].wins/b[1].pnls.length)-(a[1].wins/a[1].pnls.length);});var wrs=wE.map(function(e){return Math.round(e[1].wins/e[1].pnls.length*100);});
+  dc('ewr');CX.ewr=new Chart(document.getElementById('entryWR'),{type:'bar',data:{labels:wE.map(function(e){return e[0]+' ('+e[1].pnls.length+')';}),datasets:[{data:wrs,backgroundColor:wrs.map(function(v){return v>=60?G:v>=40?AM:R;}),borderRadius:3}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.raw+'%';}}}},scales:{x:{min:0,max:100,ticks:{color:TC,callback:function(v){return v+'%';}},grid:{color:GC}},y:{ticks:{color:'#8891a4',font:{size:10}}}}}});
+  var NEG=['FOMO','Greed','Stress','Overconfidence','Fear','Impulsive','Boredom'];var nD=NEG.map(function(e){var v=eM[e];return v?Math.round(v.pnls.reduce(function(a,b){return a+b;},0)):0;});var nC=NEG.map(function(e){var v=eM[e];return v?v.pnls.length:0;});
+  dc('neg');CX.neg=new Chart(document.getElementById('negEmo'),{type:'bar',data:{labels:NEG,datasets:[{data:nD,backgroundColor:nD.map(bc),borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return'$'+c.raw;},afterLabel:function(c){return'n='+nC[c.dataIndex];}}}},scales:{x:{ticks:{color:TC,font:{size:10}}},y:{ticks:{color:'#8891a4',callback:function(v){return'$'+v;}},grid:{color:GC}}}}});
+  buildHM(eM);buildIns(eM,xM);
+}
+
+function buildHM(eM){
+  var EMO=['Confidence','Patience','Curiosity','Boredom','Acceptance','Greed','Fear','Overconfidence','FOMO','Stress','Impulsive'];
+  var TYP=['Sell Call','Sell Put','Buy Call','Bull Call','Bear Put','Buy Put'];
+  var mat={};EMO.forEach(function(e){mat[e]={};TYP.forEach(function(t){mat[e][t]={sum:0,n:0};});});
+  trades.forEach(function(tr){semo(tr.entry).forEach(function(e){if(mat[e]&&mat[e][tr.type]!==undefined){mat[e][tr.type].sum+=tr.pnl;mat[e][tr.type].n++;}});});
+  function cbg(s,n){if(!n)return null;var v=s/n,i=Math.min(Math.abs(v)/250,1),a=(0.15+i*0.65).toFixed(2);return v>=0?'rgba(46,204,113,'+a+')':'rgba(231,76,60,'+a+')';}
+  function ctc(s,n){if(!n)return null;var v=s/n,i=Math.min(Math.abs(v)/250,1);return v>=0?(i>0.5?'#0a3320':'#1a7a45'):(i>0.5?'#4a0a0a':'#aa2222');}
+  var h='<table class="hm"><thead><tr><th class="rl"></th>';TYP.forEach(function(t){h+='<th>'+t+'</th>';});h+='</tr></thead><tbody>';
+  EMO.forEach(function(e){h+='<tr><td class="rl">'+e+'</td>';TYP.forEach(function(t){var c=mat[e][t];if(!c.n){h+='<td class="cell emp"></td>';return;}var bg=cbg(c.sum,c.n),tc=ctc(c.sum,c.n),a=Math.round(c.sum/c.n);h+='<td class="cell" style="background:'+bg+'"><div class="ca" style="color:'+tc+'">'+(a>=0?'+':'')+'$'+a+'</div><div class="cn" style="color:'+tc+'">n='+c.n+'</div></td>';});h+='</tr>';});
+  document.getElementById('heatmap').innerHTML=h+'</tbody></table>';
+}
+
+function buildIns(eM,xM){
+  var cT=trades.filter(function(t){return semo(t.entry).indexOf('Confidence')>=0;});var cWR=cT.length?Math.round(cT.filter(function(t){return t.pnl>0;}).length/cT.length*100):0;
+  var fT=trades.filter(function(t){return semo(t.entry).some(function(e){return['FOMO','Overconfidence','Impulsive'].indexOf(e)>=0;});});var fTot=Math.round(fT.reduce(function(a,t){return a+t.pnl;},0));
+  var gT=trades.filter(function(t){return semo(t.entry).indexOf('Greed')>=0;});var gWR=gT.length?Math.round(gT.filter(function(t){return t.pnl>0;}).length/gT.length*100):0;
+  var pT=trades.filter(function(t){return semo(t.entry).indexOf('Patience')>=0;});var pA=pT.length?Math.round(avg(pT.map(function(t){return t.pnl;}))):0;
+  var dT=trades.filter(function(t){return semo(t.exit).indexOf('Discipline')>=0;});var dWR=dT.length?Math.round(dT.filter(function(t){return t.pnl>0;}).length/dT.length*100):0;
+  var nM=trades.filter(function(t){return t.mistakes==='No Mistake';});var nWR=nM.length?Math.round(nM.filter(function(t){return t.pnl>0;}).length/nM.length*100):0;
+  document.getElementById('insights').innerHTML=[
+    {c:'pos',i:'↑',t:'Confidence on entry: '+cWR+'% win rate — your best emotion'},
+    {c:'pos',i:'↑',t:'Patience on entry: avg $'+pA+' — always wait for the setup'},
+    {c:fTot<0?'neg':'pos',i:fTot<0?'↓':'→',t:'FOMO + Overconfidence + Impulsive: total '+(fTot<0?'':'+')+'$'+fTot+' — consider skipping these'},
+    {c:'neg',i:'↓',t:'Greed on entry: '+gWR+'% win rate — correlated with early entries'},
+    {c:'pos',i:'↑',t:'Discipline on exit: '+dWR+'% win rate — having an exit plan improves results'},
+    {c:'neu',i:'→',t:'No mistakes: '+nWR+'% win rate — emotion management directly impacts performance'}
+  ].map(function(x){return'<div class="ins '+x.c+'"><span style="font-weight:500">'+x.i+'</span>&nbsp;<span>'+x.t+'</span></div>';}).join('');
+}
+
+function groupByPeriod(fn){var m={};trades.forEach(function(t){var d=t.entryDate||t.exitDate;if(!d)return;var k=fn(d);if(!m[k])m[k]={pnl:0,wins:0,total:0};m[k].pnl+=t.pnl;m[k].total++;if(t.pnl>0)m[k].wins++;});return m;}
+function setPeriod(p){perfPeriod=p;document.getElementById('tog-monthly').className='btn sm'+(p==='monthly'?' active-tog':'');document.getElementById('tog-weekly').className='btn sm'+(p==='weekly'?' active-tog':'');renderPerf();}
+
+function renderPerf(){
+  var fn=perfPeriod==='monthly'?fmtMonth:fmtWeek;var m=groupByPeriod(fn);var keys=Object.keys(m).sort();if(!keys.length)return;
+  var isWeekly=perfPeriod==='weekly';function dispKey(k){return isWeekly?weekLabel(k):k;}
+  var cmpA=document.getElementById('cmp-a'),cmpB=document.getElementById('cmp-b');var prevA=cmpA.value,prevB=cmpB.value;
+  cmpA.innerHTML=keys.map(function(k){return'<option value="'+k+'">'+dispKey(k)+'</option>';}).join('');
+  cmpB.innerHTML=keys.map(function(k){return'<option value="'+k+'">'+dispKey(k)+'</option>';}).join('');
+  if(keys.length>=2){cmpA.value=prevA&&m[prevA]?prevA:keys[keys.length-2];cmpB.value=prevB&&m[prevB]?prevB:keys[keys.length-1];}
+  var labels=keys.map(dispKey),pnls=keys.map(function(k){return Math.round(m[k].pnl);}),wrs=keys.map(function(k){return m[k].total?Math.round(m[k].wins/m[k].total*100):0;}),counts=keys.map(function(k){return m[k].total;});
+  dc('perfPnl');CX.perfPnl=new Chart(document.getElementById('perfPnl'),{type:'bar',data:{labels:labels,datasets:[{data:pnls,backgroundColor:pnls.map(bc),borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return'$'+c.raw;}}}},scales:{x:{ticks:{color:TC,font:{size:10}}},y:{ticks:{color:TC,callback:function(v){return'$'+v;}},grid:{color:GC}}}}});
+  dc('perfWR');CX.perfWR=new Chart(document.getElementById('perfWR'),{type:'line',data:{labels:labels,datasets:[{data:wrs,borderColor:B,backgroundColor:'rgba(52,152,219,.08)',fill:true,borderWidth:2,pointRadius:4,pointBackgroundColor:B,tension:.3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.raw+'%';}}}},scales:{x:{ticks:{color:TC,font:{size:10}}},y:{min:0,max:100,ticks:{color:TC,callback:function(v){return v+'%';}},grid:{color:GC}}}}});
+  dc('perfCount');CX.perfCount=new Chart(document.getElementById('perfCount'),{type:'bar',data:{labels:labels,datasets:[{data:counts,backgroundColor:'rgba(52,152,219,.6)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:TC,font:{size:10}}},y:{ticks:{color:TC},grid:{color:GC}}}}});
+  var scData=trades.filter(function(t){return t.timeEff!==null;}).map(function(t){return{x:t.timeEff,y:t.pnl,label:t.symbol};});
+  dc('perfScatter');if(scData.length){CX.perfScatter=new Chart(document.getElementById('perfScatter'),{type:'scatter',data:{datasets:[{data:scData,backgroundColor:scData.map(function(p){return p.y>=0?'rgba(46,204,113,.7)':'rgba(231,76,60,.7)';}),pointRadius:6,pointHoverRadius:8}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.raw.label+': '+c.raw.x+'% time | $'+c.raw.y;}}}},scales:{x:{title:{display:true,text:'% Time Used',color:TC},min:0,max:100,ticks:{color:TC,callback:function(v){return v+'%';}},grid:{color:GC}},y:{title:{display:true,text:'Net P&L',color:TC},ticks:{color:TC,callback:function(v){return'$'+v;}},grid:{color:GC}}}}});}
+  renderComparison(m,keys,dispKey);
+}
+
+function renderComparison(m,keys,dispKey){
+  var cmpA=document.getElementById('cmp-a').value,cmpB=document.getElementById('cmp-b').value;if(!cmpA||!cmpB||!m[cmpA]||!m[cmpB])return;
+  var a=m[cmpA],b=m[cmpB];var aWR=a.total?Math.round(a.wins/a.total*100):0,bWR=b.total?Math.round(b.wins/b.total*100):0;
+  function delta(bv,av,pref){var d=bv-av;var s=d>=0?'+':'';var cls=d>0?'pos':d<0?'neg':'neu';return'<span class="delta-badge '+cls+'">'+s+pref+Math.round(d)+'</span>';}
+  var rows=[{l:'Net P&L',a:'$'+Math.round(a.pnl),b:'$'+Math.round(b.pnl),d:delta(b.pnl,a.pnl,'$')},{l:'Win Rate',a:aWR+'%',b:bWR+'%',d:delta(bWR,aWR,'')+'%'},{l:'Trade Count',a:a.total,b:b.total,d:delta(b.total,a.total,'')},{l:'Avg P&L / Trade',a:'$'+Math.round(a.pnl/a.total),b:'$'+Math.round(b.pnl/b.total),d:delta(b.pnl/b.total,a.pnl/a.total,'$')}];
+  document.getElementById('compCards').innerHTML='<div class="comp-card"><div class="comp-title">'+dispKey(cmpA)+'</div>'+rows.map(function(r){return'<div class="period-row"><span style="color:var(--text3)">'+r.l+'</span><span style="font-family:var(--m)">'+r.a+'</span></div>';}).join('')+'</div>'+'<div class="comp-card"><div class="comp-title">'+dispKey(cmpB)+'</div>'+rows.map(function(r){return'<div class="period-row"><span style="color:var(--text3)">'+r.l+'</span><div style="display:flex;align-items:center;gap:8px;font-family:var(--m)">'+r.b+' '+r.d+'</div></div>';}).join('')+'</div>';
+}
+
+document.addEventListener('change',function(e){if(e.target.id==='cmp-a'||e.target.id==='cmp-b'){var fn=perfPeriod==='monthly'?fmtMonth:fmtWeek;var m=groupByPeriod(fn);var keys=Object.keys(m).sort();var isW=perfPeriod==='weekly';var dK=function(k){return isW?weekLabel(k):k;};renderComparison(m,keys,dK);}});
+
+function renderGoals(){
+  var goalPnl=parseFloat(document.getElementById('g-monthly-pnl').value)||500,goalWR=parseFloat(document.getElementById('g-wr').value)||60,goalMaxLoss=parseFloat(document.getElementById('g-max-loss').value)||200,goalAnnual=parseFloat(document.getElementById('g-annual-pnl').value)||6000,goalRR=parseFloat(document.getElementById('g-rr').value)||1.5;
+  var now=new Date(),curMonth=now.getFullYear()+'-'+(now.getMonth()+1);
+  var monthTrades=trades.filter(function(t){var d=t.entryDate||t.exitDate;return d&&fmtMonth(d)===curMonth;});
+  if(!monthTrades.length){var fn=fmtMonth;var m=groupByPeriod(fn);var keys=Object.keys(m).sort();if(keys.length){var lastM=keys[keys.length-1];monthTrades=trades.filter(function(t){var d=t.entryDate||t.exitDate;return d&&fn(d)===lastM;});}}
+  var mPnl=monthTrades.reduce(function(a,t){return a+t.pnl;},0),mWins=monthTrades.filter(function(t){return t.pnl>0;}),mWR=monthTrades.length?Math.round(mWins.length/monthTrades.length*100):0,bigLosses=monthTrades.filter(function(t){return t.pnl<-goalMaxLoss;});
+  var totalPnl=trades.reduce(function(a,t){return a+t.pnl;},0),allWins=trades.filter(function(t){return t.pnl>0;}),allLosses=trades.filter(function(t){return t.pnl<0;}),allWR=trades.length?Math.round(allWins.length/trades.length*100):0;
+  var avgWin=allWins.length?avg(allWins.map(function(t){return t.pnl;})):0,avgLoss=allLosses.length?avg(allLosses.map(function(t){return Math.abs(t.pnl);})):0,rr=avgLoss?Math.round(avgWin/avgLoss*100)/100:0;
+  function pb(val,goal,inv){var pct=Math.min(Math.round(Math.abs(val)/goal*100),100);var ok=inv?(val<=goal):(val>=goal);var cls=ok?'green':pct>=70?'amber':'red';return{pct:pct,cls:cls,ok:ok};}
+  function card(label,cur,goal,pctObj,sub){return'<div class="goal-card"><div class="goal-header"><div class="goal-label">'+label+'</div><div class="goal-val" style="color:'+(pctObj.ok?G:R)+'">'+cur+' / '+goal+'</div></div><div class="pbar-wrap"><div class="pbar '+pctObj.cls+'" style="width:'+pctObj.pct+'%"></div></div><div class="goal-sub">'+pctObj.pct+'% of target'+(sub?' · '+sub:'')+'</div></div>';}
+  document.getElementById('goalCards').innerHTML=card('Monthly P&L','$'+Math.round(mPnl),'$'+goalPnl,pb(mPnl,goalPnl,false),monthTrades.length+' trades this month')+card('Monthly Win Rate',mWR+'%',goalWR+'%',pb(mWR,goalWR,false),mWins.length+'W / '+(monthTrades.length-mWins.length)+'L')+card('Trades Exceeding Loss Limit',bigLosses.length+' trades','0',pb(bigLosses.length,0,true),'max $'+goalMaxLoss+' loss per trade');
+  document.getElementById('goalCardsAll').innerHTML=card('Annual P&L (All Time)','$'+Math.round(totalPnl),'$'+goalAnnual,pb(totalPnl,goalAnnual,false),trades.length+' total trades')+card('Overall Win Rate',allWR+'%',goalWR+'%',pb(allWR,goalWR,false),allWins.length+'W / '+allLosses.length+'L')+card('Average R:R',rr,goalRR,pb(rr,goalRR,false),'avg win $'+Math.round(avgWin)+' / avg loss $'+Math.round(avgLoss));
+}
+
+var BAD=['FOMO','Greed','Stress','Overconfidence','Impulsive'],GOOD=['Confidence','Patience','Discipline'];
+function etag(e){var c=BAD.indexOf(e)>=0?'bd':GOOD.indexOf(e)>=0?'gd':'nu';return'<span class="et '+c+'">'+e+'</span>';}
+
+function renderLog(){
+  var syms=[...new Set(trades.map(function(t){return t.symbol;}))].sort(),strats=[...new Set(trades.map(function(t){return t.strategy;}))].sort(),emos=[...new Set(trades.reduce(function(a,t){return a.concat(semo(t.entry));},[]))].sort();
+  var ss=document.getElementById('srch-sym'),curS=ss.value;ss.innerHTML='<option value="">All Symbols</option>'+syms.map(function(s){return'<option>'+s+'</option>';}).join('');if(curS)ss.value=curS;
+  var st=document.getElementById('srch-strat'),curSt=st.value;st.innerHTML='<option value="">All Strategies</option>'+strats.map(function(s){return'<option>'+s+'</option>';}).join('');if(curSt)st.value=curSt;
+  var se=document.getElementById('srch-emo'),curE=se.value;se.innerHTML='<option value="">All Emotions</option>'+emos.map(function(e){return'<option>'+e+'</option>';}).join('');if(curE)se.value=curE;
+  renderLogT();
+}
+
+function clearSearch(){document.getElementById('srch-text').value='';document.getElementById('srch-sym').value='';document.getElementById('srch-strat').value='';document.getElementById('srch-result').value='';document.getElementById('srch-emo').value='';sortKey='';sortDir=1;renderLogT();}
+function sortLog(key){if(sortKey===key)sortDir*=-1;else{sortKey=key;sortDir=1;}renderLogT();}
+
+function renderLogT(){
+  var txt=(document.getElementById('srch-text').value||'').toLowerCase(),sym=document.getElementById('srch-sym').value,strat=document.getElementById('srch-strat').value,res=document.getElementById('srch-result').value,emo=document.getElementById('srch-emo').value;
+  var rows=trades.filter(function(t){
+    if(txt&&!(t.name.toLowerCase().includes(txt)||t.symbol.toLowerCase().includes(txt)||t.strategy.toLowerCase().includes(txt)||t.mistakes.toLowerCase().includes(txt)))return false;
+    if(sym&&t.symbol!==sym)return false;if(strat&&t.strategy!==strat)return false;
+    if(res==='win'&&t.pnl<=0)return false;if(res==='loss'&&t.pnl>0)return false;
+    if(emo&&!semo(t.entry).includes(emo))return false;return true;
+  });
+  if(sortKey){rows=rows.slice().sort(function(a,b){var av=a[sortKey]||0,bv=b[sortKey]||0;if(typeof av==='string')return av.localeCompare(bv)*sortDir;return(av-bv)*sortDir;});}
+
+  // ── Compute sum for visible rows ──
+  var sum=rows.reduce(function(a,t){return a+t.pnl;},0);
+  var sumPos=sum>=0;
+  var sumSign=sumPos?'+':'';
+  var sumColor=sumPos?G:R;
+  var wCount=rows.filter(function(t){return t.pnl>0;}).length;
+  var lCount=rows.filter(function(t){return t.pnl<=0;}).length;
+
+  document.getElementById('srch-count').textContent='Showing '+rows.length+' of '+trades.length+' trades';
+
+  // ── Footer row with sum ──
+  var footEl=document.getElementById('tfoot');
+  if(rows.length>0){
+    footEl.style.display='grid';
+    footEl.innerHTML=
+      '<div style="color:var(--text3);font-size:11px;font-family:var(--f);font-weight:400;">'+rows.length+' trades · '+wCount+'W / '+lCount+'L</div>'+
+      '<div></div><div></div><div></div><div></div>'+
+      '<div style="color:'+sumColor+';">'+sumSign+'$'+Math.round(sum)+'</div>'+
+      '<div></div>';
+  } else {
+    footEl.style.display='none';
+  }
+
+  document.getElementById('tlog').innerHTML=rows.map(function(t){
+    var p=t.pnl>=0,timeEffHtml=t.timeEff!==null?'<div class="ts">⏱ '+t.timeEff+'% time used</div>':'';
+    return'<div class="trow">'+
+      '<div><div class="tn">'+t.name+'</div><div class="ts">'+t.strategy+' · '+t.mistakes+'</div>'+timeEffHtml+'</div>'+
+      '<div style="color:var(--text2);font-size:11px">'+t.strategy+'</div>'+
+      '<div>'+semo(t.entry).map(etag).join('')+'</div>'+
+      '<div>'+semo(t.exit).map(etag).join('')+'</div>'+
+      '<div style="color:var(--text3)">'+t.days+'d</div>'+
+      '<div class="'+(p?'pp':'np')+'">'+(p?'+':'')+'$'+t.pnl+'</div>'+
+      '<div class="'+(p?'pp':'np')+'">'+t.pct.toFixed(1)+'%</div>'+
+    '</div>';
+  }).join('');
+}
+
+var TABS=['overview','emotions','perf','goals','log','settings'];
+function sw(n){document.querySelectorAll('.tab').forEach(function(t,i){t.classList.toggle('active',TABS[i]===n);});document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});document.getElementById('page-'+n).classList.add('active');}
+function loadFromJSON(){ingest(RAW_DATA,'All_Data.json');}
+
+var RAW_DATA=[{"No.":"1","Full name":"LEN JAN 09'26 107$ Buy Call","Entry Date":"05/01/26","Symbol":"LEN","trade type":"Buy Call","strategy":"Technical Setup","Expiry":"09/01/26","Exit Date":"08/01/26","Net P&L":"$140.00","Net P&L (%)":"96.55%","Days in Trade":"3","Mistakes":"Cut Winner Too Early","Emotion (Entry)":"Confidence","Emotion (Exite)":"Acceptance"},{"No.":"2","Full name":"MCD FEB 20'26 305/320$ Bull Call","Entry Date":"07/01/26","Symbol":"MCD","trade type":"Bull Call","strategy":"Technical Setup","Expiry":"20/02/26","Exit Date":"27/01/26","Net P&L":"$267.00","Net P&L (%)":"47.59%","Days in Trade":"20","Mistakes":"Cut Winner Too Early","Emotion (Entry)":"Confidence, FOMO","Emotion (Exite)":"Greed, Acceptance, Fear"},{"No.":"3","Full name":"BMNR JAN 16'26 28.5$ Sell Put","Entry Date":"08/01/26","Symbol":"BMNR","trade type":"Sell Put","strategy":"Portfolio Income Strategy","Expiry":"16/01/26","Exit Date":"15/01/26","Net P&L":"$54.00","Net P&L (%)":"84.38%","Days in Trade":"7","Mistakes":"No Mistake","Emotion (Entry)":"Confidence","Emotion (Exite)":"Discipline, Acceptance"},{"No.":"4","Full name":"SOFI FEB 06'26 26$ Buy Put","Entry Date":"14/01/26","Symbol":"SOFI","trade type":"Buy Put","strategy":"Hedge or Protection","Expiry":"06/02/26","Exit Date":"14/01/26","Net P&L":"-$3.00","Net P&L (%)":"-0.61%","Days in Trade":"0","Mistakes":"Execution Error (Fat Finger)","Emotion (Entry)":"Fear, Stress","Emotion (Exite)":"Patience"},{"No.":"5","Full name":"SOFI FEB 06'26 26$ Buy Put #2","Entry Date":"14/01/26","Symbol":"SOFI","trade type":"Buy Put","strategy":"Hedge or Protection","Expiry":"06/02/26","Exit Date":"21/01/26","Net P&L":"-$24.00","Net P&L (%)":"-4.91%","Days in Trade":"7","Mistakes":"No Mistake","Emotion (Entry)":"Fear, Stress","Emotion (Exite)":"Acceptance, Discipline"},{"No.":"6","Full name":"SOFI MAR 20'26 26$ Sell Put","Entry Date":"01/08/25","Symbol":"SOFI","trade type":"Sell Put","strategy":"Directional Bullish/Bearish","Expiry":"20/03/26","Exit Date":"14/01/26","Net P&L":"$185.00","Net P&L (%)":"73.12%","Days in Trade":"166","Mistakes":"No Mistake","Emotion (Entry)":"Confidence, Patience","Emotion (Exite)":"Stress"},{"No.":"7","Full name":"ASTS JAN 16'26 96/100$ Bear Put","Entry Date":"15/01/26","Symbol":"ASTS","trade type":"Bear Put","strategy":"Speculative Idea","Expiry":"16/01/26","Exit Date":"16/01/26","Net P&L":"-$130.00","Net P&L (%)":"-106.56%","Days in Trade":"1","Mistakes":"Misread Trend","Emotion (Entry)":"Fear, Stress","Emotion (Exite)":"Acceptance"},{"No.":"8","Full name":"IBRX JAN 16'26 4$ Buy Call","Entry Date":"15/01/26","Symbol":"IBRX","trade type":"Buy Call","strategy":"Short squeeze","Expiry":"16/01/26","Exit Date":"16/01/26","Net P&L":"$342.00","Net P&L (%)":"814.29%","Days in Trade":"1","Mistakes":"Cut Winner Too Early","Emotion (Entry)":"Curiosity, Confidence","Emotion (Exite)":"Acceptance"},{"No.":"9","Full name":"QQQ JAN 16'26 625$ Sell Call","Entry Date":"15/01/26","Symbol":"QQQ","trade type":"Sell Call","strategy":"Portfolio Income Strategy","Expiry":"16/01/26","Exit Date":"16/01/26","Net P&L":"$204.00","Net P&L (%)":"98.08%","Days in Trade":"1","Mistakes":"Impulse Entry (FOMO)","Emotion (Entry)":"Overconfidence, Acceptance","Emotion (Exite)":"Confidence"},{"No.":"10","Full name":"ASTS JAN 23'26 113/116$ Bear Put","Entry Date":"21/01/26","Symbol":"ASTS","trade type":"Bear Put","strategy":"Hedge or Protection","Expiry":"23/01/26","Exit Date":"21/01/26","Net P&L":"$13.00","Net P&L (%)":"9.15%","Days in Trade":"0","Mistakes":"No Valid Setup","Emotion (Entry)":"Overconfidence, Fear, FOMO","Emotion (Exite)":"Discipline, Stress"},{"No.":"11","Full name":"QQQ JAN 21'26 604/608$ Bear Put","Entry Date":"21/01/26","Symbol":"QQQ","trade type":"Bear Put","strategy":"Hedge or Protection","Expiry":"21/01/26","Exit Date":"21/01/26","Net P&L":"-$132.00","Net P&L (%)":"-106.45%","Days in Trade":"0","Mistakes":"Impulse Entry (FOMO)","Emotion (Entry)":"FOMO, Overconfidence, Impulsive","Emotion (Exite)":"Acceptance"},{"No.":"12","Full name":"APLD JAN 23'26 37.5$ Buy Put","Entry Date":"22/01/26","Symbol":"APLD","trade type":"Buy Put","strategy":"Speculative Idea","Expiry":"23/01/26","Exit Date":"23/01/26","Net P&L":"$25.00","Net P&L (%)":"86.21%","Days in Trade":"1","Mistakes":"No Mistake","Emotion (Entry)":"Overconfidence, Curiosity","Emotion (Exite)":"Discipline, Acceptance"},{"No.":"13","Full name":"SLV MAR 20'26 101$ Sell Call","Entry Date":"26/01/26","Symbol":"SLV","trade type":"Sell Call","strategy":"Speculative Idea","Expiry":"20/03/26","Exit Date":"27/01/26","Net P&L":"$120.00","Net P&L (%)":"9.14%","Days in Trade":"1","Mistakes":"Oversized Position","Emotion (Entry)":"Overconfidence, Curiosity","Emotion (Exite)":"Fear, Acceptance"},{"No.":"14","Full name":"COIN JAN 30'26 215/222$ Bull Call","Entry Date":"27/01/26","Symbol":"COIN","trade type":"Bull Call","strategy":"Technical Setup","Expiry":"30/01/26","Exit Date":"30/01/26","Net P&L":"-$214.00","Net P&L (%)":"-103.88%","Days in Trade":"3","Mistakes":"Early Entry (No Confirmation)","Emotion (Entry)":"Greed, Curiosity","Emotion (Exite)":"Acceptance"},{"No.":"15","Full name":"SLV AUG 21'26 90/120$ Bull Call","Entry Date":"28/01/26","Symbol":"SLV","trade type":"Bull Call","strategy":"no strategy","Expiry":"21/08/26","Exit Date":"28/01/26","Net P&L":"-$20.00","Net P&L (%)":"-0.33%","Days in Trade":"0","Mistakes":"Execution Error (Fat Finger)","Emotion (Entry)":"no emotion","Emotion (Exite)":"no emotion"},{"No.":"16","Full name":"SLV JAN 28'26 97.5/100$ Bear Put","Entry Date":"28/01/26","Symbol":"SLV","trade type":"Bear Put","strategy":"Speculative Idea","Expiry":"28/01/26","Exit Date":"28/01/26","Net P&L":"-$74.00","Net P&L (%)":"-112.12%","Days in Trade":"0","Mistakes":"No Valid Setup","Emotion (Entry)":"FOMO, Overconfidence","Emotion (Exite)":"Acceptance"},{"No.":"17","Full name":"SLV FEB 11'26 175$ Sell Call","Entry Date":"28/01/26","Symbol":"SLV","trade type":"Sell Call","strategy":"Volatility Play","Expiry":"11/02/26","Exit Date":"11/02/26","Net P&L":"$25.00","Net P&L (%)":"92.59%","Days in Trade":"14","Mistakes":"No Mistake","Emotion (Entry)":"Confidence","Emotion (Exite)":"Patience"},{"No.":"18","Full name":"SLV FEB 27'26 170$ Sell Call","Entry Date":"28/01/26","Symbol":"SLV","trade type":"Sell Call","strategy":"Volatility Play","Expiry":"27/02/26","Exit Date":"27/02/26","Net P&L":"$174.00","Net P&L (%)":"98.86%","Days in Trade":"30","Mistakes":"No Mistake","Emotion (Entry)":"Confidence","Emotion (Exite)":"Confidence"},{"No.":"19","Full name":"SOFI FEB 13'26 25$ Buy Call","Entry Date":"28/01/26","Symbol":"SOFI","trade type":"Buy Call","strategy":"Earnings Play","Expiry":"13/02/26","Exit Date":"13/02/26","Net P&L":"-$300.00","Net P&L (%)":"-101.35%","Days in Trade":"16","Mistakes":"Early Entry (No Confirmation)","Emotion (Entry)":"Curiosity","Emotion (Exite)":"Acceptance"},{"No.":"20","Full name":"NVO FEB 27'26 62$ Buy Call","Entry Date":"02/02/26","Symbol":"NVO","trade type":"Buy Call","strategy":"Earnings Play","Expiry":"27/02/26","Exit Date":"03/02/26","Net P&L":"-$171.00","Net P&L (%)":"-85.93%","Days in Trade":"1","Mistakes":"External Event (News)","Emotion (Entry)":"Greed","Emotion (Exite)":"frustrated, Acceptance"},{"No.":"21","Full name":"SOFI FEB 20'26 21$ Buy Call","Entry Date":"05/02/26","Symbol":"SOFI","trade type":"Buy Call","strategy":"Speculative Idea","Expiry":"20/02/26","Exit Date":"09/02/26","Net P&L":"$72.00","Net P&L (%)":"23.68%","Days in Trade":"4","Mistakes":"No Mistake","Emotion (Entry)":"Greed, Curiosity, Fear","Emotion (Exite)":"Acceptance, Fear, Patience"},{"No.":"22","Full name":"QQQ FEB 06'26 610$ Buy Put","Entry Date":"06/02/26","Symbol":"QQQ","trade type":"Buy Put","strategy":"no strategy","Expiry":"06/02/26","Exit Date":"06/02/26","Net P&L":"$39.00","Net P&L (%)":"150.00%","Days in Trade":"0","Mistakes":"Execution Error (Fat Finger)","Emotion (Entry)":"no emotion","Emotion (Exite)":"no emotion"},{"No.":"23","Full name":"QQQ FEB 09'26 609$ Buy Put","Entry Date":"06/02/26","Symbol":"QQQ","trade type":"Buy Put","strategy":"Hedge or Protection","Expiry":"09/02/26","Exit Date":"09/02/26","Net P&L":"$26.00","Net P&L (%)":"9.81%","Days in Trade":"3","Mistakes":"No Mistake","Emotion (Entry)":"Fear","Emotion (Exite)":"Patience"},{"No.":"24","Full name":"QQQ FEB 10'26 614$ Buy Put","Entry Date":"09/02/26","Symbol":"QQQ","trade type":"Buy Put","strategy":"Hedge or Protection","Expiry":"10/02/26","Exit Date":"10/02/26","Net P&L":"$13.00","Net P&L (%)":"6.37%","Days in Trade":"1","Mistakes":"No Mistake","Emotion (Entry)":"Fear, Acceptance","Emotion (Exite)":"Patience"},{"No.":"25","Full name":"CAT FEB 13'26 800$ Sell Call","Entry Date":"11/02/26","Symbol":"CAT","trade type":"Sell Call","strategy":"Volatility Play","Expiry":"13/02/26","Exit Date":"13/02/26","Net P&L":"$188.00","Net P&L (%)":"98.95%","Days in Trade":"2","Mistakes":"No Mistake","Emotion (Entry)":"Patience, Confidence","Emotion (Exite)":"Confidence"},{"No.":"26","Full name":"VRT FEB 20'26 270$ Sell Call","Entry Date":"11/02/26","Symbol":"VRT","trade type":"Sell Call","strategy":"Volatility Play","Expiry":"20/02/26","Exit Date":"18/02/26","Net P&L":"$214.00","Net P&L (%)":"80.45%","Days in Trade":"7","Mistakes":"No Mistake","Emotion (Entry)":"Patience, Confidence","Emotion (Exite)":"Patience, Acceptance"},{"No.":"27","Full name":"AMZN FEB 20'26 200/205$ Bull Call","Entry Date":"17/02/26","Symbol":"AMZN","trade type":"Bull Call","strategy":"Technical Setup","Expiry":"20/02/26","Exit Date":"18/02/26","Net P&L":"$199.00","Net P&L (%)":"135.37%","Days in Trade":"1","Mistakes":"Cut Winner Too Early","Emotion (Entry)":"Impulsive","Emotion (Exite)":"Acceptance"},{"No.":"28","Full name":"VIX FEB 24'26 21$ Buy Call","Entry Date":"18/02/26","Symbol":"VIX","trade type":"Buy Call","strategy":"Speculative Idea","Expiry":"24/02/26","Exit Date":"19/02/26","Net P&L":"$52.00","Net P&L (%)":"65.82%","Days in Trade":"1","Mistakes":"No Mistake","Emotion (Entry)":"Curiosity","Emotion (Exite)":"Acceptance"},{"No.":"29","Full name":"USO FEB 25'26 80$ Buy Call","Entry Date":"18/02/26","Symbol":"USO","trade type":"Buy Call","strategy":"Speculative Idea","Expiry":"25/02/26","Exit Date":"19/02/26","Net P&L":"$72.00","Net P&L (%)":"41.62%","Days in Trade":"1","Mistakes":"No Mistake","Emotion (Entry)":"Curiosity","Emotion (Exite)":"Acceptance"},{"No.":"30","Full name":"ASTS MAR 06'26 80$ Buy Put","Entry Date":"26/02/26","Symbol":"ASTS","trade type":"Buy Put","strategy":"Hedge or Protection","Expiry":"06/03/26","Exit Date":"06/03/26","Net P&L":"-$507.00","Net P&L (%)":"-100.40%","Days in Trade":"8","Mistakes":"No Mistake","Emotion (Entry)":"Confidence, Fear","Emotion (Exite)":"Acceptance"},{"No.":"31","Full name":"ACHC MAR 20'26 22.5$ Sell Call","Entry Date":"04/03/26","Symbol":"ACHC","trade type":"Sell Call","strategy":"Portfolio Income Strategy","Expiry":"20/03/26","Exit Date":"20/03/26","Net P&L":"$173.00","Net P&L (%)":"81.60%","Days in Trade":"16","Mistakes":"No Mistake","Emotion (Entry)":"Boredom, Confidence","Emotion (Exite)":"Discipline, Patience"},{"No.":"32","Full name":"ONDS MAR 20'26 10.5/12.5$ Bull Call","Entry Date":"04/03/26","Symbol":"ONDS","trade type":"Bull Call","strategy":"Speculative Idea","Expiry":"20/03/26","Exit Date":"20/03/26","Net P&L":"-$77.00","Net P&L (%)":"-105.48%","Days in Trade":"16","Mistakes":"Early Entry (No Confirmation)","Emotion (Entry)":"Acceptance","Emotion (Exite)":"Acceptance"},{"No.":"33","Full name":"QQQ MAR 25'26 592$ Sell Call","Entry Date":"25/03/26","Symbol":"QQQ","trade type":"Sell Call","strategy":"Speculative Idea","Expiry":"25/03/26","Exit Date":"25/03/26","Net P&L":"$66.00","Net P&L (%)":"97.06%","Days in Trade":"0","Mistakes":"No Valid Setup","Emotion (Entry)":"Boredom","Emotion (Exite)":"Discipline"},{"No.":"34","Full name":"QQQ APR 17'26 170/180$ Bear Put","Entry Date":"02/04/26","Symbol":"QQQ","trade type":"Bear Put","strategy":"Directional Bullish/Bearish","Expiry":"17/04/26","Exit Date":"13/04/26","Net P&L":"-$289.00","Net P&L (%)":"-98.63%","Days in Trade":"11","Mistakes":"Impulse Entry (FOMO)","Emotion (Entry)":"Boredom","Emotion (Exite)":"Acceptance"},{"No.":"35","Full name":"QQQ APR 08'26 590$ Buy Call","Entry Date":"06/04/26","Symbol":"QQQ","trade type":"Buy Call","strategy":"Speculative Idea","Expiry":"08/04/26","Exit Date":"07/04/26","Net P&L":"-$103.00","Net P&L (%)":"-27.39%","Days in Trade":"1","Mistakes":"Impulse Entry (FOMO)","Emotion (Entry)":"FOMO","Emotion (Exite)":"Acceptance, Confidence"},{"No.":"36","Full name":"TQQQ APR 10'26 43.5$ Buy Call","Entry Date":"07/04/26","Symbol":"TQQQ","trade type":"Buy Call","strategy":"Speculative Idea","Expiry":"10/04/26","Exit Date":"08/04/26","Net P&L":"$242.00","Net P&L (%)":"156.13%","Days in Trade":"1","Mistakes":"Impulse Entry (FOMO)","Emotion (Entry)":"Curiosity","Emotion (Exite)":"Acceptance"},{"No.":"37","Full name":"QQQ APR 15'26 630/627$ Bull Call","Entry Date":"14/04/26","Symbol":"QQQ","trade type":"Bull Call","strategy":"Volatility Play","Expiry":"15/04/26","Exit Date":"14/04/26","Net P&L":"-$99.00","Net P&L (%)":"-186.79%","Days in Trade":"0","Mistakes":"Impulse Entry (FOMO)","Emotion (Entry)":"Greed","Emotion (Exite)":"frustrated"}];
+
+buildColUI();
+ingest(RAW_DATA,'All_Data.json');
+</script>
+</body>
+</html>
