@@ -201,6 +201,12 @@ table.hm td.emp{background:var(--bg3);border:1px solid var(--border);}
     </div>
     <div class="stt">Automatic Insights</div>
     <div class="igrid" id="insights"></div>
+    <div class="stt" style="margin-top:8px;">Day of Week Analysis</div>
+    <div id="dow-cards" style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:20px;"></div>
+    <div class="cgrid">
+      <div class="cc"><div class="ct">Avg P&L by Day of Week</div><div style="position:relative;height:220px"><canvas id="dowPnl"></canvas></div></div>
+      <div class="cc"><div class="ct">Trade Count by Day of Week</div><div style="position:relative;height:220px"><canvas id="dowCount"></canvas></div></div>
+    </div>
   </div>
 </div>
 
@@ -416,22 +422,22 @@ function renderOV(){
   }
   document.getElementById('metrics').innerHTML=row1.map(mcHtml).join('')+row2.map(mcHtml).join('');
   document.getElementById('expectancy-card').innerHTML='';
-  var cum=0,cL=[],cD=[],cN=[];trades.forEach(function(t,i){cum+=t.pnl;cL.push('#'+(i+1));cD.push(Math.round(cum));cN.push(t.name);});
-  dc('cum');CX.cum=new Chart(document.getElementById('cumulChart'),{type:'line',data:{labels:cL,datasets:[{data:cD,fill:true,borderColor:cum>=0?G:R,backgroundColor:cum>=0?'rgba(46,204,113,.07)':'rgba(231,76,60,.07)',borderWidth:2,pointRadius:4,pointHoverRadius:7,tension:.3}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{title:function(items){return cN[items[0].dataIndex];},label:function(c){var tp=trades[c.dataIndex].pnl;return'Trade P&L: '+(tp>=0?'+':'')+'$'+tp+'   |   Cumulative: $'+c.raw;}}}},scales:{x:{ticks:{color:TC,font:{size:10},maxTicksLimit:15},grid:{color:GC}},y:{ticks:{color:TC,callback:function(v){return'$'+v;}},grid:{color:GC}}}}});
+  var cum=0,cLabels=[],cData=[],cNames=[],cNums=[];
+  trades.forEach(function(t,i){cum+=t.pnl;cLabels.push('#'+(i+1));cData.push(Math.round(cum));cNames.push(t.name);cNums.push(i+1);});
+  dc('cum');CX.cum=new Chart(document.getElementById('cumulChart'),{type:'line',data:{labels:cLabels,datasets:[{data:cData,fill:true,borderColor:cum>=0?G:R,backgroundColor:cum>=0?'rgba(46,204,113,.07)':'rgba(231,76,60,.07)',borderWidth:2,pointRadius:4,pointHoverRadius:7,tension:.3}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{title:function(items){var idx=items[0].dataIndex;return'#'+cNums[idx]+' | '+cNames[idx];},label:function(c){var idx=c.dataIndex;var t=trades[idx];var tp=t.pnl;return fmtDate(t.exitDate||t.entryDate)+'  |  Trade P&L: '+(tp>=0?'+':'')+'$'+tp+'  |  Cumulative: $'+c.raw;}}}},scales:{x:{ticks:{color:TC,font:{size:10},maxTicksLimit:15},grid:{color:GC}},y:{ticks:{color:TC,callback:function(v){return'$'+v;}},grid:{color:GC}}}}});
 
   // ── Drawdown chart ──
-  var ddData=[],peak=0,maxDD=0,maxDDIdx=0;
-  cD.forEach(function(v,i){if(v>peak)peak=v;var dd=peak>0?Math.round((v-peak)/peak*100):v-peak;if(dd<maxDD){maxDD=dd;maxDDIdx=i;}ddData.push(dd);});
-  // Color each segment: red when in drawdown, green when at peak
+  var ddData=[],peak=0;
+  cData.forEach(function(v){if(v>peak)peak=v;var dd=peak>0?Math.round((v-peak)/peak*100):v-peak;ddData.push(dd);});
   var ddColors=ddData.map(function(v){return v<0?'rgba(231,76,60,.7)':'rgba(46,204,113,.5)';});
   dc('dd');CX.dd=new Chart(document.getElementById('drawdownChart'),{
     type:'bar',
-    data:{labels:cL,datasets:[{data:ddData,backgroundColor:ddColors,borderRadius:2,barPercentage:.95}]},
+    data:{labels:cLabels,datasets:[{data:ddData,backgroundColor:ddColors,borderRadius:2,barPercentage:.95}]},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
       plugins:{legend:{display:false},tooltip:{callbacks:{
-        title:function(items){return cN[items[0].dataIndex];},
-        label:function(c){return'Drawdown: '+c.raw+'%'+(c.raw===0?' (at peak)':'');},
-        afterLabel:function(c){return'Cumulative P&L: $'+cD[c.dataIndex];}
+        title:function(items){var idx=items[0].dataIndex;return'#'+cNums[idx]+' | '+cNames[idx];},
+        label:function(c){var t=trades[c.dataIndex];return fmtDate(t.exitDate||t.entryDate)+'  |  Drawdown: '+c.raw+'%'+(c.raw===0?' (at peak)':'');},
+        afterLabel:function(c){return'Cumulative P&L: $'+cData[c.dataIndex];}
       }}},
       scales:{
         x:{ticks:{color:TC,font:{size:10},maxTicksLimit:15},grid:{color:GC}},
@@ -462,7 +468,7 @@ function renderEM(){
   dc('ewr');CX.ewr=new Chart(document.getElementById('entryWR'),{type:'bar',data:{labels:wE.map(function(e){return e[0]+' ('+e[1].pnls.length+')';}),datasets:[{data:wrs,backgroundColor:wrs.map(function(v){return v>=60?G:v>=40?AM:R;}),borderRadius:3}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.raw+'%';}}}},scales:{x:{min:0,max:100,ticks:{color:TC,callback:function(v){return v+'%';}},grid:{color:GC}},y:{ticks:{color:'#8891a4',font:{size:10}}}}}});
   var NEG=['FOMO','Greed','Stress','Overconfidence','Fear','Impulsive','Boredom'];var nD=NEG.map(function(e){var v=eM[e];return v?Math.round(v.pnls.reduce(function(a,b){return a+b;},0)):0;});var nC=NEG.map(function(e){var v=eM[e];return v?v.pnls.length:0;});
   dc('neg');CX.neg=new Chart(document.getElementById('negEmo'),{type:'bar',data:{labels:NEG,datasets:[{data:nD,backgroundColor:nD.map(bc),borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return'$'+c.raw;},afterLabel:function(c){return'n='+nC[c.dataIndex];}}}},scales:{x:{ticks:{color:TC,font:{size:10}}},y:{ticks:{color:'#8891a4',callback:function(v){return'$'+v;}},grid:{color:GC}}}}});
-  buildHM(eM);buildIns(eM,xM);
+  buildHM(eM);buildIns(eM,xM);renderDOW();
 }
 function buildHM(eM){
   var EMO=['Confidence','Patience','Curiosity','Boredom','Acceptance','Greed','Fear','Overconfidence','FOMO','Stress','Impulsive'];
@@ -483,6 +489,60 @@ function buildIns(eM,xM){
   var dT=trades.filter(function(t){return semo(t.exit).indexOf('Discipline')>=0;});var dWR=dT.length?Math.round(dT.filter(function(t){return t.pnl>0;}).length/dT.length*100):0;
   var nM=trades.filter(function(t){return t.mistakes==='No Mistake';});var nWR=nM.length?Math.round(nM.filter(function(t){return t.pnl>0;}).length/nM.length*100):0;
   document.getElementById('insights').innerHTML=[{c:'pos',i:'↑',t:'Confidence on entry: '+cWR+'% win rate — your best emotion'},{c:'pos',i:'↑',t:'Patience on entry: avg $'+pA+' — always wait for the setup'},{c:fTot<0?'neg':'pos',i:fTot<0?'↓':'→',t:'FOMO + Overconfidence + Impulsive: total '+(fTot<0?'':'+')+'$'+fTot+' — consider skipping these'},{c:'neg',i:'↓',t:'Greed on entry: '+gWR+'% win rate — correlated with early entries'},{c:'pos',i:'↑',t:'Discipline on exit: '+dWR+'% win rate — having an exit plan improves results'},{c:'neu',i:'→',t:'No mistakes: '+nWR+'% win rate — emotion management directly impacts performance'}].map(function(x){return'<div class="ins '+x.c+'"><span style="font-weight:500">'+x.i+'</span>&nbsp;<span>'+x.t+'</span></div>';}).join('');
+}
+
+function renderDOW(){
+  var DAYS=['Monday','Tuesday','Wednesday','Thursday','Friday'];
+  var dow={};DAYS.forEach(function(d){dow[d]={pnls:[],wins:0,total:0};});
+  trades.forEach(function(t){
+    var d=t.entryDate;if(!d)return;
+    var dn=d.getDay(); // 0=Sun,1=Mon,...,5=Fri,6=Sat
+    if(dn===0||dn===6)return; // skip weekends
+    var name=DAYS[dn-1];
+    dow[name].pnls.push(t.pnl);
+    dow[name].total++;
+    if(t.pnl>0)dow[name].wins++;
+  });
+
+  // ── 5 metric cards ──
+  document.getElementById('dow-cards').innerHTML=DAYS.map(function(day){
+    var g=dow[day];
+    if(!g.total)return'<div class="mc"><div class="ml">'+day+'</div><div class="mv" style="color:var(--text3);">—</div><div class="msub">No trades</div></div>';
+    var avgP=Math.round(avg(g.pnls));
+    var wr=Math.round(g.wins/g.total*100);
+    var col=avgP>=0?G:R;
+    var sign=avgP>=0?'+':'';
+    return'<div class="mc" style="border-top:3px solid '+col+';"><div class="ml">'+day+'</div><div class="mv" style="color:'+col+';">'+sign+'$'+avgP+'</div><div class="msub">'+g.total+' trades · '+wr+'% WR</div></div>';
+  }).join('');
+
+  // ── Avg P&L bar chart ──
+  var avgPnls=DAYS.map(function(d){var g=dow[d];return g.total?Math.round(avg(g.pnls)):null;});
+  dc('dowPnl');CX.dowPnl=new Chart(document.getElementById('dowPnl'),{
+    type:'bar',
+    data:{labels:DAYS,datasets:[{data:avgPnls,backgroundColor:avgPnls.map(function(v){return v===null?'rgba(255,255,255,.05)':bc(v);}),borderRadius:5}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{
+        label:function(c){return c.raw===null?'No trades':'Avg P&L: '+(c.raw>=0?'+':'')+'$'+c.raw;},
+        afterLabel:function(c){var g=dow[DAYS[c.dataIndex]];return g.total?g.total+' trades · '+Math.round(g.wins/g.total*100)+'% WR':'';}
+      }}},
+      scales:{x:{ticks:{color:TC}},y:{ticks:{color:TC,callback:function(v){return'$'+v;}},grid:{color:GC}}}
+    }
+  });
+
+  // ── Trade Count bar chart ──
+  var counts=DAYS.map(function(d){return dow[d].total;});
+  var countColors=DAYS.map(function(d){var g=dow[d];return g.total&&avg(g.pnls)<0?'rgba(231,76,60,.5)':'rgba(52,152,219,.6)';});
+  dc('dowCount');CX.dowCount=new Chart(document.getElementById('dowCount'),{
+    type:'bar',
+    data:{labels:DAYS,datasets:[{data:counts,backgroundColor:countColors,borderRadius:5}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{
+        label:function(c){return c.raw+' trades';},
+        afterLabel:function(c){var g=dow[DAYS[c.dataIndex]];return g.total?'Avg P&L: '+(avg(g.pnls)>=0?'+':'')+'$'+Math.round(avg(g.pnls))+'  ·  '+Math.round(g.wins/g.total*100)+'% WR':'';}
+      }}},
+      scales:{x:{ticks:{color:TC}},y:{ticks:{color:TC},grid:{color:GC}}}
+    }
+  });
 }
 
 function renderConf(){
