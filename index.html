@@ -475,10 +475,38 @@ function buildHM(eM){
   var TYP=['Sell Call','Sell Put','Buy Call','Bull Call','Bear Put','Buy Put'];
   var mat={};EMO.forEach(function(e){mat[e]={};TYP.forEach(function(t){mat[e][t]={sum:0,n:0};});});
   trades.forEach(function(tr){semo(tr.entry).forEach(function(e){if(mat[e]&&mat[e][tr.type]!==undefined){mat[e][tr.type].sum+=tr.pnl;mat[e][tr.type].n++;}});});
-  function cbg(s,n){if(!n)return null;var v=s/n,i=Math.min(Math.abs(v)/250,1),a=(0.15+i*0.65).toFixed(2);return v>=0?'rgba(46,204,113,'+a+')':'rgba(231,76,60,'+a+')';}
-  function ctc(s,n){if(!n)return null;var v=s/n,i=Math.min(Math.abs(v)/250,1);return v>=0?(i>0.5?'#0a3320':'#1a7a45'):(i>0.5?'#4a0a0a':'#aa2222');}
-  var h='<table class="hm"><thead><tr><th class="rl"></th>';TYP.forEach(function(t){h+='<th>'+t+'</th>';});h+='</tr></thead><tbody>';
-  EMO.forEach(function(e){h+='<tr><td class="rl">'+e+'</td>';TYP.forEach(function(t){var c=mat[e][t];if(!c.n){h+='<td class="cell emp"></td>';return;}var bg=cbg(c.sum,c.n),tc=ctc(c.sum,c.n),a=Math.round(c.sum/c.n);h+='<td class="cell" style="background:'+bg+'"><div class="ca" style="color:'+tc+'">'+(a>=0?'+':'')+'$'+a+'</div><div class="cn" style="color:'+tc+'">n='+c.n+'</div></td>';});h+='</tr>';});
+
+  // Find max absolute avg for relative scaling
+  var maxAbs=0;
+  EMO.forEach(function(e){TYP.forEach(function(t){var c=mat[e][t];if(c.n){var a=Math.abs(c.sum/c.n);if(a>maxAbs)maxAbs=a;}});});
+  if(maxAbs===0)maxAbs=1;
+
+  function cbg(s,n){
+    if(!n)return null;
+    var v=s/n;
+    var intensity=Math.min(Math.abs(v)/maxAbs,1);
+    // min opacity 0.25 so even small values are clearly visible
+    var a=(0.25+intensity*0.65).toFixed(2);
+    return v>=0?'rgba(46,204,113,'+a+')':'rgba(231,76,60,'+a+')';
+  }
+  // Always use white text for readability against colored bg
+  function ctc(s,n){
+    if(!n)return null;
+    return s/n>=0?'#c8f5dc':'#fdd0cc';
+  }
+
+  var h='<table class="hm"><thead><tr><th class="rl"></th>';
+  TYP.forEach(function(t){h+='<th>'+t+'</th>';});h+='</tr></thead><tbody>';
+  EMO.forEach(function(e){
+    h+='<tr><td class="rl">'+e+'</td>';
+    TYP.forEach(function(t){
+      var c=mat[e][t];
+      if(!c.n){h+='<td class="cell emp"></td>';return;}
+      var bg=cbg(c.sum,c.n),tc=ctc(c.sum,c.n),a=Math.round(c.sum/c.n);
+      h+='<td class="cell" style="background:'+bg+'"><div class="ca" style="color:'+tc+'">'+(a>=0?'+':'')+'$'+a+'</div><div class="cn" style="color:'+tc+'">n='+c.n+'</div></td>';
+    });
+    h+='</tr>';
+  });
   document.getElementById('heatmap').innerHTML=h+'</tbody></table>';
 }
 function buildIns(eM,xM){
