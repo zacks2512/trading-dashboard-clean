@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
-<head
+<head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Trading Journal Dashboard</title>
@@ -11,15 +11,12 @@
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);color:var(--text);font-family:var(--f);font-size:14px;}
 .hdr{background:var(--bg2);border-bottom:1px solid var(--border);padding:13px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:8px;}
-.logo{font-family:var(--m);font-size:13px;font-weight:500;color:var(--green);}
-.logo span{color:var(--text2);}
+.logo{font-family:var(--m);font-size:13px;font-weight:500;color:var(--green);}.logo span{color:var(--text2);}
 .badge{font-size:11px;color:var(--text3);font-family:var(--m);margin-left:14px;}
 .btn{background:transparent;border:1px solid var(--border2);border-radius:var(--r);padding:6px 14px;color:var(--text);font-family:var(--f);font-size:12px;cursor:pointer;transition:all .15s;white-space:nowrap;}
 .btn:hover{background:var(--bg3);border-color:var(--blue);color:var(--blue);}
-.btn.p{border-color:var(--green);color:var(--green);}
-.btn.p:hover{background:var(--gdim);}
-.btn.sm{padding:4px 10px;font-size:11px;}
-.btn.active-tog{background:var(--bdim);border-color:var(--blue);color:var(--blue);}
+.btn.p{border-color:var(--green);color:var(--green);}.btn.p:hover{background:var(--gdim);}
+.btn.sm{padding:4px 10px;font-size:11px;}.btn.active-tog{background:var(--bdim);border-color:var(--blue);color:var(--blue);}
 .ibar{background:var(--bg2);border-bottom:1px solid var(--border);padding:9px 24px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .ibar label{font-size:12px;color:var(--text2);white-space:nowrap;}
 .ibar input[type=text]{flex:1;min-width:220px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:6px 10px;color:var(--text);font-family:var(--m);font-size:12px;outline:none;}
@@ -27,20 +24,16 @@ body{background:var(--bg);color:var(--text);font-family:var(--f);font-size:14px;
 #jf{display:none;}
 .tabs{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;display:flex;overflow-x:auto;}
 .tab{padding:11px 18px;font-size:13px;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;}
-.tab:hover{color:var(--text);}
-.tab.active{color:var(--green);border-bottom-color:var(--green);}
-.page{display:none;padding:24px;max-width:1200px;margin:0 auto;}
-.page.active{display:block;}
+.tab:hover{color:var(--text);}.tab.active{color:var(--green);border-bottom-color:var(--green);}
+.page{display:none;padding:24px;max-width:1200px;margin:0 auto;}.page.active{display:block;}
 .empty{text-align:center;padding:48px;color:var(--text3);font-family:var(--m);font-size:13px;line-height:2;}
 .mgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:20px;}
 .mc{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;}
 .ml{font-size:11px;color:var(--text3);margin-bottom:4px;font-family:var(--m);text-transform:uppercase;letter-spacing:.5px;}
-.mv{font-size:21px;font-weight:500;font-family:var(--m);}
-.mv.pos{color:var(--green);}.mv.neg{color:var(--red);}
+.mv{font-size:21px;font-weight:500;font-family:var(--m);}.mv.pos{color:var(--green);}.mv.neg{color:var(--red);}
 .msub{font-size:10px;color:var(--text3);margin-top:3px;}
 .cgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
-.cc{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px;}
-.cc.wide{grid-column:span 2;}
+.cc{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px;}.cc.wide{grid-column:span 2;}
 .ct{font-size:11px;color:var(--text3);font-family:var(--m);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;}
 .hmwrap{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:20px;overflow-x:auto;}
 .hmtitle{font-size:11px;color:var(--text3);font-family:var(--m);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
@@ -64,65 +57,44 @@ table.hm td.emp{background:var(--bg3);border:1px solid var(--border);}
 .srchbar select{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:7px 10px;color:var(--text);font-family:var(--f);font-size:12px;outline:none;cursor:pointer;}
 .ttbl{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:20px;}
 .thd{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 70px 80px 66px;font-size:11px;color:var(--text3);padding:8px 14px;background:var(--bg3);border-bottom:1px solid var(--border);font-family:var(--m);}
-.thd span{cursor:pointer;user-select:none;}
-.thd span:hover{color:var(--text);}
-.tbdy{max-height:520px;overflow-y:auto;}
+.thd span{cursor:pointer;user-select:none;}.thd span:hover{color:var(--text);}
+.tbdy{max-height:480px;overflow-y:auto;}
 .trow{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 70px 80px 66px;padding:8px 14px;border-bottom:1px solid var(--border);align-items:center;font-size:11px;transition:background .1s;cursor:pointer;}
-.trow:hover{background:rgba(52,152,219,.06);}
-.trow.active-row{background:rgba(52,152,219,.10);border-left:2px solid var(--blue);}
+.trow:hover{background:rgba(52,152,219,.06);}.trow.active-row{background:rgba(52,152,219,.10);border-left:2px solid var(--blue);}
 .tfoot{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 70px 80px 66px;padding:9px 14px;background:var(--bg3);border-top:2px solid var(--border2);font-size:11px;font-family:var(--m);font-weight:500;}
 .tn{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .ts{font-size:10px;color:var(--text3);margin-top:1px;}
 .et{display:inline-block;font-size:9px;padding:1px 5px;border-radius:10px;margin:1px;}
-.et.gd{background:rgba(46,204,113,.15);color:#27ae60;}
-.et.bd{background:rgba(231,76,60,.15);color:#c0392b;}
-.et.nu{background:rgba(52,152,219,.12);color:#2980b9;}
-.pp{color:var(--green);font-family:var(--m);font-weight:500;}
-.np{color:var(--red);font-family:var(--m);font-weight:500;}
-
-/* ── Trade Detail Panel ── */
-.detail-panel{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);margin-bottom:20px;overflow:hidden;animation:slideDown .18s ease;}
+.et.gd{background:rgba(46,204,113,.15);color:#27ae60;}.et.bd{background:rgba(231,76,60,.15);color:#c0392b;}.et.nu{background:rgba(52,152,219,.12);color:#2980b9;}
+.pp{color:var(--green);font-family:var(--m);font-weight:500;}.np{color:var(--red);font-family:var(--m);font-weight:500;}
+.detail-panel{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);margin-bottom:16px;overflow:hidden;animation:slideDown .18s ease;}
 @keyframes slideDown{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
 .detail-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px;}
-.detail-title{font-size:13px;font-weight:500;color:var(--text);}
-.detail-pnl{font-family:var(--m);font-size:18px;font-weight:500;}
-.detail-close{background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:2px 6px;border-radius:4px;transition:color .1s;}
-.detail-close:hover{color:var(--text);}
-.detail-body{padding:16px 18px;}
-.detail-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
-.detail-grid-wide{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:16px;}
-@media(max-width:700px){.detail-grid,.detail-grid-wide{grid-template-columns:repeat(2,1fr);}}
+.detail-title{font-size:13px;font-weight:500;}.detail-pnl{font-family:var(--m);font-size:18px;font-weight:500;}
+.detail-close{background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:2px 8px;border-radius:4px;transition:color .1s;}
+.detail-close:hover{color:var(--text);}.detail-body{padding:16px 18px;}
+.dg6{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:12px;}
+.dg4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px;}
+.dg3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
+@media(max-width:700px){.dg6,.dg4,.dg3{grid-template-columns:repeat(2,1fr);}}
 .dfield{background:var(--bg3);border-radius:6px;padding:10px 12px;}
 .dflabel{font-size:10px;color:var(--text3);font-family:var(--m);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px;}
 .dfval{font-size:12px;color:var(--text2);font-family:var(--m);}
-.dfval.pos{color:var(--green);}
-.dfval.neg{color:var(--red);}
-.stars{color:var(--amber);letter-spacing:1px;}
-.detail-notes{background:var(--bg3);border-radius:6px;padding:12px 14px;}
-.detail-notes-label{font-size:10px;color:var(--text3);font-family:var(--m);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;}
-.detail-notes-text{font-size:12px;color:var(--text2);line-height:1.7;}
-.detail-emotions{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;}
+.emo-row{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px;}
 .emo-group{display:flex;flex-direction:column;gap:4px;}
 .emo-label{font-size:10px;color:var(--text3);font-family:var(--m);text-transform:uppercase;letter-spacing:.4px;}
 .emo-tags{display:flex;gap:4px;flex-wrap:wrap;}
+.detail-notes{background:var(--bg3);border-radius:6px;padding:12px 14px;}
+.detail-notes-label{font-size:10px;color:var(--text3);font-family:var(--m);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;}
+.detail-notes-text{font-size:12px;color:var(--text2);line-height:1.75;}
 .hint-click{font-size:10px;color:var(--text3);margin-bottom:6px;font-style:italic;}
-
 .stt{font-size:11px;color:var(--text3);font-family:var(--m);text-transform:uppercase;letter-spacing:.5px;margin:0 0 10px;}
-.sbox{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:20px;max-width:640px;}
-.cgr{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
-.cgr label{font-size:11px;color:var(--text3);display:block;margin-bottom:3px;}
-.cgr input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 8px;color:var(--text);font-family:var(--m);font-size:11px;outline:none;}
-.steps{font-size:12px;color:var(--text3);padding-left:18px;line-height:2.3;margin:8px 0;}
-.hint{background:var(--bg3);border-radius:var(--r);padding:10px 12px;font-family:var(--m);font-size:11px;color:var(--text3);word-break:break-all;margin-top:8px;}
 .goal-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;margin-bottom:12px;}
 .goal-header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:10px;}
-.goal-label{font-size:12px;color:var(--text2);}
-.goal-val{font-family:var(--m);font-size:13px;}
+.goal-label{font-size:12px;color:var(--text2);}.goal-val{font-family:var(--m);font-size:13px;}
 .pbar-wrap{height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;}
 .pbar{height:100%;border-radius:4px;transition:width .6s ease;}
-.pbar.green{background:var(--green);}
-.pbar.amber{background:var(--amber);}
-.pbar.red{background:var(--red);}
+.pbar.green{background:var(--green);}.pbar.amber{background:var(--amber);}.pbar.red{background:var(--red);}
 .goal-sub{font-size:10px;color:var(--text3);margin-top:6px;}
 .goal-input-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
 .goal-input-row label{font-size:11px;color:var(--text3);min-width:180px;}
@@ -131,19 +103,20 @@ table.hm td.emp{background:var(--bg3);border:1px solid var(--border);}
 .comp-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px;}
 .comp-title{font-size:11px;color:var(--text3);font-family:var(--m);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;}
 .delta-badge{display:inline-block;font-family:var(--m);font-size:11px;padding:2px 8px;border-radius:4px;}
-.delta-badge.pos{background:var(--gdim);color:var(--green);}
-.delta-badge.neg{background:var(--rdim);color:var(--red);}
-.delta-badge.neu{background:var(--bdim);color:var(--blue);}
+.delta-badge.pos{background:var(--gdim);color:var(--green);}.delta-badge.neg{background:var(--rdim);color:var(--red);}.delta-badge.neu{background:var(--bdim);color:var(--blue);}
 .period-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;}
 .period-row:last-child{border-bottom:none;}
+.sbox{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:20px;max-width:640px;}
+.cgr{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.cgr label{font-size:11px;color:var(--text3);display:block;margin-bottom:3px;}
+.cgr input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 8px;color:var(--text);font-family:var(--m);font-size:11px;outline:none;}
+.steps{font-size:12px;color:var(--text3);padding-left:18px;line-height:2.3;margin:8px 0;}
+.hint{background:var(--bg3);border-radius:var(--r);padding:10px 12px;font-family:var(--m);font-size:11px;color:var(--text3);word-break:break-all;margin-top:8px;}
 </style>
 </head>
 <body>
 <div class="hdr">
-  <div style="display:flex;align-items:center">
-    <div class="logo">TRADING<span>/</span>JOURNAL</div>
-    <div class="badge" id="badge">— No data loaded</div>
-  </div>
+  <div style="display:flex;align-items:center"><div class="logo">TRADING<span>/</span>JOURNAL</div><div class="badge" id="badge">— No data loaded</div></div>
   <div style="display:flex;gap:8px;flex-wrap:wrap">
     <button class="btn" onclick="document.getElementById('jf').click()">📂 Load File</button>
     <input type="file" id="jf" accept=".json,.csv" onchange="loadFile(event)">
@@ -160,12 +133,14 @@ table.hm td.emp{background:var(--bg3);border:1px solid var(--border);}
 <div class="tabs">
   <div class="tab active" onclick="sw('overview')">Overview</div>
   <div class="tab" onclick="sw('emotions')">Emotion Analysis</div>
+  <div class="tab" onclick="sw('confidence')">Confidence Analysis</div>
   <div class="tab" onclick="sw('perf')">Performance</div>
   <div class="tab" onclick="sw('goals')">Goals</div>
   <div class="tab" onclick="sw('log')">Trade Log</div>
   <div class="tab" onclick="sw('settings')">Settings</div>
 </div>
 
+<!-- OVERVIEW -->
 <div class="page active" id="page-overview">
   <div id="ov0" class="empty">Loading data...</div>
   <div id="ov1" style="display:none">
@@ -183,6 +158,7 @@ table.hm td.emp{background:var(--bg3);border:1px solid var(--border);}
   </div>
 </div>
 
+<!-- EMOTIONS -->
 <div class="page" id="page-emotions">
   <div id="em0" class="empty">⬆ Load data first</div>
   <div id="em1" style="display:none">
@@ -210,6 +186,24 @@ table.hm td.emp{background:var(--bg3);border:1px solid var(--border);}
   </div>
 </div>
 
+<!-- CONFIDENCE ANALYSIS -->
+<div class="page" id="page-confidence">
+  <div id="cf0" class="empty">⬆ Load data first</div>
+  <div id="cf1" style="display:none">
+    <div class="mgrid" id="conf-metrics"></div>
+    <div id="calib-card"></div>
+    <div class="cgrid">
+      <div class="cc"><div class="ct">Avg P&L by Confidence Level</div><div style="position:relative;height:240px"><canvas id="confPnl"></canvas></div></div>
+      <div class="cc"><div class="ct">Win Rate by Confidence Level</div><div style="position:relative;height:240px"><canvas id="confWR"></canvas></div></div>
+    </div>
+    <div class="cgrid">
+      <div class="cc"><div class="ct">Trade Count by Confidence Level</div><div style="position:relative;height:220px"><canvas id="confCount"></canvas></div></div>
+      <div class="cc"><div class="ct">Confidence vs Actual P&L (Every Trade)</div><div style="position:relative;height:220px"><canvas id="confScatter"></canvas></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- PERFORMANCE -->
 <div class="page" id="page-perf">
   <div id="pf0" class="empty">⬆ Load data first</div>
   <div id="pf1" style="display:none">
@@ -235,6 +229,7 @@ table.hm td.emp{background:var(--bg3);border:1px solid var(--border);}
   </div>
 </div>
 
+<!-- GOALS -->
 <div class="page" id="page-goals">
   <div id="gl0" class="empty">⬆ Load data first</div>
   <div id="gl1" style="display:none">
@@ -248,15 +243,13 @@ table.hm td.emp{background:var(--bg3);border:1px solid var(--border);}
         <div class="goal-input-row"><label>Minimum R:R Target</label><input type="number" id="g-rr" value="1.5" step="0.1"></div>
         <button class="btn p" style="margin-top:12px" onclick="renderGoals()">Update Goals</button>
       </div>
-      <div>
-        <div class="stt" style="margin-bottom:16px;">Progress — Current Month</div>
-        <div id="goalCards"></div>
-      </div>
+      <div><div class="stt" style="margin-bottom:16px;">Progress — Current Month</div><div id="goalCards"></div></div>
     </div>
     <div style="margin-top:24px;"><div class="stt" style="margin-bottom:16px;">Overall Progress</div><div id="goalCardsAll"></div></div>
   </div>
 </div>
 
+<!-- TRADE LOG -->
 <div class="page" id="page-log">
   <div id="lg0" class="empty">⬆ Load data first</div>
   <div id="lg1" style="display:none">
@@ -264,52 +257,38 @@ table.hm td.emp{background:var(--bg3);border:1px solid var(--border);}
       <input type="text" id="srch-text" placeholder="Free search — name, symbol, strategy..." oninput="renderLogT()">
       <select id="srch-sym" onchange="renderLogT()"><option value="">All Symbols</option></select>
       <select id="srch-strat" onchange="renderLogT()"><option value="">All Strategies</option></select>
-      <select id="srch-result" onchange="renderLogT()">
-        <option value="">All Results</option>
-        <option value="win">Winners Only</option>
-        <option value="loss">Losers Only</option>
-      </select>
+      <select id="srch-result" onchange="renderLogT()"><option value="">All Results</option><option value="win">Winners Only</option><option value="loss">Losers Only</option></select>
       <select id="srch-emo" onchange="renderLogT()"><option value="">All Emotions</option></select>
       <button class="btn sm" onclick="clearSearch()">Clear</button>
     </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
-      <div style="font-size:11px;color:var(--text3);" id="srch-count"></div>
-    </div>
-
-    <!-- Detail panel (shown on click) -->
+    <div style="font-size:11px;color:var(--text3);margin-bottom:8px;" id="srch-count"></div>
     <div id="detail-panel"></div>
-
-    <div class="hint-click" style="margin-bottom:6px;">💡 Click any row to view full trade details & notes</div>
-    <div class="ttbl">
+    <div class="hint-click">💡 Click any row to view full trade details &amp; notes</div>
+    <div class="ttbl" style="margin-top:6px;">
       <div class="thd">
-        <span onclick="sortLog('name')">Trade ↕</span>
-        <span onclick="sortLog('strategy')">Strategy ↕</span>
-        <span>Entry</span><span>Exit</span>
-        <span onclick="sortLog('days')">Days ↕</span>
-        <span onclick="sortLog('pnl')">Net P&L ↕</span>
-        <span onclick="sortLog('pct')">% ↕</span>
+        <span onclick="sortLog('name')">Trade ↕</span><span onclick="sortLog('strategy')">Strategy ↕</span>
+        <span>Entry</span><span>Exit</span><span onclick="sortLog('days')">Days ↕</span>
+        <span onclick="sortLog('pnl')">Net P&L ↕</span><span onclick="sortLog('pct')">% ↕</span>
       </div>
       <div class="tbdy" id="tlog"></div>
-      <div class="tfoot" id="tfoot"></div>
+      <div class="tfoot" id="tfoot" style="display:none;"></div>
     </div>
   </div>
 </div>
 
+<!-- SETTINGS -->
 <div class="page" id="page-settings">
   <div class="sbox">
     <div class="stt">CSV / Google Sheets Column Mapping</div>
-    <p style="font-size:12px;color:var(--text3);margin-bottom:14px;line-height:1.7">Set the exact column names as they appear in your sheet. Click Save after any changes.</p>
+    <p style="font-size:12px;color:var(--text3);margin-bottom:14px;line-height:1.7">Set the exact column names as they appear in your sheet. Click Save after changes.</p>
     <div class="cgr" id="colset"></div>
-    <div style="display:flex;gap:8px;margin-bottom:20px">
-      <button class="btn p" onclick="saveCols()">Save</button>
-      <button class="btn" onclick="resetCols()">Reset</button>
-    </div>
+    <div style="display:flex;gap:8px;margin-bottom:20px"><button class="btn p" onclick="saveCols()">Save</button><button class="btn" onclick="resetCols()">Reset</button></div>
     <div style="border-top:1px solid var(--border);padding-top:16px">
       <div class="stt">Google Sheets Instructions</div>
       <ol class="steps">
         <li>Open Google Sheets → <b style="color:var(--text)">File → Share → Publish to Web</b></li>
         <li>Select your sheet + <b style="color:var(--text)">CSV</b> format → Publish</li>
-        <li>Copy the generated URL and paste it in the field above</li>
+        <li>Copy the generated URL and paste it above</li>
         <li>Click <b style="color:var(--green)">Refresh from Sheets</b> to reload</li>
       </ol>
       <div class="hint">https://docs.google.com/spreadsheets/d/<span style="color:var(--amber)">SHEET_ID</span>/pub?output=csv</div>
@@ -320,7 +299,7 @@ table.hm td.emp{background:var(--bg3);border:1px solid var(--border);}
 <script>
 var DEFS={name:{l:'Full Name',d:'Full name'},symbol:{l:'Symbol',d:'Symbol'},type:{l:'Trade Type',d:'trade type'},strategy:{l:'Strategy',d:'strategy'},entry_date:{l:'Entry Date',d:'Entry Date'},exit_date:{l:'Exit Date',d:'Exit Date'},expiry:{l:'Expiry Date',d:'Expiry'},pnl:{l:'Net P&L',d:'Net P&L'},pct:{l:'Net P&L (%)',d:'Net P&L (%)'},days:{l:'Days in Trade',d:'Days in Trade'},mistakes:{l:'Mistakes',d:'Mistakes'},emotion_entry:{l:'Entry Emotion',d:'Emotion (Entry)'},emotion_exit:{l:'Exit Emotion',d:'Emotion (Exite)'}};
 var COL={};Object.entries(DEFS).forEach(function(e){COL[e[0]]=e[1].d;});
-var trades=[],CX={},sortKey='',sortDir=1,perfPeriod='monthly',activeTradeIdx=null;
+var trades=[],CX={},sortKey='',sortDir=1,perfPeriod='monthly',activeTradeIdx=null,_currentRows=[];
 var G='#2ecc71',R='#e74c3c',B='#3498db',AM='#f39c12',GC='rgba(255,255,255,.04)',TC='#5a6070';
 
 function buildColUI(){document.getElementById('colset').innerHTML=Object.entries(DEFS).map(function(e){return'<div><label>'+e[1].l+'</label><input id="col-'+e[0]+'" value="'+COL[e[0]]+'"></div>';}).join('');}
@@ -347,103 +326,47 @@ function parseCSV(txt){
 }
 
 function rtt(row){
-  var g=function(k){return(row[COL[k]]||'').trim();};
-  var rawName=row['Full name']||row['Full Name']||g('name')||g('symbol');
-  var rawSym=row['Symbol']||g('symbol');
-  if(!rawName&&!rawSym)return null;
-  var pnlVal=pm(row['Net P&L']||g('pnl'));if(isNaN(pnlVal))return null;
-  var entryD=parseDate(row['Entry Date']||g('entry_date'));
-  var exitD=parseDate(row['Exit Date']||g('exit_date'));
-  var expiryD=parseDate(row['Expiry']||g('expiry'));
+  var name=row['Full name']||row['Full Name']||'',sym=row['Symbol']||'';
+  if(!name&&!sym)return null;
+  var pnlVal=pm(row['Net P&L']||'');if(isNaN(pnlVal))return null;
+  var entryD=parseDate(row['Entry Date']||''),exitD=parseDate(row['Exit Date']||''),expiryD=parseDate(row['Expiry']||'');
   var timeEff=null;
-  if(entryD&&exitD&&expiryD){var maxDays=(expiryD-entryD)/(1000*60*60*24),usedDays=(exitD-entryD)/(1000*60*60*24);if(maxDays>0)timeEff=Math.min(Math.round(usedDays/maxDays*100),100);}
-  return{
-    name:rawName,symbol:rawSym,
-    type:row['trade type']||g('type')||'—',
-    strategy:row['strategy']||g('strategy')||'—',
-    pnl:pnlVal,
-    pct:pm(row['Net P&L (%)']||g('pct')),
-    days:parseInt(row['Days in Trade']||g('days'))||0,
-    mistakes:row['Mistakes']||g('mistakes')||'—',
-    entry:row['Emotion (Entry)']||g('emotion_entry')||'—',
-    exit:row['Emotion (Exite)']||g('emotion_exit')||'—',
-    entryDate:entryD,exitDate:exitD,timeEff:timeEff,
-    // Extra rich fields
-    comments:row['comments']||row['Comments']||'',
-    confidence:row['confidence level (1-5)']||'',
-    strike:row['Strike']||'',
-    entryPrice:row['Entry Price']||'',
-    exitPrice:row['Exit Price']||'',
-    grossPnl:row['Gross P&L']||'',
-    fees:row['Fees']||'',
-    contracts:row['Contracts']||'',
-    expiry:row['Expiry']||g('expiry')||''
-  };
+  if(entryD&&exitD&&expiryD){var mxD=(expiryD-entryD)/864e5,usD=(exitD-entryD)/864e5;if(mxD>0)timeEff=Math.min(Math.round(usD/mxD*100),100);}
+  return{name:name||sym,symbol:sym,type:row['trade type']||'—',strategy:row['strategy']||'—',pnl:pnlVal,pct:pm(row['Net P&L (%)']||''),days:parseInt(row['Days in Trade'])||0,mistakes:row['Mistakes']||'—',entry:row['Emotion (Entry)']||'—',exit:row['Emotion (Exite)']||'—',entryDate:entryD,exitDate:exitD,timeEff:timeEff,comments:row['comments']||'',confidence:row['confidence level (1-5)']||'',strike:row['Strike']||'',entryPrice:row['Entry Price']||'',exitPrice:row['Exit Price']||'',grossPnl:row['Gross P&L']||'',fees:row['Fees']||'',contracts:row['Contracts']||'',expiry:row['Expiry']||''};
 }
 
-function showStatus(msg,isErr){var el=document.getElementById('loadStatus');if(!el)return;el.textContent=msg;el.style.color=isErr?R:G;el.style.display=msg?'inline':'none';}
-
-function ingest(rows,src){
-  var parsed=rows.map(rtt).filter(Boolean);
-  if(!parsed.length){showStatus('No trades found — check column names',true);return;}
-  trades=parsed;
-  document.getElementById('badge').textContent='— '+src+' · '+trades.length+' trades';
-  showStatus('');renderAll();
-}
-
-function loadSheets(){
-  var url=document.getElementById('surl').value.trim();if(!url){showStatus('Enter a URL',true);return;}
-  showStatus('Loading...',false);
-  var btns=document.querySelectorAll('.btn.p');btns.forEach(function(b){b.disabled=true;});
-  var proxies=[url,'https://corsproxy.io/?'+encodeURIComponent(url),'https://api.allorigins.win/raw?url='+encodeURIComponent(url)];
-  var idx=0;
-  function tryNext(){if(idx>=proxies.length){showStatus('CORS error',true);btns.forEach(function(b){b.disabled=false;});return;}fetch(proxies[idx++]).then(function(r){if(!r.ok)throw new Error(r.status);return r.text();}).then(function(t){var rows=parseCSV(t);if(!rows.length)throw new Error('empty');ingest(rows,'Google Sheets');btns.forEach(function(b){b.disabled=false;});}).catch(function(){tryNext();});}
-  tryNext();
-}
+function showStatus(msg,isErr){var el=document.getElementById('loadStatus');el.textContent=msg;el.style.color=isErr?R:G;el.style.display=msg?'inline':'none';}
+function ingest(rows,src){var parsed=rows.map(rtt).filter(Boolean);if(!parsed.length){showStatus('No trades found',true);return;}trades=parsed;document.getElementById('badge').textContent='— '+src+' · '+trades.length+' trades';showStatus('');renderAll();}
+function loadSheets(){var url=document.getElementById('surl').value.trim();if(!url){showStatus('Enter a URL',true);return;}showStatus('Loading...',false);var btns=document.querySelectorAll('.btn.p');btns.forEach(function(b){b.disabled=true;});var proxies=[url,'https://corsproxy.io/?'+encodeURIComponent(url),'https://api.allorigins.win/raw?url='+encodeURIComponent(url)];var idx=0;function tryNext(){if(idx>=proxies.length){showStatus('CORS error',true);btns.forEach(function(b){b.disabled=false;});return;}fetch(proxies[idx++]).then(function(r){if(!r.ok)throw new Error(r.status);return r.text();}).then(function(t){var rows=parseCSV(t);if(!rows.length)throw new Error('empty');ingest(rows,'Google Sheets');btns.forEach(function(b){b.disabled=false;});}).catch(function(){tryNext();});}tryNext();}
 function loadFile(evt){var f=evt.target.files[0];if(!f)return;var reader=new FileReader();reader.onload=function(e){var txt=e.target.result;if(f.name.endsWith('.json')){try{var d=JSON.parse(txt);var arr=Array.isArray(d)?d:d.trades||[];ingest(arr,f.name);}catch(ex){showStatus('JSON error: '+ex.message,true);}}else{ingest(parseCSV(txt),f.name);}};reader.readAsText(f);}
 function exportJSON(){var b=new Blob([JSON.stringify(trades,null,2)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='trading_journal.json';a.click();}
+function loadFromJSON(){ingest(RAW_DATA,'All_Data.json');}
 
 function renderAll(){
-  ['ov0','em0','pf0','gl0','lg0'].forEach(function(id){document.getElementById(id).style.display='none';});
-  ['ov1','em1','pf1','gl1','lg1'].forEach(function(id){document.getElementById(id).style.display='block';});
-  renderOV();renderEM();renderPerf();renderGoals();renderLog();
+  ['ov0','em0','cf0','pf0','gl0','lg0'].forEach(function(id){document.getElementById(id).style.display='none';});
+  ['ov1','em1','cf1','pf1','gl1','lg1'].forEach(function(id){document.getElementById(id).style.display='block';});
+  renderOV();renderEM();renderConf();renderPerf();renderGoals();renderLog();
 }
 
 function renderOV(){
   var total=trades.reduce(function(s,t){return s+t.pnl;},0);
   var wins=trades.filter(function(t){return t.pnl>0;}),losses=trades.filter(function(t){return t.pnl<=0;});
   var wr=trades.length?(wins.length/trades.length):0;
-  var aW=wins.length?avg(wins.map(function(t){return t.pnl;})):0;
-  var aL=losses.length?avg(losses.map(function(t){return t.pnl;})):0;
-  var wrPct=wr*100,rr=aL!==0?Math.abs(aW/aL).toFixed(2):'—';
-  var best=trades.length?Math.max.apply(null,trades.map(function(t){return t.pnl;})):0;
-  var worst=trades.length?Math.min.apply(null,trades.map(function(t){return t.pnl;})):0;
-  var expectancy=wins.length&&losses.length?(wr*aW)+((1-wr)*aL):0;
-  var expRounded=Math.round(expectancy*100)/100;
-
-  document.getElementById('metrics').innerHTML=[
-    {l:'Net P&L',v:(total>=0?'+':'')+'$'+Math.round(total),c:total>=0?'pos':'neg',s:trades.length+' trades'},
-    {l:'Win Rate',v:wrPct.toFixed(1)+'%',c:'',s:wins.length+'W / '+losses.length+'L'},
-    {l:'Avg Win / Loss',v:'$'+Math.round(aW)+' / $'+Math.round(aL),c:'',s:'R:R '+rr},
-    {l:'Best / Worst',v:'$'+best,c:'pos',s:'worst: $'+worst}
-  ].map(function(m){return'<div class="mc"><div class="ml">'+m.l+'</div><div class="mv '+m.c+'">'+m.v+'</div><div class="msub">'+m.s+'</div></div>';}).join('');
-
-  var expColor=expRounded>=0?G:R,expBg=expRounded>=0?'rgba(46,204,113,.06)':'rgba(231,76,60,.06)',expBorder=expRounded>=0?'rgba(46,204,113,.35)':'rgba(231,76,60,.35)';
-  var expSign=expRounded>=0?'+':'',expLabel=expRounded>=50?'🔥 Strong edge':expRounded>=0?'✅ Positive edge':expRounded>=-20?'⚠️ Marginal negative':'❌ Negative edge';
-  document.getElementById('expectancy-card').innerHTML='<div style="background:'+expBg+';border:1px solid '+expBorder+';border-radius:var(--r);padding:14px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;"><div><div style="font-size:11px;color:var(--text3);font-family:var(--m);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Expectancy per Trade</div><div style="font-size:28px;font-weight:500;font-family:var(--m);color:'+expColor+';">'+expSign+'$'+Math.abs(expRounded).toFixed(2)+'</div></div><div style="font-size:12px;font-weight:500;color:'+expColor+';font-family:var(--m);padding:6px 16px;border-radius:20px;border:1px solid '+expBorder+';background:var(--bg2);">'+expLabel+'</div></div>';
-
-  var cum=0,cLabels=[],cData=[],cNames=[];
-  trades.forEach(function(t,i){cum+=t.pnl;cLabels.push('#'+(i+1));cData.push(Math.round(cum));cNames.push(t.name);});
-  dc('cum');CX.cum=new Chart(document.getElementById('cumulChart'),{type:'line',data:{labels:cLabels,datasets:[{data:cData,fill:true,borderColor:cum>=0?G:R,backgroundColor:cum>=0?'rgba(46,204,113,.07)':'rgba(231,76,60,.07)',borderWidth:2,pointRadius:4,pointHoverRadius:7,tension:.3}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{title:function(items){return cNames[items[0].dataIndex];},label:function(c){var idx=c.dataIndex;var tpnl=trades[idx].pnl;return'Trade P&L: '+(tpnl>=0?'+':'')+'$'+tpnl+'   |   Cumulative: $'+c.raw;}}}},scales:{x:{ticks:{color:TC,font:{size:10},maxTicksLimit:15},grid:{color:GC}},y:{ticks:{color:TC,callback:function(v){return'$'+v;}},grid:{color:GC}}}}});
-
-  function hbar(id,mapFn){var m={};trades.forEach(function(t){var k=mapFn(t);m[k]=(m[k]||0)+t.pnl;});var s=Object.entries(m).sort(function(a,b){return b[1]-a[1];});dc(id);CX[id]=new Chart(document.getElementById(id),{type:'bar',data:{labels:s.map(function(x){return x[0];}),datasets:[{data:s.map(function(x){return Math.round(x[1]);}),backgroundColor:s.map(function(x){return bc(x[1]);}),borderRadius:3}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return'$'+c.raw;}}}},scales:{x:{ticks:{color:TC,callback:function(v){return'$'+v;}},grid:{color:GC}},y:{ticks:{color:'#8891a4',font:{size:10}}}}}});}
+  var aW=wins.length?avg(wins.map(function(t){return t.pnl;})):0,aL=losses.length?avg(losses.map(function(t){return t.pnl;})):0;
+  var best=trades.length?Math.max.apply(null,trades.map(function(t){return t.pnl;})):0,worst=trades.length?Math.min.apply(null,trades.map(function(t){return t.pnl;})):0;
+  var rr=aL!==0?Math.abs(aW/aL).toFixed(2):'—';
+  var exp=wins.length&&losses.length?(wr*aW)+((1-wr)*aL):0,expR=Math.round(exp*100)/100;
+  document.getElementById('metrics').innerHTML=[{l:'Net P&L',v:(total>=0?'+':'')+'$'+Math.round(total),c:total>=0?'pos':'neg',s:trades.length+' trades'},{l:'Win Rate',v:(wr*100).toFixed(1)+'%',c:'',s:wins.length+'W / '+losses.length+'L'},{l:'Avg Win / Loss',v:'$'+Math.round(aW)+' / $'+Math.round(aL),c:'',s:'R:R '+rr},{l:'Best / Worst',v:'$'+best,c:'pos',s:'worst: $'+worst}].map(function(m){return'<div class="mc"><div class="ml">'+m.l+'</div><div class="mv '+m.c+'">'+m.v+'</div><div class="msub">'+m.s+'</div></div>';}).join('');
+  var eC=expR>=0?G:R,eBg=expR>=0?'rgba(46,204,113,.06)':'rgba(231,76,60,.06)',eBd=expR>=0?'rgba(46,204,113,.35)':'rgba(231,76,60,.35)',eSign=expR>=0?'+':'',eLabel=expR>=50?'🔥 Strong edge':expR>=0?'✅ Positive edge':expR>=-20?'⚠️ Marginal negative':'❌ Negative edge';
+  document.getElementById('expectancy-card').innerHTML='<div style="background:'+eBg+';border:1px solid '+eBd+';border-radius:var(--r);padding:14px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;"><div><div style="font-size:11px;color:var(--text3);font-family:var(--m);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Expectancy per Trade</div><div style="font-size:28px;font-weight:500;font-family:var(--m);color:'+eC+';">'+eSign+'$'+Math.abs(expR).toFixed(2)+'</div></div><div style="font-size:12px;font-weight:500;color:'+eC+';font-family:var(--m);padding:6px 16px;border-radius:20px;border:1px solid '+eBd+';background:var(--bg2);">'+eLabel+'</div></div>';
+  var cum=0,cL=[],cD=[],cN=[];trades.forEach(function(t,i){cum+=t.pnl;cL.push('#'+(i+1));cD.push(Math.round(cum));cN.push(t.name);});
+  dc('cum');CX.cum=new Chart(document.getElementById('cumulChart'),{type:'line',data:{labels:cL,datasets:[{data:cD,fill:true,borderColor:cum>=0?G:R,backgroundColor:cum>=0?'rgba(46,204,113,.07)':'rgba(231,76,60,.07)',borderWidth:2,pointRadius:4,pointHoverRadius:7,tension:.3}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{title:function(items){return cN[items[0].dataIndex];},label:function(c){var tp=trades[c.dataIndex].pnl;return'Trade P&L: '+(tp>=0?'+':'')+'$'+tp+'   |   Cumulative: $'+c.raw;}}}},scales:{x:{ticks:{color:TC,font:{size:10},maxTicksLimit:15},grid:{color:GC}},y:{ticks:{color:TC,callback:function(v){return'$'+v;}},grid:{color:GC}}}}});
+  function hbar(id,fn){var m={};trades.forEach(function(t){var k=fn(t);m[k]=(m[k]||0)+t.pnl;});var s=Object.entries(m).sort(function(a,b){return b[1]-a[1];});dc(id);CX[id]=new Chart(document.getElementById(id),{type:'bar',data:{labels:s.map(function(x){return x[0];}),datasets:[{data:s.map(function(x){return Math.round(x[1]);}),backgroundColor:s.map(function(x){return bc(x[1]);}),borderRadius:3}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return'$'+c.raw;}}}},scales:{x:{ticks:{color:TC,callback:function(v){return'$'+v;}},grid:{color:GC}},y:{ticks:{color:'#8891a4',font:{size:10}}}}}});}
   hbar('stratChart',function(t){return t.strategy;});hbar('typeChart',function(t){return t.type;});
-
   var sym={};trades.forEach(function(t){sym[t.symbol]=(sym[t.symbol]||0)+t.pnl;});var ss=Object.entries(sym).sort(function(a,b){return b[1]-a[1];});
   dc('sym');CX.sym=new Chart(document.getElementById('symChart'),{type:'bar',data:{labels:ss.map(function(x){return x[0];}),datasets:[{data:ss.map(function(x){return Math.round(x[1]);}),backgroundColor:ss.map(function(x){return bc(x[1]);}),borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return'$'+c.raw;}}}},scales:{x:{ticks:{color:TC,font:{size:10}}},y:{ticks:{color:'#8891a4',callback:function(v){return'$'+v;}},grid:{color:GC}}}}});
-
-  var mk={};trades.forEach(function(t){mk[t.mistakes]=(mk[t.mistakes]||0)+1;});var me=Object.entries(mk).sort(function(a,b){return b[1]-a[1];});var mkC=[G,R,B,AM,'#9b59b6','#e67e22','#1abc9c','#d35400'];
-  dc('mk');CX.mk=new Chart(document.getElementById('mistakeChart'),{type:'doughnut',data:{labels:me.map(function(x){return x[0];}),datasets:[{data:me.map(function(x){return x[1];}),backgroundColor:mkC,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'right',labels:{color:'#8891a4',font:{size:10},boxWidth:10,padding:6}}}}});
+  var mk={};trades.forEach(function(t){mk[t.mistakes]=(mk[t.mistakes]||0)+1;});var me=Object.entries(mk).sort(function(a,b){return b[1]-a[1];});
+  dc('mk');CX.mk=new Chart(document.getElementById('mistakeChart'),{type:'doughnut',data:{labels:me.map(function(x){return x[0];}),datasets:[{data:me.map(function(x){return x[1];}),backgroundColor:[G,R,B,AM,'#9b59b6','#e67e22','#1abc9c','#d35400'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'right',labels:{color:'#8891a4',font:{size:10},boxWidth:10,padding:6}}}}});
 }
 
 function renderEM(){
@@ -462,7 +385,6 @@ function renderEM(){
   dc('neg');CX.neg=new Chart(document.getElementById('negEmo'),{type:'bar',data:{labels:NEG,datasets:[{data:nD,backgroundColor:nD.map(bc),borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return'$'+c.raw;},afterLabel:function(c){return'n='+nC[c.dataIndex];}}}},scales:{x:{ticks:{color:TC,font:{size:10}}},y:{ticks:{color:'#8891a4',callback:function(v){return'$'+v;}},grid:{color:GC}}}}});
   buildHM(eM);buildIns(eM,xM);
 }
-
 function buildHM(eM){
   var EMO=['Confidence','Patience','Curiosity','Boredom','Acceptance','Greed','Fear','Overconfidence','FOMO','Stress','Impulsive'];
   var TYP=['Sell Call','Sell Put','Buy Call','Bull Call','Bear Put','Buy Put'];
@@ -474,7 +396,6 @@ function buildHM(eM){
   EMO.forEach(function(e){h+='<tr><td class="rl">'+e+'</td>';TYP.forEach(function(t){var c=mat[e][t];if(!c.n){h+='<td class="cell emp"></td>';return;}var bg=cbg(c.sum,c.n),tc=ctc(c.sum,c.n),a=Math.round(c.sum/c.n);h+='<td class="cell" style="background:'+bg+'"><div class="ca" style="color:'+tc+'">'+(a>=0?'+':'')+'$'+a+'</div><div class="cn" style="color:'+tc+'">n='+c.n+'</div></td>';});h+='</tr>';});
   document.getElementById('heatmap').innerHTML=h+'</tbody></table>';
 }
-
 function buildIns(eM,xM){
   var cT=trades.filter(function(t){return semo(t.entry).indexOf('Confidence')>=0;});var cWR=cT.length?Math.round(cT.filter(function(t){return t.pnl>0;}).length/cT.length*100):0;
   var fT=trades.filter(function(t){return semo(t.entry).some(function(e){return['FOMO','Overconfidence','Impulsive'].indexOf(e)>=0;});});var fTot=Math.round(fT.reduce(function(a,t){return a+t.pnl;},0));
@@ -482,207 +403,125 @@ function buildIns(eM,xM){
   var pT=trades.filter(function(t){return semo(t.entry).indexOf('Patience')>=0;});var pA=pT.length?Math.round(avg(pT.map(function(t){return t.pnl;}))):0;
   var dT=trades.filter(function(t){return semo(t.exit).indexOf('Discipline')>=0;});var dWR=dT.length?Math.round(dT.filter(function(t){return t.pnl>0;}).length/dT.length*100):0;
   var nM=trades.filter(function(t){return t.mistakes==='No Mistake';});var nWR=nM.length?Math.round(nM.filter(function(t){return t.pnl>0;}).length/nM.length*100):0;
-  document.getElementById('insights').innerHTML=[
-    {c:'pos',i:'↑',t:'Confidence on entry: '+cWR+'% win rate — your best emotion'},
-    {c:'pos',i:'↑',t:'Patience on entry: avg $'+pA+' — always wait for the setup'},
-    {c:fTot<0?'neg':'pos',i:fTot<0?'↓':'→',t:'FOMO + Overconfidence + Impulsive: total '+(fTot<0?'':'+')+'$'+fTot+' — consider skipping these'},
-    {c:'neg',i:'↓',t:'Greed on entry: '+gWR+'% win rate — correlated with early entries'},
-    {c:'pos',i:'↑',t:'Discipline on exit: '+dWR+'% win rate — having an exit plan improves results'},
-    {c:'neu',i:'→',t:'No mistakes: '+nWR+'% win rate — emotion management directly impacts performance'}
-  ].map(function(x){return'<div class="ins '+x.c+'"><span style="font-weight:500">'+x.i+'</span>&nbsp;<span>'+x.t+'</span></div>';}).join('');
+  document.getElementById('insights').innerHTML=[{c:'pos',i:'↑',t:'Confidence on entry: '+cWR+'% win rate — your best emotion'},{c:'pos',i:'↑',t:'Patience on entry: avg $'+pA+' — always wait for the setup'},{c:fTot<0?'neg':'pos',i:fTot<0?'↓':'→',t:'FOMO + Overconfidence + Impulsive: total '+(fTot<0?'':'+')+'$'+fTot+' — consider skipping these'},{c:'neg',i:'↓',t:'Greed on entry: '+gWR+'% win rate — correlated with early entries'},{c:'pos',i:'↑',t:'Discipline on exit: '+dWR+'% win rate — having an exit plan improves results'},{c:'neu',i:'→',t:'No mistakes: '+nWR+'% win rate — emotion management directly impacts performance'}].map(function(x){return'<div class="ins '+x.c+'"><span style="font-weight:500">'+x.i+'</span>&nbsp;<span>'+x.t+'</span></div>';}).join('');
+}
+
+function renderConf(){
+  var groups={};
+  trades.forEach(function(t){var c=parseInt(t.confidence);if(!c||c<1||c>5)return;if(!groups[c])groups[c]={pnls:[],wins:0,total:0};groups[c].pnls.push(t.pnl);groups[c].total++;if(t.pnl>0)groups[c].wins++;});
+  var levels=[1,2,3,4,5];
+  var sL=function(l){return'★'.repeat(l)+'☆'.repeat(5-l);};
+  var labels=levels.map(sL);
+  var avgPnls=levels.map(function(l){var g=groups[l];return g&&g.pnls.length?Math.round(avg(g.pnls)):null;});
+  var wrs=levels.map(function(l){var g=groups[l];return g?Math.round(g.wins/g.total*100):null;});
+  var counts=levels.map(function(l){var g=groups[l];return g?g.total:0;});
+  var hi45=trades.filter(function(t){var c=parseInt(t.confidence);return c>=4&&c<=5;});
+  var lo12=trades.filter(function(t){var c=parseInt(t.confidence);return c>=1&&c<=2;});
+  var hiWR=hi45.length?Math.round(hi45.filter(function(t){return t.pnl>0;}).length/hi45.length*100):null;
+  var loWR=lo12.length?Math.round(lo12.filter(function(t){return t.pnl>0;}).length/lo12.length*100):null;
+  var correlation='';
+  if(hiWR!==null&&loWR!==null){if(hiWR>loWR+10)correlation='well';else if(hiWR<loWR-10)correlation='inverse';else correlation='none';}
+  var cBg,cBorder,cColor,cIcon,cTitle,cDesc;
+  if(correlation==='well'){cBg='rgba(46,204,113,.06)';cBorder='rgba(46,204,113,.35)';cColor=G;cIcon='✅';cTitle='Well Calibrated';cDesc='High confidence (4-5★) trades win '+hiWR+'% vs '+loWR+'% for low confidence. Your gut is trustworthy — when you feel confident, you perform better.';}
+  else if(correlation==='inverse'){cBg='rgba(231,76,60,.06)';cBorder='rgba(231,76,60,.35)';cColor=R;cIcon='⚠️';cTitle='Inverse Calibration';cDesc='Low confidence trades win '+loWR+'% vs only '+hiWR+'% for high confidence. Overconfidence may be masking poor setups.';}
+  else if(correlation==='none'){cBg='rgba(52,152,219,.06)';cBorder='rgba(52,152,219,.35)';cColor=B;cIcon='🔍';cTitle='No Clear Correlation';cDesc='Confidence level does not predict win rate ('+loWR+'% low vs '+hiWR+'% high). Keep tracking to find a pattern.';}
+  if(correlation){
+    document.getElementById('calib-card').innerHTML='<div style="background:'+cBg+';border:1px solid '+cBorder+';border-radius:var(--r);padding:14px 20px;margin-bottom:20px;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;"><div><div style="font-size:11px;color:var(--text3);font-family:var(--m);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Calibration Verdict</div><div style="font-size:20px;font-weight:500;font-family:var(--m);color:'+cColor+';margin-bottom:6px;">'+cIcon+' '+cTitle+'</div><div style="font-size:12px;color:var(--text2);max-width:600px;line-height:1.6;">'+cDesc+'</div></div><div style="display:flex;gap:20px;flex-wrap:wrap;">'+(hiWR!==null?'<div style="text-align:center;"><div style="font-size:10px;color:var(--text3);font-family:var(--m);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;">4-5★ Win Rate</div><div style="font-size:22px;font-weight:500;font-family:var(--m);color:'+G+';">'+hiWR+'%</div><div style="font-size:10px;color:var(--text3);">'+hi45.length+' trades</div></div>':'')+(loWR!==null?'<div style="text-align:center;"><div style="font-size:10px;color:var(--text3);font-family:var(--m);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;">1-2★ Win Rate</div><div style="font-size:22px;font-weight:500;font-family:var(--m);color:'+AM+';">'+loWR+'%</div><div style="font-size:10px;color:var(--text3);">'+lo12.length+' trades</div></div>':'')+'</div></div>';
+  }else{document.getElementById('calib-card').innerHTML='';}
+  var ratedT=trades.filter(function(t){var c=parseInt(t.confidence);return c>=1&&c<=5;});
+  var avgC=ratedT.length?Math.round(ratedT.reduce(function(a,t){return a+parseInt(t.confidence);},0)/ratedT.length*10)/10:0;
+  var bestL=0;levels.forEach(function(l){var g=groups[l];if(!g||!g.pnls.length)return;var bg=groups[bestL];if(!bestL||!bg||!bg.pnls.length||avg(g.pnls)>avg(bg.pnls))bestL=l;});
+  document.getElementById('conf-metrics').innerHTML=[
+    {l:'Avg Confidence',v:avgC>0?avgC+'★':'—',c:'',s:ratedT.length+' rated trades'},
+    {l:'Best Level',v:bestL>0?'★'.repeat(bestL):'—',c:'pos',s:bestL>0?'avg $'+Math.round(avg(groups[bestL].pnls)):'—'},
+    {l:'High Conf WR (4-5★)',v:hiWR!==null?hiWR+'%':'—',c:'',s:hi45.length+' trades'},
+    {l:'Low Conf WR (1-2★)',v:loWR!==null?loWR+'%':'—',c:'',s:lo12.length+' trades'}
+  ].map(function(m){return'<div class="mc"><div class="ml">'+m.l+'</div><div class="mv '+m.c+'">'+m.v+'</div><div class="msub">'+m.s+'</div></div>';}).join('');
+  dc('confPnl');CX.confPnl=new Chart(document.getElementById('confPnl'),{type:'bar',data:{labels:labels,datasets:[{data:avgPnls,backgroundColor:avgPnls.map(function(v){return v===null?'rgba(255,255,255,.05)':bc(v);}),borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.raw===null?'No data':'Avg P&L: $'+c.raw;},afterLabel:function(c){var g=groups[c.dataIndex+1];return g?'('+g.total+' trades)':'';}}}},scales:{x:{ticks:{color:TC,font:{size:13}}},y:{ticks:{color:TC,callback:function(v){return'$'+v;}},grid:{color:GC}}}}});
+  dc('confWR');CX.confWR=new Chart(document.getElementById('confWR'),{type:'bar',data:{labels:labels,datasets:[{data:wrs,backgroundColor:wrs.map(function(v){return v===null?'rgba(255,255,255,.05)':v>=60?G:v>=40?AM:R;}),borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.raw===null?'No data':'Win Rate: '+c.raw+'%';},afterLabel:function(c){var g=groups[c.dataIndex+1];return g?'('+g.total+' trades)':'';}}}},scales:{x:{ticks:{color:TC,font:{size:13}}},y:{min:0,max:100,ticks:{color:TC,callback:function(v){return v+'%';}},grid:{color:GC}}}}});
+  dc('confCount');CX.confCount=new Chart(document.getElementById('confCount'),{type:'bar',data:{labels:labels,datasets:[{data:counts,backgroundColor:'rgba(52,152,219,.5)',borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:TC,font:{size:13}}},y:{ticks:{color:TC},grid:{color:GC}}}}});
+  var scData=trades.filter(function(t){return parseInt(t.confidence)>=1&&parseInt(t.confidence)<=5;}).map(function(t){return{x:parseInt(t.confidence),y:t.pnl,label:t.name};});
+  dc('confScatter');if(scData.length){CX.confScatter=new Chart(document.getElementById('confScatter'),{type:'scatter',data:{datasets:[{data:scData,backgroundColor:scData.map(function(p){return p.y>=0?'rgba(46,204,113,.7)':'rgba(231,76,60,.7)';}),pointRadius:6,pointHoverRadius:9}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.raw.label;},afterLabel:function(c){return'Confidence: '+'★'.repeat(c.raw.x)+'  |  P&L: $'+c.raw.y;}}}},scales:{x:{title:{display:true,text:'Confidence Level',color:TC},min:0.5,max:5.5,ticks:{color:TC,stepSize:1,callback:function(v){return Number.isInteger(v)?'★'.repeat(v):''}},grid:{color:GC}},y:{title:{display:true,text:'Net P&L ($)',color:TC},ticks:{color:TC,callback:function(v){return'$'+v;}},grid:{color:GC}}}}});}
 }
 
 function groupByPeriod(fn){var m={};trades.forEach(function(t){var d=t.entryDate||t.exitDate;if(!d)return;var k=fn(d);if(!m[k])m[k]={pnl:0,wins:0,total:0};m[k].pnl+=t.pnl;m[k].total++;if(t.pnl>0)m[k].wins++;});return m;}
 function setPeriod(p){perfPeriod=p;document.getElementById('tog-monthly').className='btn sm'+(p==='monthly'?' active-tog':'');document.getElementById('tog-weekly').className='btn sm'+(p==='weekly'?' active-tog':'');renderPerf();}
-
 function renderPerf(){
   var fn=perfPeriod==='monthly'?fmtMonth:fmtWeek;var m=groupByPeriod(fn);var keys=Object.keys(m).sort();if(!keys.length)return;
-  var isWeekly=perfPeriod==='weekly';function dispKey(k){return isWeekly?weekLabel(k):k;}
-  var cmpA=document.getElementById('cmp-a'),cmpB=document.getElementById('cmp-b');var prevA=cmpA.value,prevB=cmpB.value;
-  cmpA.innerHTML=keys.map(function(k){return'<option value="'+k+'">'+dispKey(k)+'</option>';}).join('');
-  cmpB.innerHTML=keys.map(function(k){return'<option value="'+k+'">'+dispKey(k)+'</option>';}).join('');
-  if(keys.length>=2){cmpA.value=prevA&&m[prevA]?prevA:keys[keys.length-2];cmpB.value=prevB&&m[prevB]?prevB:keys[keys.length-1];}
-  var labels=keys.map(dispKey),pnls=keys.map(function(k){return Math.round(m[k].pnl);}),wrs=keys.map(function(k){return m[k].total?Math.round(m[k].wins/m[k].total*100):0;}),counts=keys.map(function(k){return m[k].total;});
+  var isW=perfPeriod==='weekly';function dK(k){return isW?weekLabel(k):k;}
+  var cA=document.getElementById('cmp-a'),cB=document.getElementById('cmp-b'),pA=cA.value,pB=cB.value;
+  cA.innerHTML=keys.map(function(k){return'<option value="'+k+'">'+dK(k)+'</option>';}).join('');
+  cB.innerHTML=keys.map(function(k){return'<option value="'+k+'">'+dK(k)+'</option>';}).join('');
+  if(keys.length>=2){cA.value=pA&&m[pA]?pA:keys[keys.length-2];cB.value=pB&&m[pB]?pB:keys[keys.length-1];}
+  var labels=keys.map(dK),pnls=keys.map(function(k){return Math.round(m[k].pnl);}),wrs=keys.map(function(k){return m[k].total?Math.round(m[k].wins/m[k].total*100):0;}),counts=keys.map(function(k){return m[k].total;});
   dc('perfPnl');CX.perfPnl=new Chart(document.getElementById('perfPnl'),{type:'bar',data:{labels:labels,datasets:[{data:pnls,backgroundColor:pnls.map(bc),borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return'$'+c.raw;}}}},scales:{x:{ticks:{color:TC,font:{size:10}}},y:{ticks:{color:TC,callback:function(v){return'$'+v;}},grid:{color:GC}}}}});
   dc('perfWR');CX.perfWR=new Chart(document.getElementById('perfWR'),{type:'line',data:{labels:labels,datasets:[{data:wrs,borderColor:B,backgroundColor:'rgba(52,152,219,.08)',fill:true,borderWidth:2,pointRadius:4,pointBackgroundColor:B,tension:.3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.raw+'%';}}}},scales:{x:{ticks:{color:TC,font:{size:10}}},y:{min:0,max:100,ticks:{color:TC,callback:function(v){return v+'%';}},grid:{color:GC}}}}});
   dc('perfCount');CX.perfCount=new Chart(document.getElementById('perfCount'),{type:'bar',data:{labels:labels,datasets:[{data:counts,backgroundColor:'rgba(52,152,219,.6)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:TC,font:{size:10}}},y:{ticks:{color:TC},grid:{color:GC}}}}});
   var scData=trades.filter(function(t){return t.timeEff!==null;}).map(function(t){return{x:t.timeEff,y:t.pnl,label:t.symbol};});
   dc('perfScatter');if(scData.length){CX.perfScatter=new Chart(document.getElementById('perfScatter'),{type:'scatter',data:{datasets:[{data:scData,backgroundColor:scData.map(function(p){return p.y>=0?'rgba(46,204,113,.7)':'rgba(231,76,60,.7)';}),pointRadius:6,pointHoverRadius:8}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.raw.label+': '+c.raw.x+'% time | $'+c.raw.y;}}}},scales:{x:{title:{display:true,text:'% Time Used',color:TC},min:0,max:100,ticks:{color:TC,callback:function(v){return v+'%';}},grid:{color:GC}},y:{title:{display:true,text:'Net P&L',color:TC},ticks:{color:TC,callback:function(v){return'$'+v;}},grid:{color:GC}}}}});}
-  renderComparison(m,keys,dispKey);
+  renderComparison(m,keys,dK);
 }
-
-function renderComparison(m,keys,dispKey){
-  var cmpA=document.getElementById('cmp-a').value,cmpB=document.getElementById('cmp-b').value;if(!cmpA||!cmpB||!m[cmpA]||!m[cmpB])return;
-  var a=m[cmpA],b=m[cmpB];var aWR=a.total?Math.round(a.wins/a.total*100):0,bWR=b.total?Math.round(b.wins/b.total*100):0;
-  function delta(bv,av,pref){var d=bv-av;var s=d>=0?'+':'';var cls=d>0?'pos':d<0?'neg':'neu';return'<span class="delta-badge '+cls+'">'+s+pref+Math.round(d)+'</span>';}
+function renderComparison(m,keys,dK){
+  var cA=document.getElementById('cmp-a').value,cB=document.getElementById('cmp-b').value;if(!cA||!cB||!m[cA]||!m[cB])return;
+  var a=m[cA],b=m[cB],aWR=a.total?Math.round(a.wins/a.total*100):0,bWR=b.total?Math.round(b.wins/b.total*100):0;
+  function delta(bv,av,pref){var d=bv-av;var cls=d>0?'pos':d<0?'neg':'neu';return'<span class="delta-badge '+cls+'">'+(d>=0?'+':'')+pref+Math.round(d)+'</span>';}
   var rows=[{l:'Net P&L',a:'$'+Math.round(a.pnl),b:'$'+Math.round(b.pnl),d:delta(b.pnl,a.pnl,'$')},{l:'Win Rate',a:aWR+'%',b:bWR+'%',d:delta(bWR,aWR,'')+'%'},{l:'Trade Count',a:a.total,b:b.total,d:delta(b.total,a.total,'')},{l:'Avg P&L / Trade',a:'$'+Math.round(a.pnl/a.total),b:'$'+Math.round(b.pnl/b.total),d:delta(b.pnl/b.total,a.pnl/a.total,'$')}];
-  document.getElementById('compCards').innerHTML='<div class="comp-card"><div class="comp-title">'+dispKey(cmpA)+'</div>'+rows.map(function(r){return'<div class="period-row"><span style="color:var(--text3)">'+r.l+'</span><span style="font-family:var(--m)">'+r.a+'</span></div>';}).join('')+'</div>'+'<div class="comp-card"><div class="comp-title">'+dispKey(cmpB)+'</div>'+rows.map(function(r){return'<div class="period-row"><span style="color:var(--text3)">'+r.l+'</span><div style="display:flex;align-items:center;gap:8px;font-family:var(--m)">'+r.b+' '+r.d+'</div></div>';}).join('')+'</div>';
+  document.getElementById('compCards').innerHTML='<div class="comp-card"><div class="comp-title">'+dK(cA)+'</div>'+rows.map(function(r){return'<div class="period-row"><span style="color:var(--text3)">'+r.l+'</span><span style="font-family:var(--m)">'+r.a+'</span></div>';}).join('')+'</div><div class="comp-card"><div class="comp-title">'+dK(cB)+'</div>'+rows.map(function(r){return'<div class="period-row"><span style="color:var(--text3)">'+r.l+'</span><div style="display:flex;align-items:center;gap:8px;font-family:var(--m)">'+r.b+' '+r.d+'</div></div>';}).join('')+'</div>';
 }
-document.addEventListener('change',function(e){if(e.target.id==='cmp-a'||e.target.id==='cmp-b'){var fn=perfPeriod==='monthly'?fmtMonth:fmtWeek;var m=groupByPeriod(fn);var keys=Object.keys(m).sort();var isW=perfPeriod==='weekly';var dK=function(k){return isW?weekLabel(k):k;};renderComparison(m,keys,dK);}});
+document.addEventListener('change',function(e){if(e.target.id==='cmp-a'||e.target.id==='cmp-b'){var fn=perfPeriod==='monthly'?fmtMonth:fmtWeek;var m=groupByPeriod(fn);var keys=Object.keys(m).sort();var isW=perfPeriod==='weekly';renderComparison(m,keys,function(k){return isW?weekLabel(k):k;});}});
 
 function renderGoals(){
-  var goalPnl=parseFloat(document.getElementById('g-monthly-pnl').value)||500,goalWR=parseFloat(document.getElementById('g-wr').value)||60,goalMaxLoss=parseFloat(document.getElementById('g-max-loss').value)||200,goalAnnual=parseFloat(document.getElementById('g-annual-pnl').value)||6000,goalRR=parseFloat(document.getElementById('g-rr').value)||1.5;
-  var now=new Date(),curMonth=now.getFullYear()+'-'+(now.getMonth()+1);
-  var monthTrades=trades.filter(function(t){var d=t.entryDate||t.exitDate;return d&&fmtMonth(d)===curMonth;});
-  if(!monthTrades.length){var fn=fmtMonth;var m=groupByPeriod(fn);var keys=Object.keys(m).sort();if(keys.length){var lastM=keys[keys.length-1];monthTrades=trades.filter(function(t){var d=t.entryDate||t.exitDate;return d&&fn(d)===lastM;});}}
-  var mPnl=monthTrades.reduce(function(a,t){return a+t.pnl;},0),mWins=monthTrades.filter(function(t){return t.pnl>0;}),mWR=monthTrades.length?Math.round(mWins.length/monthTrades.length*100):0,bigLosses=monthTrades.filter(function(t){return t.pnl<-goalMaxLoss;});
-  var totalPnl=trades.reduce(function(a,t){return a+t.pnl;},0),allWins=trades.filter(function(t){return t.pnl>0;}),allLosses=trades.filter(function(t){return t.pnl<0;}),allWR=trades.length?Math.round(allWins.length/trades.length*100):0;
-  var avgWin=allWins.length?avg(allWins.map(function(t){return t.pnl;})):0,avgLoss=allLosses.length?avg(allLosses.map(function(t){return Math.abs(t.pnl);})):0,rr=avgLoss?Math.round(avgWin/avgLoss*100)/100:0;
-  function pb(val,goal,inv){var pct=Math.min(Math.round(Math.abs(val)/goal*100),100);var ok=inv?(val<=goal):(val>=goal);var cls=ok?'green':pct>=70?'amber':'red';return{pct:pct,cls:cls,ok:ok};}
-  function card(label,cur,goal,pctObj,sub){return'<div class="goal-card"><div class="goal-header"><div class="goal-label">'+label+'</div><div class="goal-val" style="color:'+(pctObj.ok?G:R)+'">'+cur+' / '+goal+'</div></div><div class="pbar-wrap"><div class="pbar '+pctObj.cls+'" style="width:'+pctObj.pct+'%"></div></div><div class="goal-sub">'+pctObj.pct+'% of target'+(sub?' · '+sub:'')+'</div></div>';}
-  document.getElementById('goalCards').innerHTML=card('Monthly P&L','$'+Math.round(mPnl),'$'+goalPnl,pb(mPnl,goalPnl,false),monthTrades.length+' trades this month')+card('Monthly Win Rate',mWR+'%',goalWR+'%',pb(mWR,goalWR,false),mWins.length+'W / '+(monthTrades.length-mWins.length)+'L')+card('Trades Exceeding Loss Limit',bigLosses.length+' trades','0',pb(bigLosses.length,0,true),'max $'+goalMaxLoss+' loss per trade');
-  document.getElementById('goalCardsAll').innerHTML=card('Annual P&L (All Time)','$'+Math.round(totalPnl),'$'+goalAnnual,pb(totalPnl,goalAnnual,false),trades.length+' total trades')+card('Overall Win Rate',allWR+'%',goalWR+'%',pb(allWR,goalWR,false),allWins.length+'W / '+allLosses.length+'L')+card('Average R:R',rr,goalRR,pb(rr,goalRR,false),'avg win $'+Math.round(avgWin)+' / avg loss $'+Math.round(avgLoss));
+  var gP=parseFloat(document.getElementById('g-monthly-pnl').value)||500,gWR=parseFloat(document.getElementById('g-wr').value)||60,gML=parseFloat(document.getElementById('g-max-loss').value)||200,gA=parseFloat(document.getElementById('g-annual-pnl').value)||6000,gRR=parseFloat(document.getElementById('g-rr').value)||1.5;
+  var now=new Date(),curM=now.getFullYear()+'-'+(now.getMonth()+1);
+  var mT=trades.filter(function(t){var d=t.entryDate||t.exitDate;return d&&fmtMonth(d)===curM;});
+  if(!mT.length){var gm=groupByPeriod(fmtMonth);var gk=Object.keys(gm).sort();if(gk.length){var lM=gk[gk.length-1];mT=trades.filter(function(t){var d=t.entryDate||t.exitDate;return d&&fmtMonth(d)===lM;});}}
+  var mPnl=mT.reduce(function(a,t){return a+t.pnl;},0),mW=mT.filter(function(t){return t.pnl>0;}),mWR=mT.length?Math.round(mW.length/mT.length*100):0,bL=mT.filter(function(t){return t.pnl<-gML;});
+  var tPnl=trades.reduce(function(a,t){return a+t.pnl;},0),aW=trades.filter(function(t){return t.pnl>0;}),aL=trades.filter(function(t){return t.pnl<0;}),aWR=trades.length?Math.round(aW.length/trades.length*100):0;
+  var avgW=aW.length?avg(aW.map(function(t){return t.pnl;})):0,avgL=aL.length?avg(aL.map(function(t){return Math.abs(t.pnl);})):0,rr=avgL?Math.round(avgW/avgL*100)/100:0;
+  function pb(val,goal,inv){var pct=Math.min(Math.round(Math.abs(val)/goal*100),100);var ok=inv?(val<=goal):(val>=goal);return{pct:pct,cls:ok?'green':pct>=70?'amber':'red',ok:ok};}
+  function card(lbl,cur,goal,p,sub){return'<div class="goal-card"><div class="goal-header"><div class="goal-label">'+lbl+'</div><div class="goal-val" style="color:'+(p.ok?G:R)+'">'+cur+' / '+goal+'</div></div><div class="pbar-wrap"><div class="pbar '+p.cls+'" style="width:'+p.pct+'%"></div></div><div class="goal-sub">'+p.pct+'% of target'+(sub?' · '+sub:'')+'</div></div>';}
+  document.getElementById('goalCards').innerHTML=card('Monthly P&L','$'+Math.round(mPnl),'$'+gP,pb(mPnl,gP,false),mT.length+' trades this month')+card('Monthly Win Rate',mWR+'%',gWR+'%',pb(mWR,gWR,false),mW.length+'W / '+(mT.length-mW.length)+'L')+card('Trades Exceeding Loss Limit',bL.length+' trades','0',pb(bL.length,0,true),'max $'+gML+' loss per trade');
+  document.getElementById('goalCardsAll').innerHTML=card('Annual P&L (All Time)','$'+Math.round(tPnl),'$'+gA,pb(tPnl,gA,false),trades.length+' total trades')+card('Overall Win Rate',aWR+'%',gWR+'%',pb(aWR,gWR,false),aW.length+'W / '+aL.length+'L')+card('Average R:R',rr,gRR,pb(rr,gRR,false),'avg win $'+Math.round(avgW)+' / avg loss $'+Math.round(avgL));
 }
 
 var BAD=['FOMO','Greed','Stress','Overconfidence','Impulsive'],GOOD=['Confidence','Patience','Discipline'];
 function etag(e){var c=BAD.indexOf(e)>=0?'bd':GOOD.indexOf(e)>=0?'gd':'nu';return'<span class="et '+c+'">'+e+'</span>';}
-function stars(n){var s=parseInt(n)||0;if(!s)return'<span style="color:var(--text3)">—</span>';var out='';for(var i=0;i<5;i++){out+='<span style="color:'+(i<s?AM:'var(--border2)')+'">★</span>';}return out;}
-
-// ── Detail panel ──
+function stars(n){var s=parseInt(n)||0;if(!s)return'<span style="color:var(--text3)">—</span>';var o='';for(var i=0;i<5;i++)o+='<span style="color:'+(i<s?AM:'var(--border2)')+'">★</span>';return o;}
 function showDetail(t){
-  var p=t.pnl>=0;
-  var pnlColor=p?G:R;
-  var pnlSign=p?'+':'';
-  var conf=parseInt(t.confidence)||0;
-
-  var entryEmos=semo(t.entry),exitEmos=semo(t.exit);
-
-  var html='<div class="detail-panel">'+
-    '<div class="detail-header">'+
-      '<div>'+
-        '<div class="detail-title">'+t.name+'</div>'+
-        '<div style="font-size:11px;color:var(--text3);margin-top:3px;">'+t.strategy+' · '+t.type+'</div>'+
-      '</div>'+
-      '<div style="display:flex;align-items:center;gap:12px;">'+
-        '<div class="detail-pnl" style="color:'+pnlColor+';">'+pnlSign+'$'+t.pnl+'</div>'+
-        '<button class="detail-close" onclick="closeDetail()" title="Close">✕</button>'+
-      '</div>'+
-    '</div>'+
-    '<div class="detail-body">'+
-
-    // Row 1: key trade facts
-    '<div class="detail-grid-wide" style="margin-bottom:12px;">'+
-      dfield('Symbol', t.symbol)+
-      dfield('Entry Date', fmtDate(t.entryDate))+
-      dfield('Exit Date', fmtDate(t.exitDate))+
-      dfield('Expiry', t.expiry||'—')+
-      dfield('Days Held', t.days+'d')+
-      dfield('Contracts', t.contracts||'—')+
-    '</div>'+
-
-    // Row 2: price / P&L breakdown
-    '<div class="detail-grid" style="margin-bottom:12px;">'+
-      dfield('Entry Price', t.entryPrice||'—')+
-      dfield('Exit Price', t.exitPrice||'—')+
-      dfield('Gross P&L', t.grossPnl||'—')+
-      dfield('Fees', t.fees||'—')+
-    '</div>'+
-
-    // Row 3: qualitative
-    '<div class="detail-grid" style="margin-bottom:12px;">'+
-      dfield('Mistake', t.mistakes)+
-      dfield('Strike', t.strike||'—')+
-      '<div class="dfield"><div class="dflabel">Confidence</div><div class="dfval">'+stars(conf)+'</div></div>'+
-      (t.timeEff!==null?dfield('Time Efficiency', t.timeEff+'%'):'<div class="dfield"><div class="dflabel">Time Efficiency</div><div class="dfval" style="color:var(--text3)">—</div></div>')+
-    '</div>'+
-
-    // Emotions
-    '<div class="detail-emotions">'+
-      '<div class="emo-group"><div class="emo-label">Entry Emotions</div><div class="emo-tags">'+(entryEmos.length?entryEmos.map(etag).join(''):'<span style="color:var(--text3);font-size:11px;">—</span>')+'</div></div>'+
-      '<div class="emo-group"><div class="emo-label">Exit Emotions</div><div class="emo-tags">'+(exitEmos.length?exitEmos.map(etag).join(''):'<span style="color:var(--text3);font-size:11px;">—</span>')+'</div></div>'+
-    '</div>'+
-
-    // Notes
-    '<div class="detail-notes">'+
-      '<div class="detail-notes-label">📝 Trade Notes</div>'+
-      '<div class="detail-notes-text">'+(t.comments&&t.comments.trim()?t.comments:'<span style="color:var(--text3);font-style:italic;">No notes for this trade.</span>')+'</div>'+
-    '</div>'+
-
-    '</div></div>';
-
-  document.getElementById('detail-panel').innerHTML=html;
+  var p=t.pnl>=0,pC=p?G:R,pS=p?'+':'';var eE=semo(t.entry),xE=semo(t.exit);
+  function df(l,v){return'<div class="dfield"><div class="dflabel">'+l+'</div><div class="dfval">'+v+'</div></div>';}
+  document.getElementById('detail-panel').innerHTML='<div class="detail-panel"><div class="detail-header"><div><div class="detail-title">'+t.name+'</div><div style="font-size:11px;color:var(--text3);margin-top:3px;">'+t.strategy+' · '+t.type+'</div></div><div style="display:flex;align-items:center;gap:12px;"><div class="detail-pnl" style="color:'+pC+';">'+pS+'$'+t.pnl+'</div><button class="detail-close" onclick="closeDetail()">✕</button></div></div><div class="detail-body"><div class="dg6">'+df('Symbol',t.symbol)+df('Entry Date',fmtDate(t.entryDate))+df('Exit Date',fmtDate(t.exitDate))+df('Expiry',t.expiry||'—')+df('Days Held',t.days+'d')+df('Contracts',t.contracts||'—')+'</div><div class="dg4">'+df('Entry Price',t.entryPrice||'—')+df('Exit Price',t.exitPrice||'—')+df('Gross P&L',t.grossPnl||'—')+df('Fees',t.fees||'—')+'</div><div class="dg3">'+df('Mistake',t.mistakes)+df('Strike',t.strike||'—')+'<div class="dfield"><div class="dflabel">Confidence</div><div class="dfval">'+stars(t.confidence)+'</div></div></div><div class="emo-row"><div class="emo-group"><div class="emo-label">Entry Emotions</div><div class="emo-tags">'+(eE.length?eE.map(etag).join(''):'<span style="color:var(--text3);font-size:11px;">—</span>')+'</div></div><div class="emo-group"><div class="emo-label">Exit Emotions</div><div class="emo-tags">'+(xE.length?xE.map(etag).join(''):'<span style="color:var(--text3);font-size:11px;">—</span>')+'</div></div></div><div class="detail-notes"><div class="detail-notes-label">📝 Trade Notes</div><div class="detail-notes-text">'+(t.comments&&t.comments.trim()?t.comments:'<span style="color:var(--text3);font-style:italic;">No notes for this trade.</span>')+'</div></div></div></div>';
   document.getElementById('detail-panel').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
-
-function dfield(label,val){
-  return'<div class="dfield"><div class="dflabel">'+label+'</div><div class="dfval">'+val+'</div></div>';
-}
-
-function closeDetail(){
-  activeTradeIdx=null;
-  document.getElementById('detail-panel').innerHTML='';
-  document.querySelectorAll('.trow').forEach(function(r){r.classList.remove('active-row');});
-}
-
+function closeDetail(){activeTradeIdx=null;document.getElementById('detail-panel').innerHTML='';document.querySelectorAll('.trow').forEach(function(r){r.classList.remove('active-row');});}
+function onRowClick(i){var t=_currentRows[i];if(activeTradeIdx===i){closeDetail();return;}activeTradeIdx=i;document.querySelectorAll('.trow').forEach(function(r){r.classList.remove('active-row');});var el=document.getElementById('trow-'+i);if(el)el.classList.add('active-row');showDetail(t);}
 function renderLog(){
   var syms=[...new Set(trades.map(function(t){return t.symbol;}))].sort(),strats=[...new Set(trades.map(function(t){return t.strategy;}))].sort(),emos=[...new Set(trades.reduce(function(a,t){return a.concat(semo(t.entry));},[]))].sort();
-  var ss=document.getElementById('srch-sym'),curS=ss.value;ss.innerHTML='<option value="">All Symbols</option>'+syms.map(function(s){return'<option>'+s+'</option>';}).join('');if(curS)ss.value=curS;
-  var st=document.getElementById('srch-strat'),curSt=st.value;st.innerHTML='<option value="">All Strategies</option>'+strats.map(function(s){return'<option>'+s+'</option>';}).join('');if(curSt)st.value=curSt;
-  var se=document.getElementById('srch-emo'),curE=se.value;se.innerHTML='<option value="">All Emotions</option>'+emos.map(function(e){return'<option>'+e+'</option>';}).join('');if(curE)se.value=curE;
+  var ss=document.getElementById('srch-sym'),cs=ss.value;ss.innerHTML='<option value="">All Symbols</option>'+syms.map(function(s){return'<option>'+s+'</option>';}).join('');if(cs)ss.value=cs;
+  var st=document.getElementById('srch-strat'),cst=st.value;st.innerHTML='<option value="">All Strategies</option>'+strats.map(function(s){return'<option>'+s+'</option>';}).join('');if(cst)st.value=cst;
+  var se=document.getElementById('srch-emo'),ce=se.value;se.innerHTML='<option value="">All Emotions</option>'+emos.map(function(e){return'<option>'+e+'</option>';}).join('');if(ce)se.value=ce;
   renderLogT();
 }
 function clearSearch(){document.getElementById('srch-text').value='';document.getElementById('srch-sym').value='';document.getElementById('srch-strat').value='';document.getElementById('srch-result').value='';document.getElementById('srch-emo').value='';sortKey='';sortDir=1;closeDetail();renderLogT();}
 function sortLog(key){if(sortKey===key)sortDir*=-1;else{sortKey=key;sortDir=1;}renderLogT();}
-
-var _currentRows=[];
 function renderLogT(){
   var txt=(document.getElementById('srch-text').value||'').toLowerCase(),sym=document.getElementById('srch-sym').value,strat=document.getElementById('srch-strat').value,res=document.getElementById('srch-result').value,emo=document.getElementById('srch-emo').value;
-  var rows=trades.filter(function(t){
-    if(txt&&!(t.name.toLowerCase().includes(txt)||t.symbol.toLowerCase().includes(txt)||t.strategy.toLowerCase().includes(txt)||t.mistakes.toLowerCase().includes(txt)))return false;
-    if(sym&&t.symbol!==sym)return false;if(strat&&t.strategy!==strat)return false;
-    if(res==='win'&&t.pnl<=0)return false;if(res==='loss'&&t.pnl>0)return false;
-    if(emo&&!semo(t.entry).includes(emo))return false;return true;
-  });
+  var rows=trades.filter(function(t){if(txt&&!(t.name.toLowerCase().includes(txt)||t.symbol.toLowerCase().includes(txt)||t.strategy.toLowerCase().includes(txt)||t.mistakes.toLowerCase().includes(txt)))return false;if(sym&&t.symbol!==sym)return false;if(strat&&t.strategy!==strat)return false;if(res==='win'&&t.pnl<=0)return false;if(res==='loss'&&t.pnl>0)return false;if(emo&&!semo(t.entry).includes(emo))return false;return true;});
   if(sortKey){rows=rows.slice().sort(function(a,b){var av=a[sortKey]||0,bv=b[sortKey]||0;if(typeof av==='string')return av.localeCompare(bv)*sortDir;return(av-bv)*sortDir;});}
   _currentRows=rows;
-
-  var sum=rows.reduce(function(a,t){return a+t.pnl;},0);
-  var sumPos=sum>=0,sumSign=sumPos?'+':'',sumColor=sumPos?G:R;
-  var wCount=rows.filter(function(t){return t.pnl>0;}).length,lCount=rows.filter(function(t){return t.pnl<=0;}).length;
-
+  var sum=rows.reduce(function(a,t){return a+t.pnl;},0),sPos=sum>=0,wC=rows.filter(function(t){return t.pnl>0;}).length,lC=rows.filter(function(t){return t.pnl<=0;}).length;
   document.getElementById('srch-count').textContent='Showing '+rows.length+' of '+trades.length+' trades';
-
-  var footEl=document.getElementById('tfoot');
-  if(rows.length>0){
-    footEl.style.display='grid';
-    footEl.innerHTML='<div style="color:var(--text3);font-size:11px;font-family:var(--f);font-weight:400;">'+rows.length+' trades · '+wCount+'W / '+lCount+'L</div><div></div><div></div><div></div><div></div><div style="color:'+sumColor+';">'+sumSign+'$'+Math.round(sum)+'</div><div></div>';
-  }else{footEl.style.display='none';}
-
-  document.getElementById('tlog').innerHTML=rows.map(function(t,i){
-    var p=t.pnl>=0;
-    var hasNote=t.comments&&t.comments.trim();
-    var timeEffHtml=t.timeEff!==null?'<div class="ts">⏱ '+t.timeEff+'% time used</div>':'';
-    var noteIcon=hasNote?'<span style="font-size:9px;color:var(--blue);margin-left:4px;" title="Has notes">💬</span>':'';
-    return'<div class="trow" onclick="onRowClick('+i+')" id="trow-'+i+'">'+
-      '<div><div class="tn">'+t.name+noteIcon+'</div><div class="ts">'+t.strategy+' · '+t.mistakes+'</div>'+timeEffHtml+'</div>'+
-      '<div style="color:var(--text2);font-size:11px">'+t.strategy+'</div>'+
-      '<div>'+semo(t.entry).map(etag).join('')+'</div>'+
-      '<div>'+semo(t.exit).map(etag).join('')+'</div>'+
-      '<div style="color:var(--text3)">'+t.days+'d</div>'+
-      '<div class="'+(p?'pp':'np')+'">'+(p?'+':'')+'$'+t.pnl+'</div>'+
-      '<div class="'+(p?'pp':'np')+'">'+t.pct.toFixed(1)+'%</div>'+
-    '</div>';
-  }).join('');
+  var foot=document.getElementById('tfoot');
+  if(rows.length){foot.style.display='grid';foot.innerHTML='<div style="color:var(--text3);font-size:11px;font-family:var(--f);font-weight:400;">'+rows.length+' trades · '+wC+'W / '+lC+'L</div><div></div><div></div><div></div><div></div><div style="color:'+(sPos?G:R)+';">'+(sPos?'+':'')+'$'+Math.round(sum)+'</div><div></div>';}else{foot.style.display='none';}
+  document.getElementById('tlog').innerHTML=rows.map(function(t,i){var p=t.pnl>=0,hasNote=t.comments&&t.comments.trim(),te=t.timeEff!==null?'<div class="ts">⏱ '+t.timeEff+'% time used</div>':'',ni=hasNote?'<span style="font-size:9px;color:var(--blue);margin-left:4px;" title="Has notes">💬</span>':'';return'<div class="trow" onclick="onRowClick('+i+')" id="trow-'+i+'"><div><div class="tn">'+t.name+ni+'</div><div class="ts">'+t.strategy+' · '+t.mistakes+'</div>'+te+'</div><div style="color:var(--text2);font-size:11px">'+t.strategy+'</div><div>'+semo(t.entry).map(etag).join('')+'</div><div>'+semo(t.exit).map(etag).join('')+'</div><div style="color:var(--text3)">'+t.days+'d</div><div class="'+(p?'pp':'np')+'">'+(p?'+':'')+'$'+t.pnl+'</div><div class="'+(p?'pp':'np')+'">'+t.pct.toFixed(1)+'%</div></div>';}).join('');
 }
 
-function onRowClick(i){
-  var t=_currentRows[i];
-  if(activeTradeIdx===i){closeDetail();return;}
-  activeTradeIdx=i;
-  document.querySelectorAll('.trow').forEach(function(r){r.classList.remove('active-row');});
-  var rowEl=document.getElementById('trow-'+i);
-  if(rowEl)rowEl.classList.add('active-row');
-  showDetail(t);
-}
-
-var TABS=['overview','emotions','perf','goals','log','settings'];
+var TABS=['overview','emotions','confidence','perf','goals','log','settings'];
 function sw(n){document.querySelectorAll('.tab').forEach(function(t,i){t.classList.toggle('active',TABS[i]===n);});document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});document.getElementById('page-'+n).classList.add('active');}
 function loadFromJSON(){ingest(RAW_DATA,'All_Data.json');}
-
-var RAW_DATA=[{"No.":"1","Full name":"LEN JAN 09'26 107$ Buy Call","Entry Date":"05/01/26","Symbol":"LEN","Type":"Call","Strike":"107","Break Even":" $ 108.49 ","Expiry":"09/01/26","Days to expiry":"Expired","Contracts":"1.00","legs":"1.00","Entry Price":"$1.45","Exit Price":"$2.89","Exit Date":"08/01/26","R":"$149.00","Gross P&L":"$144.00","Fees":"$4.00","Net P&L":"$140.00","Net P&L (%)":"96.55%","Status":"Closed","strategy":"Technical Setup","confidence level (1-5)":"3","Emotion (Entry)":"Confidence","Emotion (Exite)":"Acceptance","Mistakes":"Cut Winner Too Early","comments":"","trade type":"Buy Call","Days in Trade":"3"},{"No.":"2","Full name":"MCD FEB 20'26 305/320$ Bull Call","Entry Date":"07/01/26","Symbol":"MCD","Type":"Call spread debit","Strike":" 305/320 ","Break Even":" $ 310.69 ","Expiry":"20/02/26","Days to expiry":"Expired","Contracts":"1.00","legs":"2.00","Entry Price":"$5.61","Exit Price":"$8.36","Exit Date":"27/01/26","R":"$569.00","Gross P&L":"$275.00","Fees":"$8.00","Net P&L":"$267.00","Net P&L (%)":"47.59%","Status":"Closed","strategy":"Technical Setup","confidence level (1-5)":"4","Emotion (Entry)":"Confidence, FOMO","Emotion (Exite)":"Greed, Acceptance, Fear","Mistakes":"Cut Winner Too Early","comments":"Check if the exit was early. The stock was sold at a price of 314 on 01/27. - yes a bit too early check 19/02","trade type":"Bull Call","Days in Trade":"20"},{"No.":"3","Full name":"BMNR JAN 16'26 28.5$ Sell Put","Entry Date":"08/01/26","Symbol":"BMNR","Type":"Put","Strike":"28.5","Break Even":" $ 27.82 ","Expiry":"16/01/26","Days to expiry":"Expired","Contracts":"1.00","legs":"1.00","Entry Price":"-$0.64","Exit Price":"-$0.06","Exit Date":"15/01/26","R":"$68.00","Gross P&L":"$58.00","Fees":"$4.00","Net P&L":"$54.00","Net P&L (%)":"84.38%","Status":"Closed","strategy":"Portfolio Income Strategy","confidence level (1-5)":"4","Emotion (Entry)":"Confidence","Emotion (Exite)":"Discipline, Acceptance","Mistakes":"No Mistake","comments":"","trade type":"Sell Put","Days in Trade":"7"},{"No.":"4","Full name":"SOFI FEB 06'26 26$ Buy Put","Entry Date":"14/01/26","Symbol":"SOFI","Type":"Put","Strike":"26","Break Even":" $ 24.25 ","Expiry":"06/02/26","Days to expiry":"Expired","Contracts":"3.00","legs":"1.00","Entry Price":"$1.63","Exit Price":"$1.66","Exit Date":"14/01/26","R":"$501.00","Gross P&L":"$9.00","Fees":"$12.00","Net P&L":"-$3.00","Net P&L (%)":"-0.61%","Status":"Closed","strategy":"Hedge or Protection","confidence level (1-5)":"2","Emotion (Entry)":"Fear, Stress","Emotion (Exite)":"Patience","Mistakes":"Execution Error (Fat Finger)","comments":"","trade type":"Buy Put","Days in Trade":"0"},{"No.":"5","Full name":"SOFI FEB 06'26 26$ Buy Put","Entry Date":"14/01/26","Symbol":"SOFI","Type":"Put","Strike":"26","Break Even":" $ 24.25 ","Expiry":"06/02/26","Days to expiry":"Expired","Contracts":"3.00","legs":"1.00","Entry Price":"$1.63","Exit Price":"$1.59","Exit Date":"21/01/26","R":"$501.00","Gross P&L":"-$12.00","Fees":"$12.00","Net P&L":"-$24.00","Net P&L (%)":"-4.91%","Status":"Closed","strategy":"Hedge or Protection","confidence level (1-5)":"2","Emotion (Entry)":"Fear, Stress","Emotion (Exite)":"Acceptance, Discipline","Mistakes":"No Mistake","comments":"Exiting hedging due to good report from Interactive Brokers LLC","trade type":"Buy Put","Days in Trade":"7"},{"No.":"6","Full name":"SOFI MAR 20'26 26$ Sell Put","Entry Date":"01/08/25","Symbol":"SOFI","Type":"Put","Strike":"26","Break Even":" $ 23.43 ","Expiry":"20/03/26","Days to expiry":"Expired","Contracts":"1.00","legs":"1.00","Entry Price":"-$2.53","Exit Price":"-$0.64","Exit Date":"14/01/26","R":"$257.00","Gross P&L":"$189.00","Fees":"$4.00","Net P&L":"$185.00","Net P&L (%)":"73.12%","Status":"Closed","strategy":"Directional Bullish/Bearish","confidence level (1-5)":"5","Emotion (Entry)":"Confidence, Patience","Emotion (Exite)":"Stress","Mistakes":"No Mistake","comments":"","trade type":"Sell Put","Days in Trade":"166"},{"No.":"7","Full name":"ASTS JAN 16'26 96/100$ Bear Put","Entry Date":"15/01/26","Symbol":"ASTS","Type":"Put spread debit","Strike":"96/100","Break Even":" $ 98.70 ","Expiry":"16/01/26","Days to expiry":"Expired","Contracts":"1.00","legs":"2.00","Entry Price":"$1.22","Exit Price":"$0.00","Exit Date":"16/01/26","R":"$130.00","Gross P&L":"-$122.00","Fees":"$8.00","Net P&L":"-$130.00","Net P&L (%)":"-106.56%","Status":"Closed","strategy":"Speculative Idea","confidence level (1-5)":"2","Emotion (Entry)":"Fear, Stress","Emotion (Exite)":"Acceptance","Mistakes":"Misread Trend","comments":"","trade type":"Bear Put","Days in Trade":"1"},{"No.":"8","Full name":"IBRX JAN 16'26 4$ Buy Call","Entry Date":"15/01/26","Symbol":"IBRX","Type":"Call","Strike":"4","Break Even":" $ 4.26 ","Expiry":"16/01/26","Days to expiry":"Expired","Contracts":"3.00","legs":"1.00","Entry Price":"$0.14","Exit Price":"$1.32","Exit Date":"16/01/26","R":"$54.00","Gross P&L":"$354.00","Fees":"$12.00","Net P&L":"$342.00","Net P&L (%)":"814.29%","Status":"Closed","strategy":"Short squeeze","confidence level (1-5)":"3","Emotion (Entry)":"Curiosity, Confidence","Emotion (Exite)":"Acceptance","Mistakes":"Cut Winner Too Early","comments":"","trade type":"Buy Call","Days in Trade":"1"},{"No.":"9","Full name":"QQQ JAN 16'26 625$ Sell Call","Entry Date":"15/01/26","Symbol":"QQQ","Type":"Call","Strike":"625","Break Even":" $ 627.12 ","Expiry":"16/01/26","Days to expiry":"Expired","Contracts":"1.00","legs":"1.00","Entry Price":"-$2.08","Exit Price":"$0.00","Exit Date":"16/01/26","R":"$212.00","Gross P&L":"$208.00","Fees":"$4.00","Net P&L":"$204.00","Net P&L (%)":"98.08%","Status":"Closed","strategy":"Portfolio Income Strategy","confidence level (1-5)":"3","Emotion (Entry)":"Overconfidence, Acceptance","Emotion (Exite)":"Confidence","Mistakes":"Impulse Entry (FOMO)","comments":"","trade type":"Sell Call","Days in Trade":"1"},{"No.":"10","Full name":"ASTS JAN 23'26 113/116$ Bear Put","Entry Date":"21/01/26","Symbol":"ASTS","Type":"Put spread debit","Strike":"113/116","Break Even":" $ 114.50 ","Expiry":"23/01/26","Days to expiry":"Expired","Contracts":"1.00","legs":"2.00","Entry Price":"$1.42","Exit Price":"$1.63","Exit Date":"21/01/26","R":"$150.00","Gross P&L":"$21.00","Fees":"$8.00","Net P&L":"$13.00","Net P&L (%)":"9.15%","Status":"Closed","strategy":"Hedge or Protection","confidence level (1-5)":"1","Emotion (Entry)":"Overconfidence, Fear, FOMO","Emotion (Exite)":"Discipline, Stress","Mistakes":"No Valid Setup","comments":"Exiting too early, the risk-reward ratio was weak, there was no need to take a spread, just a put against declines to hedge the  position","trade type":"Bear Put","Days in Trade":"0"},{"No.":"11","Full name":"QQQ JAN 21'26 604/608$ Bear Put","Entry Date":"21/01/26","Symbol":"QQQ","Type":"Put spread debit","Strike":"604/608","Break Even":" $ 606.68 ","Expiry":"21/01/26","Days to expiry":"Expired","Contracts":"1.00","legs":"2.00","Entry Price":"$1.24","Exit Price":"$0.00","Exit Date":"21/01/26","R":"$132.00","Gross P&L":"-$124.00","Fees":"$8.00","Net P&L":"-$132.00","Net P&L (%)":"-106.45%","Status":"Closed","strategy":"Hedge or Protection","confidence level (1-5)":"4","Emotion (Entry)":"FOMO, Overconfidence, Impulsive","Emotion (Exite)":"Acceptance","Mistakes":"Impulse Entry (FOMO)","comments":"Hedging against declines due to Trump  tariffs and Greenland","trade type":"Bear Put","Days in Trade":"0"},{"No.":"12","Full name":"APLD JAN 23'26 37.5$ Buy Put","Entry Date":"22/01/26","Symbol":"APLD","Type":"Put","Strike":"37.5","Break Even":" $ 37.17 ","Expiry":"23/01/26","Days to expiry":"Expired","Contracts":"1.00","legs":"1.00","Entry Price":"$0.29","Exit Price":"$0.58","Exit Date":"23/01/26","R":"$33.00","Gross P&L":"$29.00","Fees":"$4.00","Net P&L":"$25.00","Net P&L (%)":"86.21%","Status":"Closed","strategy":"Speculative Idea","confidence level (1-5)":"3","Emotion (Entry)":"Overconfidence, Curiosity","Emotion (Exite)":"Discipline, Acceptance","Mistakes":"No Mistake","comments":"I entered the trade with the speculative thought that the stock would fall towards the end of the day due to the weekend.","trade type":"Buy Put","Days in Trade":"1"},{"No.":"13","Full name":"SLV MAR 20'26 101$ Sell Call","Entry Date":"26/01/26","Symbol":"SLV","Type":"Call","Strike":"101","Break Even":" $ 114.17 ","Expiry":"20/03/26","Days to expiry":"Expired","Contracts":"1.00","legs":"1.00","Entry Price":"-$13.13","Exit Price":"-$11.89","Exit Date":"27/01/26","R":"$1,317.00","Gross P&L":"$124.00","Fees":"$4.00","Net P&L":"$120.00","Net P&L (%)":"9.14%","Status":"Closed","strategy":"Speculative Idea","confidence level (1-5)":"4","Emotion (Entry)":"Overconfidence, Curiosity","Emotion (Exite)":"Fear, Acceptance","Mistakes":"Oversized Position","comments":"I entered the trade after a massive increase in the stock, thinking that the asset is volatile and need to correct.","trade type":"Sell Call","Days in Trade":"1"},{"No.":"14","Full name":"COIN JAN 30'26 215/222$ Bull Call","Entry Date":"27/01/26","Symbol":"COIN","Type":"Call spread debit","Strike":"215/222","Break Even":" $ 217.14 ","Expiry":"30/01/26","Days to expiry":"Expired","Contracts":"1.00","legs":"2.00","Entry Price":"$2.06","Exit Price":"$0.00","Exit Date":"30/01/26","R":"$214.00","Gross P&L":"-$206.00","Fees":"$8.00","Net P&L":"-$214.00","Net P&L (%)":"-103.88%","Status":"Closed","strategy":"Technical Setup","confidence level (1-5)":"2","Emotion (Entry)":"Greed, Curiosity","Emotion (Exite)":"Acceptance","Mistakes":"Early Entry (No Confirmation)","comments":"I entered the trade because RSI is at 30 but OBV is supportive, expecting to see a few days of gains towards EMA 20, end with hammer candle","trade type":"Bull Call","Days in Trade":"3"},{"No.":"15","Full name":"SLV AUG 21'26 90/120$ Bull Call","Entry Date":"28/01/26","Symbol":"SLV","Type":"Call spread debit","Strike":"90/120","Break Even":" $ 110.25 ","Expiry":"21/08/26","Days to expiry":"Closed","Contracts":"3.00","legs":"2.00","Entry Price":"$20.01","Exit Price":"$20.02","Exit Date":"28/01/26","R":"$6,026.00","Gross P&L":"$4.00","Fees":"$24.00","Net P&L":"-$20.00","Net P&L (%)":"-0.33%","Status":"Closed","strategy":"no strategy","confidence level (1-5)":"0","Emotion (Entry)":"no emotion","Emotion (Exite)":"no emotion","Mistakes":"Execution Error (Fat Finger)","comments":"Pure mistake, confusion between call and put","trade type":"Bull Call","Days in Trade":"0"},{"No.":"16","Full name":"SLV JAN 28'26 97.5/100$ Bear Put","Entry Date":"28/01/26","Symbol":"SLV","Type":"Put spread debit","Strike":"97.5/100","Break Even":" $ 99.26 ","Expiry":"28/01/26","Days to expiry":"Expired","Contracts":"1.00","legs":"2.00","Entry Price":"$0.66","Exit Price":"$0.00","Exit Date":"28/01/26","R":"$74.00","Gross P&L":"-$66.00","Fees":"$8.00","Net P&L":"-$74.00","Net P&L (%)":"-112.12%","Status":"Closed","strategy":"Speculative Idea","confidence level (1-5)":"4","Emotion (Entry)":"FOMO, Overconfidence","Emotion (Exite)":"Acceptance","Mistakes":"No Valid Setup","comments":"","trade type":"Bear Put","Days in Trade":"0"},{"No.":"17","Full name":"SLV FEB 11'26 175$ Sell Call","Entry Date":"28/01/26","Symbol":"SLV","Type":"Call","Strike":"175","Break Even":" $ 175.29 ","Expiry":"11/02/26","Days to expiry":"Expired","Contracts":"1.00","legs":"1.00","Entry Price":"-$0.27","Exit Price":"$0.00","Exit Date":"11/02/26","R":"$29.00","Gross P&L":"$27.00","Fees":"$2.00","Net P&L":"$25.00","Net P&L (%)":"92.59%","Status":"Closed","strategy":"Volatility Play","confidence level (1-5)":"5","Emotion (Entry)":"Confidence","Emotion (Exite)":"Patience","Mistakes":"No Mistake","comments":"I entered the trade because I think a 70% spread between the entry point and the strike is sufficient.","trade type":"Sell Call","Days in Trade":"14"},{"No.":"18","Full name":"SLV FEB 27'26 170$ Sell Call","Entry Date":"28/01/26","Symbol":"SLV","Type":"Call","Strike":"170","Break Even":" $ 171.78 ","Expiry":"27/02/26","Days to expiry":"Expired","Contracts":"1.00","legs":"1.00","Entry Price":"-$1.76","Exit Price":"$0.00","Exit Date":"27/02/26","R":"$178.00","Gross P&L":"$176.00","Fees":"$2.00","Net P&L":"$174.00","Net P&L (%)":"98.86%","Status":"Closed","strategy":"Volatility Play","confidence level (1-5)":"5","Emotion (Entry)":"Confidence","Emotion (Exite)":"Confidence","Mistakes":"No Mistake","comments":"I entered the trade because I think a 70% spread between the entry point and the strike is sufficient.","trade type":"Sell Call","Days in Trade":"30"},{"No.":"19","Full name":"SOFI FEB 13'26 25$ Buy Call","Entry Date":"28/01/26","Symbol":"SOFI","Type":"Call","Strike":"25","Break Even":" $ 26.52 ","Expiry":"13/02/26","Days to expiry":"Expired","Contracts":"2.00","legs":"1.00","Entry Price":"$1.48","Exit Price":"$0.00","Exit Date":"13/02/26","R":"$300.00","Gross P&L":"-$296.00","Fees":"$4.00","Net P&L":"-$300.00","Net P&L (%)":"-101.35%","Status":"Closed","strategy":"Earnings Play","confidence level (1-5)":"3","Emotion (Entry)":"Curiosity","Emotion (Exite)":"Acceptance","Mistakes":"Early Entry (No Confirmation)","comments":"I entered the trade to increase exposure to the stock ahead of the report.","trade type":"Buy Call","Days in Trade":"16"},{"No.":"20","Full name":"NVO FEB 27'26 62$ Buy Call","Entry Date":"02/02/26","Symbol":"NVO","Type":"Call","Strike":"62","Break Even":" $ 64.03 ","Expiry":"27/02/26","Days to expiry":"Expired","Contracts":"1.00","legs":"1.00","Entry Price":"$1.99","Exit Price":"$0.32","Exit Date":"03/02/26","R":"$203.00","Gross P&L":"-$167.00","Fees":"$4.00","Net P&L":"-$171.00","Net P&L (%)":"-85.93%","Status":"Closed","strategy":"Earnings Play","confidence level (1-5)":"4","Emotion (Entry)":"Greed","Emotion (Exite)":"frustrated, Acceptance","Mistakes":"External Event (News)","comments":"Published before the report that the company is stopping growth and then a 15% crash","trade type":"Buy Call","Days in Trade":"1"},{"No.":"21","Full name":"SOFI FEB 20'26 21$ Buy Call","Entry Date":"05/02/26","Symbol":"SOFI","Type":"Call","Strike":"21","Break Even":" $ 21.92 ","Expiry":"20/02/26","Days to expiry":"Expired","Contracts":"4.00","legs":"1.00","Entry Price":"$0.76","Exit Price":"$0.98","Exit Date":"09/02/26","R":"$320.00","Gross P&L":"$88.00","Fees":"$16.00","Net P&L":"$72.00","Net P&L (%)":"23.68%","Status":"Closed","strategy":"Speculative Idea","confidence level (1-5)":"3","Emotion (Entry)":"Greed, Curiosity, Fear","Emotion (Exite)":"Acceptance, Fear, Patience","Mistakes":"No Mistake","comments":"I entered the trade when RSI was below 30 after several days of strong declines, the stock did not rise so I exited 09/02/2026","trade type":"Buy Call","Days in Trade":"4"},{"No.":"22","Full name":"QQQ FEB 06'26 610$ Buy Put","Entry Date":"06/02/26","Symbol":"QQQ","Type":"Put","Strike":"610","Break Even":" $ 609.70 ","Expiry":"06/02/26","Days to expiry":"Expired","Contracts":"1.00","legs":"1.00","Entry Price":"$0.26","Exit Price":"$0.69","Exit Date":"06/02/26","R":"$30.00","Gross P&L":"$43.00","Fees":"$4.00","Net P&L":"$39.00","Net P&L (%)":"150.00%","Status":"Closed","strategy":"no strategy","confidence level (1-5)":"0","Emotion (Entry)":"no emotion","Emotion (Exite)":"no emotion","Mistakes":"Execution Error (Fat Finger)","comments":"I bought the deal by mistake when I wanted to buy the deal a row below I accidentally bought that one too","trade type":"Buy Put","Days in Trade":"0"},{"No.":"23","Full name":"QQQ FEB 09'26 609$ Buy Put","Entry Date":"06/02/26","Symbol":"QQQ","Type":"Put","Strike":"609","Break Even":" $ 606.31 ","Expiry":"09/02/26","Days to expiry":"Expired","Contracts":"1.00","legs":"1.00","Entry Price":"$2.65","Exit Price":"$2.95","Exit Date":"09/02/26","R":"$269.00","Gross P&L":"$30.00","Fees":"$4.00","Net P&L":"$26.00","Net P&L (%)":"9.81%","Status":"Closed","strategy":"Hedge or Protection","confidence level (1-5)":"3","Emotion (Entry)":"Fear","Emotion (Exite)":"Patience","Mistakes":"No Mistake","comments":"I bought the deal to hedge my investment portfolio against falls.","trade type":"Buy Put","Days in Trade":"3"},{"No.":"24","Full name":"QQQ FEB 10'26 614$ Buy Put","Entry Date":"09/02/26","Symbol":"QQQ","Type":"Put","Strike":"614","Break Even":" $ 611.92 ","Expiry":"10/02/26","Days to expiry":"Expired","Contracts":"1.00","legs":"1.00","Entry Price":"$2.04","Exit Price":"$2.21","Exit Date":"10/02/26","R":"$208.00","Gross P&L":"$17.00","Fees":"$4.00","Net P&L":"$13.00","Net P&L (%)":"6.37%","Status":"Closed","strategy":"Hedge or Protection","confidence level (1-5)":"2","Emotion (Entry)":"Fear, Acceptance","Emotion (Exite)":"Patience","Mistakes":"No Mistake","comments":"I entered into a trade to hedge a position against an idle rise in the market.","trade type":"Buy Put","Days in Trade":"1"},{"No.":"25","Full name":"CAT FEB 13'26 800$ Sell Call","Entry Date":"11/02/26","Symbol":"CAT","Type":"Call","Strike":"800","Break Even":" $ 801.92 ","Expiry":"13/02/26","Days to expiry":"Expired","Contracts":"1.00","legs":"1.00","Entry Price":"-$1.90","Exit Price":"$0.00","Exit Date":"13/02/26","R":"$192.00","Gross P&L":"$190.00","Fees":"$2.00","Net P&L":"$188.00","Net P&L (%)":"98.95%","Status":"Closed","strategy":"Volatility Play","confidence level (1-5)":"4","Emotion (Entry)":"Patience, Confidence","Emotion (Exite)":"Confidence","Mistakes":"No Mistake","comments":"RSI at 76 high after the stock is very stretched expiration time is near","trade type":"Sell Call","Days in Trade":"2"},{"No.":"26","Full name":"VRT FEB 20'26 270$ Sell Call","Entry Date":"11/02/26","Symbol":"VRT","Type":"Call","Strike":"270","Break Even":" $ 272.70 ","Expiry":"20/02/26","Days to expiry":"Expired","Contracts":"1.00","legs":"1.00","Entry Price":"-$2.66","Exit Price":"-$0.48","Exit Date":"18/02/26","R":"$270.00","Gross P&L":"$218.00","Fees":"$4.00","Net P&L":"$214.00","Net P&L (%)":"80.45%","Status":"Closed","strategy":"Volatility Play","confidence level (1-5)":"4","Emotion (Entry)":"Patience, Confidence","Emotion (Exite)":"Patience, Acceptance","Mistakes":"No Mistake","comments":"After a good report, the stock jumps 25%, the RSI rises to 77, a relatively short expiration time, the intention is to take money at 50%.","trade type":"Sell Call","Days in Trade":"7"},{"No.":"27","Full name":"AMZN FEB 20'26 200/205$ Bull Call","Entry Date":"17/02/26","Symbol":"AMZN","Type":"Call spread debit","Strike":"200/205","Break Even":" $ 201.55 ","Expiry":"20/02/26","Days to expiry":"Expired","Contracts":"1.00","legs":"2.00","Entry Price":"$1.47","Exit Price":"$3.54","Exit Date":"18/02/26","R":"$155.00","Gross P&L":"$207.00","Fees":"$8.00","Net P&L":"$199.00","Net P&L (%)":"135.37%","Status":"Closed","strategy":"Technical Setup","confidence level (1-5)":"2","Emotion (Entry)":"Impulsive","Emotion (Exite)":"Acceptance","Mistakes":"Cut Winner Too Early","comments":"I entered the trade because the RSI was low at 22.5 and the stock fell a lot. It may have been a mistake to take a small time interval of only 3 days.","trade type":"Bull Call","Days in Trade":"1"},{"No.":"28","Full name":"VIX FEB 24'26 21$ Buy Call","Entry Date":"18/02/26","Symbol":"VIX","Type":"Call","Strike":"21","Break Even":" $ 21.83 ","Expiry":"24/02/26","Days to expiry":"Expired","Contracts":"1.00","legs":"1.00","Entry Price":"$0.79","Exit Price":"$1.35","Exit Date":"19/02/26","R":"$83.00","Gross P&L":"$56.00","Fees":"$4.00","Net P&L":"$52.00","Net P&L (%)":"65.82%","Status":"Closed","strategy":"Speculative Idea","confidence level (1-5)":"2","Emotion (Entry)":"Curiosity","Emotion (Exite)":"Acceptance","Mistakes":"No Mistake","comments":"I entered the trade thinking there would be a development against Iran. - I exited because there were conflicting indications of an attack and the timing was uncertain. 19/02","trade type":"Buy Call","Days in Trade":"1"},{"No.":"29","Full name":"USO FEB 25'26 80$ Buy Call","Entry Date":"18/02/26","Symbol":"USO","Type":"Call","Strike":"80","Break Even":" $ 81.77 ","Expiry":"25/02/26","Days to expiry":"Expired","Contracts":"1.00","legs":"1.00","Entry Price":"$1.73","Exit Price":"$2.49","Exit Date":"19/02/26","R":"$177.00","Gross P&L":"$76.00","Fees":"$4.00","Net P&L":"$72.00","Net P&L (%)":"41.62%","Status":"Closed","strategy":"Speculative Idea","confidence level (1-5)":"2","Emotion (Entry)":"Curiosity","Emotion (Exite)":"Acceptance","Mistakes":"No Mistake","comments":"I entered the trade thinking there would be a development against Iran. I exited because there were conflicting indications of an attack and the timing was uncertain. 19/02","trade type":"Buy Call","Days in Trade":"1"},{"No.":"30","Full name":"ASTS MAR 06'26 80$ Buy Put","Entry Date":"26/02/26","Symbol":"ASTS","Type":"Put","Strike":"80","Break Even":" $ 74.93 ","Expiry":"06/03/26","Days to expiry":"Expired","Contracts":"1.00","legs":"1.00","Entry Price":"$5.05","Exit Price":"$0.00","Exit Date":"06/03/26","R":"$507.00","Gross P&L":"-$505.00","Fees":"$2.00","Net P&L":"-$507.00","Net P&L (%)":"-100.40%","Status":"Closed","strategy":"Hedge or Protection","confidence level (1-5)":"3","Emotion (Entry)":"Confidence, Fear","Emotion (Exite)":"Acceptance","Mistakes":"No Mistake","comments":"Hedging deal ahead of reports of fear of falling short of satellite launch schedules","trade type":"Buy Put","Days in Trade":"8"},{"No.":"31","Full name":"ACHC MAR 20'26 22.5$ Sell Call","Entry Date":"04/03/26","Symbol":"ACHC","Type":"Call","Strike":"22.5","Break Even":" $ 24.66 ","Expiry":"20/03/26","Days to expiry":"Expired","Contracts":"1.00","legs":"1.00","Entry Price":"-$2.12","Exit Price":"-$0.35","Exit Date":"20/03/26","R":"$216.00","Gross P&L":"$177.00","Fees":"$4.00","Net P&L":"$173.00","Net P&L (%)":"81.60%","Status":"Closed","strategy":"Portfolio Income Strategy","confidence level (1-5)":"4","Emotion (Entry)":"Boredom, Confidence","Emotion (Exite)":"Discipline, Patience","Mistakes":"No Mistake","comments":"I entered the trade to reduce some risk from the stock. RSI at 82.5. The goal is to exit with a 50% profit in the upcoming correction.","trade type":"Sell Call","Days in Trade":"16"},{"No.":"32","Full name":"ONDS MAR 20'26 10.5/12.5$ Bull Call","Entry Date":"04/03/26","Symbol":"ONDS","Type":"Call spread debit","Strike":"10.5/12.5","Break Even":" $ 11.27 ","Expiry":"20/03/26","Days to expiry":"Expired","Contracts":"1.00","legs":"2.00","Entry Price":"$0.73","Exit Price":"$0.00","Exit Date":"20/03/26","R":"$77.00","Gross P&L":"-$73.00","Fees":"$4.00","Net P&L":"-$77.00","Net P&L (%)":"-105.48%","Status":"Closed","strategy":"Speculative Idea","confidence level (1-5)":"3","Emotion (Entry)":"Acceptance","Emotion (Exite)":"Acceptance","Mistakes":"Early Entry (No Confirmation)","comments":"I entered the trade because of rising IBV versus static RSI in the middle of the company after many good messages that have not yet been responded to","trade type":"Bull Call","Days in Trade":"16"},{"No.":"33","Full name":"QQQ MAR 25'26 592$ Sell Call","Entry Date":"25/03/26","Symbol":"QQQ","Type":"Call","Strike":"592","Break Even":" $ 592.70 ","Expiry":"25/03/26","Days to expiry":"Expired","Contracts":"1.00","legs":"1.00","Entry Price":"-$0.68","Exit Price":"$0.00","Exit Date":"25/03/26","R":"$70.00","Gross P&L":"$68.00","Fees":"$2.00","Net P&L":"$66.00","Net P&L (%)":"97.06%","Status":"Closed","strategy":"Speculative Idea","confidence level (1-5)":"3","Emotion (Entry)":"Boredom","Emotion (Exite)":"Discipline","Mistakes":"No Valid Setup","comments":"I entered the trade with the speculative thought that the Nasdaq could not rise more than 1.4% after the Irish announced their exit from the deal.","trade type":"Sell Call","Days in Trade":"0"},{"No.":"34","Full name":"QQQ APR 17'26 170/180$ Bear Put","Entry Date":"02/04/26","Symbol":"QQQ","Type":"Put spread debit","Strike":"170/180","Break Even":" $ 176.99 ","Expiry":"17/04/26","Days to expiry":"Closed","Contracts":"1.00","legs":"2.00","Entry Price":"$2.93","Exit Price":"$0.12","Exit Date":"13/04/26","R":"$301.00","Gross P&L":"-$281.00","Fees":"$8.00","Net P&L":"-$289.00","Net P&L (%)":"-98.63%","Status":"Closed","strategy":"Directional Bullish/Bearish","confidence level (1-5)":"3","Emotion (Entry)":"Boredom","Emotion (Exite)":"Acceptance","Mistakes":"Impulse Entry (FOMO)","comments":"I entered the trade because oil is jumping and there is apparently no deal. In addition, volume is falling and RSI is rising.","trade type":"Bear Put","Days in Trade":"11"},{"No.":"35","Full name":"QQQ APR 08'26 590$ Buy Call","Entry Date":"06/04/26","Symbol":"QQQ","Type":"Call","Strike":"590","Break Even":" $ 593.80 ","Expiry":"08/04/26","Days to expiry":"Expired","Contracts":"1.00","legs":"1.00","Entry Price":"$3.76","Exit Price":"$2.77","Exit Date":"07/04/26","R":"$380.00","Gross P&L":"-$99.00","Fees":"$4.00","Net P&L":"-$103.00","Net P&L (%)":"-27.39%","Status":"Closed","strategy":"Speculative Idea","confidence level (1-5)":"3","Emotion (Entry)":"FOMO","Emotion (Exite)":"Acceptance, Confidence","Mistakes":"Impulse Entry (FOMO)","comments":"","trade type":"Buy Call","Days in Trade":"1"},{"No.":"36","Full name":"TQQQ APR 10'26 43.5$ Buy Call","Entry Date":"07/04/26","Symbol":"TQQQ","Type":"Call","Strike":"43.5","Break Even":" $ 45.09 ","Expiry":"10/04/26","Days to expiry":"Expired","Contracts":"1.00","legs":"1.00","Entry Price":"$1.55","Exit Price":"$4.01","Exit Date":"08/04/26","R":"$159.00","Gross P&L":"$246.00","Fees":"$4.00","Net P&L":"$242.00","Net P&L (%)":"156.13%","Status":"Closed","strategy":"Speculative Idea","confidence level (1-5)":"4","Emotion (Entry)":"Curiosity","Emotion (Exite)":"Acceptance","Mistakes":"Impulse Entry (FOMO)","comments":"","trade type":"Buy Call","Days in Trade":"1"},{"No.":"37","Full name":"QQQ APR 15'26 630/627$ Bull Call","Entry Date":"14/04/26","Symbol":"QQQ","Type":"Call spread debit","Strike":"630/627","Break Even":" $ 630.61 ","Expiry":"15/04/26","Days to expiry":"Closed","Contracts":"1.00","legs":"2.00","Entry Price":"-$0.53","Exit Price":"-$1.44","Exit Date":"14/04/26","R":"$61.00","Gross P&L":"-$91.00","Fees":"$8.00","Net P&L":"-$99.00","Net P&L (%)":"-186.79%","Status":"Closed","strategy":"Volatility Play","confidence level (1-5)":"3","Emotion (Entry)":"Greed","Emotion (Exite)":"frustrated","Mistakes":"Impulse Entry (FOMO)","comments":"entered the trade after 7 days up","trade type":"Bull Call","Days in Trade":"0"},{"No.":"38"}];
-
+var RAW_DATA=[{"No.": "1", "Full name": "LEN JAN 09'26 107$ Buy Call", "Entry Date": "05/01/26", "Symbol": "LEN", "Type": "Call", "Strike": "107", "Break Even": " $ 108.49 ", "Expiry": "09/01/26", "Days to expiry": "Expired", "Contracts": "1.00", "legs": "1.00", "Entry Price": "$1.45", "Exit Price": "$2.89", "Exit Date": "08/01/26", "R": "$149.00", "Gross P&L": "$144.00", "Fees": "$4.00", "Net P&L": "$140.00", "Net P&L (%)": "96.55%", "Status": "Closed", "strategy": "Technical Setup", "confidence level (1-5)": "3", "Emotion (Entry)": "Confidence", "Emotion (Exite)": "Acceptance", "Mistakes": "Cut Winner Too Early", "comments": "", "trade type": "Buy Call", "Days in Trade": "3"}, {"No.": "2", "Full name": "MCD FEB 20'26 305/320$ Bull Call", "Entry Date": "07/01/26", "Symbol": "MCD", "Type": "Call spread debit", "Strike": " 305/320 ", "Break Even": " $ 310.69 ", "Expiry": "20/02/26", "Days to expiry": "Expired", "Contracts": "1.00", "legs": "2.00", "Entry Price": "$5.61", "Exit Price": "$8.36", "Exit Date": "27/01/26", "R": "$569.00", "Gross P&L": "$275.00", "Fees": "$8.00", "Net P&L": "$267.00", "Net P&L (%)": "47.59%", "Status": "Closed", "strategy": "Technical Setup", "confidence level (1-5)": "4", "Emotion (Entry)": "Confidence, FOMO", "Emotion (Exite)": "Greed, Acceptance, Fear", "Mistakes": "Cut Winner Too Early", "comments": "Check if the exit was early. The stock was sold at a price of 314 on 01/27. - yes a bit too early check 19/02", "trade type": "Bull Call", "Days in Trade": "20"}, {"No.": "3", "Full name": "BMNR JAN 16'26 28.5$ Sell Put", "Entry Date": "08/01/26", "Symbol": "BMNR", "Type": "Put", "Strike": "28.5", "Break Even": " $ 27.82 ", "Expiry": "16/01/26", "Days to expiry": "Expired", "Contracts": "1.00", "legs": "1.00", "Entry Price": "-$0.64", "Exit Price": "-$0.06", "Exit Date": "15/01/26", "R": "$68.00", "Gross P&L": "$58.00", "Fees": "$4.00", "Net P&L": "$54.00", "Net P&L (%)": "84.38%", "Status": "Closed", "strategy": "Portfolio Income Strategy", "confidence level (1-5)": "4", "Emotion (Entry)": "Confidence", "Emotion (Exite)": "Discipline, Acceptance", "Mistakes": "No Mistake", "comments": "", "trade type": "Sell Put", "Days in Trade": "7"}, {"No.": "4", "Full name": "SOFI FEB 06'26 26$ Buy Put", "Entry Date": "14/01/26", "Symbol": "SOFI", "Type": "Put", "Strike": "26", "Break Even": " $ 24.25 ", "Expiry": "06/02/26", "Days to expiry": "Expired", "Contracts": "3.00", "legs": "1.00", "Entry Price": "$1.63", "Exit Price": "$1.66", "Exit Date": "14/01/26", "R": "$501.00", "Gross P&L": "$9.00", "Fees": "$12.00", "Net P&L": "-$3.00", "Net P&L (%)": "-0.61%", "Status": "Closed", "strategy": "Hedge or Protection", "confidence level (1-5)": "2", "Emotion (Entry)": "Fear, Stress", "Emotion (Exite)": "Patience", "Mistakes": "Execution Error (Fat Finger)", "comments": "", "trade type": "Buy Put", "Days in Trade": "0"}, {"No.": "5", "Full name": "SOFI FEB 06'26 26$ Buy Put", "Entry Date": "14/01/26", "Symbol": "SOFI", "Type": "Put", "Strike": "26", "Break Even": " $ 24.25 ", "Expiry": "06/02/26", "Days to expiry": "Expired", "Contracts": "3.00", "legs": "1.00", "Entry Price": "$1.63", "Exit Price": "$1.59", "Exit Date": "21/01/26", "R": "$501.00", "Gross P&L": "-$12.00", "Fees": "$12.00", "Net P&L": "-$24.00", "Net P&L (%)": "-4.91%", "Status": "Closed", "strategy": "Hedge or Protection", "confidence level (1-5)": "2", "Emotion (Entry)": "Fear, Stress", "Emotion (Exite)": "Acceptance, Discipline", "Mistakes": "No Mistake", "comments": "Exiting hedging due to good report from Interactive Brokers LLC", "trade type": "Buy Put", "Days in Trade": "7"}, {"No.": "6", "Full name": "SOFI MAR 20'26 26$ Sell Put", "Entry Date": "01/08/25", "Symbol": "SOFI", "Type": "Put", "Strike": "26", "Break Even": " $ 23.43 ", "Expiry": "20/03/26", "Days to expiry": "Expired", "Contracts": "1.00", "legs": "1.00", "Entry Price": "-$2.53", "Exit Price": "-$0.64", "Exit Date": "14/01/26", "R": "$257.00", "Gross P&L": "$189.00", "Fees": "$4.00", "Net P&L": "$185.00", "Net P&L (%)": "73.12%", "Status": "Closed", "strategy": "Directional Bullish/Bearish", "confidence level (1-5)": "5", "Emotion (Entry)": "Confidence, Patience", "Emotion (Exite)": "Stress", "Mistakes": "No Mistake", "comments": "", "trade type": "Sell Put", "Days in Trade": "166"}, {"No.": "7", "Full name": "ASTS JAN 16'26 96/100$ Bear Put", "Entry Date": "15/01/26", "Symbol": "ASTS", "Type": "Put spread debit", "Strike": "96/100", "Break Even": " $ 98.70 ", "Expiry": "16/01/26", "Days to expiry": "Expired", "Contracts": "1.00", "legs": "2.00", "Entry Price": "$1.22", "Exit Price": "$0.00", "Exit Date": "16/01/26", "R": "$130.00", "Gross P&L": "-$122.00", "Fees": "$8.00", "Net P&L": "-$130.00", "Net P&L (%)": "-106.56%", "Status": "Closed", "strategy": "Speculative Idea", "confidence level (1-5)": "2", "Emotion (Entry)": "Fear, Stress", "Emotion (Exite)": "Acceptance", "Mistakes": "Misread Trend", "comments": "", "trade type": "Bear Put", "Days in Trade": "1"}, {"No.": "8", "Full name": "IBRX JAN 16'26 4$ Buy Call", "Entry Date": "15/01/26", "Symbol": "IBRX", "Type": "Call", "Strike": "4", "Break Even": " $ 4.26 ", "Expiry": "16/01/26", "Days to expiry": "Expired", "Contracts": "3.00", "legs": "1.00", "Entry Price": "$0.14", "Exit Price": "$1.32", "Exit Date": "16/01/26", "R": "$54.00", "Gross P&L": "$354.00", "Fees": "$12.00", "Net P&L": "$342.00", "Net P&L (%)": "814.29%", "Status": "Closed", "strategy": "Short squeeze", "confidence level (1-5)": "3", "Emotion (Entry)": "Curiosity, Confidence", "Emotion (Exite)": "Acceptance", "Mistakes": "Cut Winner Too Early", "comments": "", "trade type": "Buy Call", "Days in Trade": "1"}, {"No.": "9", "Full name": "QQQ JAN 16'26 625$ Sell Call", "Entry Date": "15/01/26", "Symbol": "QQQ", "Type": "Call", "Strike": "625", "Break Even": " $ 627.12 ", "Expiry": "16/01/26", "Days to expiry": "Expired", "Contracts": "1.00", "legs": "1.00", "Entry Price": "-$2.08", "Exit Price": "$0.00", "Exit Date": "16/01/26", "R": "$212.00", "Gross P&L": "$208.00", "Fees": "$4.00", "Net P&L": "$204.00", "Net P&L (%)": "98.08%", "Status": "Closed", "strategy": "Portfolio Income Strategy", "confidence level (1-5)": "3", "Emotion (Entry)": "Overconfidence, Acceptance", "Emotion (Exite)": "Confidence", "Mistakes": "Impulse Entry (FOMO)", "comments": "", "trade type": "Sell Call", "Days in Trade": "1"}, {"No.": "10", "Full name": "ASTS JAN 23'26 113/116$ Bear Put", "Entry Date": "21/01/26", "Symbol": "ASTS", "Type": "Put spread debit", "Strike": "113/116", "Break Even": " $ 114.50 ", "Expiry": "23/01/26", "Days to expiry": "Expired", "Contracts": "1.00", "legs": "2.00", "Entry Price": "$1.42", "Exit Price": "$1.63", "Exit Date": "21/01/26", "R": "$150.00", "Gross P&L": "$21.00", "Fees": "$8.00", "Net P&L": "$13.00", "Net P&L (%)": "9.15%", "Status": "Closed", "strategy": "Hedge or Protection", "confidence level (1-5)": "1", "Emotion (Entry)": "Overconfidence, Fear, FOMO", "Emotion (Exite)": "Discipline, Stress", "Mistakes": "No Valid Setup", "comments": "Exiting too early, the risk-reward ratio was weak, there was no need to take a spread, just a put against declines to hedge the  position", "trade type": "Bear Put", "Days in Trade": "0"}, {"No.": "11", "Full name": "QQQ JAN 21'26 604/608$ Bear Put", "Entry Date": "21/01/26", "Symbol": "QQQ", "Type": "Put spread debit", "Strike": "604/608", "Break Even": " $ 606.68 ", "Expiry": "21/01/26", "Days to expiry": "Expired", "Contracts": "1.00", "legs": "2.00", "Entry Price": "$1.24", "Exit Price": "$0.00", "Exit Date": "21/01/26", "R": "$132.00", "Gross P&L": "-$124.00", "Fees": "$8.00", "Net P&L": "-$132.00", "Net P&L (%)": "-106.45%", "Status": "Closed", "strategy": "Hedge or Protection", "confidence level (1-5)": "4", "Emotion (Entry)": "FOMO, Overconfidence, Impulsive", "Emotion (Exite)": "Acceptance", "Mistakes": "Impulse Entry (FOMO)", "comments": "Hedging against declines due to Trump  tariffs and Greenland", "trade type": "Bear Put", "Days in Trade": "0"}, {"No.": "12", "Full name": "APLD JAN 23'26 37.5$ Buy Put", "Entry Date": "22/01/26", "Symbol": "APLD", "Type": "Put", "Strike": "37.5", "Break Even": " $ 37.17 ", "Expiry": "23/01/26", "Days to expiry": "Expired", "Contracts": "1.00", "legs": "1.00", "Entry Price": "$0.29", "Exit Price": "$0.58", "Exit Date": "23/01/26", "R": "$33.00", "Gross P&L": "$29.00", "Fees": "$4.00", "Net P&L": "$25.00", "Net P&L (%)": "86.21%", "Status": "Closed", "strategy": "Speculative Idea", "confidence level (1-5)": "3", "Emotion (Entry)": "Overconfidence, Curiosity", "Emotion (Exite)": "Discipline, Acceptance", "Mistakes": "No Mistake", "comments": "I entered the trade with the speculative thought that the stock would fall towards the end of the day due to the weekend.", "trade type": "Buy Put", "Days in Trade": "1"}, {"No.": "13", "Full name": "SLV MAR 20'26 101$ Sell Call", "Entry Date": "26/01/26", "Symbol": "SLV", "Type": "Call", "Strike": "101", "Break Even": " $ 114.17 ", "Expiry": "20/03/26", "Days to expiry": "Expired", "Contracts": "1.00", "legs": "1.00", "Entry Price": "-$13.13", "Exit Price": "-$11.89", "Exit Date": "27/01/26", "R": "$1,317.00", "Gross P&L": "$124.00", "Fees": "$4.00", "Net P&L": "$120.00", "Net P&L (%)": "9.14%", "Status": "Closed", "strategy": "Speculative Idea", "confidence level (1-5)": "4", "Emotion (Entry)": "Overconfidence, Curiosity", "Emotion (Exite)": "Fear, Acceptance", "Mistakes": "Oversized Position", "comments": "I entered the trade after a massive increase in the stock, thinking that the asset is volatile and need to correct.", "trade type": "Sell Call", "Days in Trade": "1"}, {"No.": "14", "Full name": "COIN JAN 30'26 215/222$ Bull Call", "Entry Date": "27/01/26", "Symbol": "COIN", "Type": "Call spread debit", "Strike": "215/222", "Break Even": " $ 217.14 ", "Expiry": "30/01/26", "Days to expiry": "Expired", "Contracts": "1.00", "legs": "2.00", "Entry Price": "$2.06", "Exit Price": "$0.00", "Exit Date": "30/01/26", "R": "$214.00", "Gross P&L": "-$206.00", "Fees": "$8.00", "Net P&L": "-$214.00", "Net P&L (%)": "-103.88%", "Status": "Closed", "strategy": "Technical Setup", "confidence level (1-5)": "2", "Emotion (Entry)": "Greed, Curiosity", "Emotion (Exite)": "Acceptance", "Mistakes": "Early Entry (No Confirmation)", "comments": "I entered the trade because RSI is at 30 but OBV is supportive, expecting to see a few days of gains towards EMA 20, end with hammer candle", "trade type": "Bull Call", "Days in Trade": "3"}, {"No.": "15", "Full name": "SLV AUG 21'26 90/120$ Bull Call", "Entry Date": "28/01/26", "Symbol": "SLV", "Type": "Call spread debit", "Strike": "90/120", "Break Even": " $ 110.25 ", "Expiry": "21/08/26", "Days to expiry": "Closed", "Contracts": "3.00", "legs": "2.00", "Entry Price": "$20.01", "Exit Price": "$20.02", "Exit Date": "28/01/26", "R": "$6,026.00", "Gross P&L": "$4.00", "Fees": "$24.00", "Net P&L": "-$20.00", "Net P&L (%)": "-0.33%", "Status": "Closed", "strategy": "no strategy", "confidence level (1-5)": "0", "Emotion (Entry)": "no emotion", "Emotion (Exite)": "no emotion", "Mistakes": "Execution Error (Fat Finger)", "comments": "Pure mistake, confusion between call and put", "trade type": "Bull Call", "Days in Trade": "0"}, {"No.": "16", "Full name": "SLV JAN 28'26 97.5/100$ Bear Put", "Entry Date": "28/01/26", "Symbol": "SLV", "Type": "Put spread debit", "Strike": "97.5/100", "Break Even": " $ 99.26 ", "Expiry": "28/01/26", "Days to expiry": "Expired", "Contracts": "1.00", "legs": "2.00", "Entry Price": "$0.66", "Exit Price": "$0.00", "Exit Date": "28/01/26", "R": "$74.00", "Gross P&L": "-$66.00", "Fees": "$8.00", "Net P&L": "-$74.00", "Net P&L (%)": "-112.12%", "Status": "Closed", "strategy": "Speculative Idea", "confidence level (1-5)": "4", "Emotion (Entry)": "FOMO, Overconfidence", "Emotion (Exite)": "Acceptance", "Mistakes": "No Valid Setup", "comments": "", "trade type": "Bear Put", "Days in Trade": "0"}, {"No.": "17", "Full name": "SLV FEB 11'26 175$ Sell Call", "Entry Date": "28/01/26", "Symbol": "SLV", "Type": "Call", "Strike": "175", "Break Even": " $ 175.29 ", "Expiry": "11/02/26", "Days to expiry": "Expired", "Contracts": "1.00", "legs": "1.00", "Entry Price": "-$0.27", "Exit Price": "$0.00", "Exit Date": "11/02/26", "R": "$29.00", "Gross P&L": "$27.00", "Fees": "$2.00", "Net P&L": "$25.00", "Net P&L (%)": "92.59%", "Status": "Closed", "strategy": "Volatility Play", "confidence level (1-5)": "5", "Emotion (Entry)": "Confidence", "Emotion (Exite)": "Patience", "Mistakes": "No Mistake", "comments": "I entered the trade because I think a 70% spread between the entry point and the strike is sufficient.", "trade type": "Sell Call", "Days in Trade": "14"}, {"No.": "18", "Full name": "SLV FEB 27'26 170$ Sell Call", "Entry Date": "28/01/26", "Symbol": "SLV", "Type": "Call", "Strike": "170", "Break Even": " $ 171.78 ", "Expiry": "27/02/26", "Days to expiry": "Expired", "Contracts": "1.00", "legs": "1.00", "Entry Price": "-$1.76", "Exit Price": "$0.00", "Exit Date": "27/02/26", "R": "$178.00", "Gross P&L": "$176.00", "Fees": "$2.00", "Net P&L": "$174.00", "Net P&L (%)": "98.86%", "Status": "Closed", "strategy": "Volatility Play", "confidence level (1-5)": "5", "Emotion (Entry)": "Confidence", "Emotion (Exite)": "Confidence", "Mistakes": "No Mistake", "comments": "I entered the trade because I think a 70% spread between the entry point and the strike is sufficient.", "trade type": "Sell Call", "Days in Trade": "30"}, {"No.": "19", "Full name": "SOFI FEB 13'26 25$ Buy Call", "Entry Date": "28/01/26", "Symbol": "SOFI", "Type": "Call", "Strike": "25", "Break Even": " $ 26.52 ", "Expiry": "13/02/26", "Days to expiry": "Expired", "Contracts": "2.00", "legs": "1.00", "Entry Price": "$1.48", "Exit Price": "$0.00", "Exit Date": "13/02/26", "R": "$300.00", "Gross P&L": "-$296.00", "Fees": "$4.00", "Net P&L": "-$300.00", "Net P&L (%)": "-101.35%", "Status": "Closed", "strategy": "Earnings Play", "confidence level (1-5)": "3", "Emotion (Entry)": "Curiosity", "Emotion (Exite)": "Acceptance", "Mistakes": "Early Entry (No Confirmation)", "comments": "I entered the trade to increase exposure to the stock ahead of the report.", "trade type": "Buy Call", "Days in Trade": "16"}, {"No.": "20", "Full name": "NVO FEB 27'26 62$ Buy Call", "Entry Date": "02/02/26", "Symbol": "NVO", "Type": "Call", "Strike": "62", "Break Even": " $ 64.03 ", "Expiry": "27/02/26", "Days to expiry": "Expired", "Contracts": "1.00", "legs": "1.00", "Entry Price": "$1.99", "Exit Price": "$0.32", "Exit Date": "03/02/26", "R": "$203.00", "Gross P&L": "-$167.00", "Fees": "$4.00", "Net P&L": "-$171.00", "Net P&L (%)": "-85.93%", "Status": "Closed", "strategy": "Earnings Play", "confidence level (1-5)": "4", "Emotion (Entry)": "Greed", "Emotion (Exite)": "frustrated, Acceptance", "Mistakes": "External Event (News)", "comments": "Published before the report that the company is stopping growth and then a 15% crash", "trade type": "Buy Call", "Days in Trade": "1"}, {"No.": "21", "Full name": "SOFI FEB 20'26 21$ Buy Call", "Entry Date": "05/02/26", "Symbol": "SOFI", "Type": "Call", "Strike": "21", "Break Even": " $ 21.92 ", "Expiry": "20/02/26", "Days to expiry": "Expired", "Contracts": "4.00", "legs": "1.00", "Entry Price": "$0.76", "Exit Price": "$0.98", "Exit Date": "09/02/26", "R": "$320.00", "Gross P&L": "$88.00", "Fees": "$16.00", "Net P&L": "$72.00", "Net P&L (%)": "23.68%", "Status": "Closed", "strategy": "Speculative Idea", "confidence level (1-5)": "3", "Emotion (Entry)": "Greed, Curiosity, Fear", "Emotion (Exite)": "Acceptance, Fear, Patience", "Mistakes": "No Mistake", "comments": "I entered the trade when RSI was below 30 after several days of strong declines, the stock did not rise so I exited 09/02/2026", "trade type": "Buy Call", "Days in Trade": "4"}, {"No.": "22", "Full name": "QQQ FEB 06'26 610$ Buy Put", "Entry Date": "06/02/26", "Symbol": "QQQ", "Type": "Put", "Strike": "610", "Break Even": " $ 609.70 ", "Expiry": "06/02/26", "Days to expiry": "Expired", "Contracts": "1.00", "legs": "1.00", "Entry Price": "$0.26", "Exit Price": "$0.69", "Exit Date": "06/02/26", "R": "$30.00", "Gross P&L": "$43.00", "Fees": "$4.00", "Net P&L": "$39.00", "Net P&L (%)": "150.00%", "Status": "Closed", "strategy": "no strategy", "confidence level (1-5)": "0", "Emotion (Entry)": "no emotion", "Emotion (Exite)": "no emotion", "Mistakes": "Execution Error (Fat Finger)", "comments": "I bought the deal by mistake when I wanted to buy the deal a row below I accidentally bought that one too", "trade type": "Buy Put", "Days in Trade": "0"}, {"No.": "23", "Full name": "QQQ FEB 09'26 609$ Buy Put", "Entry Date": "06/02/26", "Symbol": "QQQ", "Type": "Put", "Strike": "609", "Break Even": " $ 606.31 ", "Expiry": "09/02/26", "Days to expiry": "Expired", "Contracts": "1.00", "legs": "1.00", "Entry Price": "$2.65", "Exit Price": "$2.95", "Exit Date": "09/02/26", "R": "$269.00", "Gross P&L": "$30.00", "Fees": "$4.00", "Net P&L": "$26.00", "Net P&L (%)": "9.81%", "Status": "Closed", "strategy": "Hedge or Protection", "confidence level (1-5)": "3", "Emotion (Entry)": "Fear", "Emotion (Exite)": "Patience", "Mistakes": "No Mistake", "comments": "I bought the deal to hedge my investment portfolio against falls.", "trade type": "Buy Put", "Days in Trade": "3"}, {"No.": "24", "Full name": "QQQ FEB 10'26 614$ Buy Put", "Entry Date": "09/02/26", "Symbol": "QQQ", "Type": "Put", "Strike": "614", "Break Even": " $ 611.92 ", "Expiry": "10/02/26", "Days to expiry": "Expired", "Contracts": "1.00", "legs": "1.00", "Entry Price": "$2.04", "Exit Price": "$2.21", "Exit Date": "10/02/26", "R": "$208.00", "Gross P&L": "$17.00", "Fees": "$4.00", "Net P&L": "$13.00", "Net P&L (%)": "6.37%", "Status": "Closed", "strategy": "Hedge or Protection", "confidence level (1-5)": "2", "Emotion (Entry)": "Fear, Acceptance", "Emotion (Exite)": "Patience", "Mistakes": "No Mistake", "comments": "I entered into a trade to hedge a position against an idle rise in the market.", "trade type": "Buy Put", "Days in Trade": "1"}, {"No.": "25", "Full name": "CAT FEB 13'26 800$ Sell Call", "Entry Date": "11/02/26", "Symbol": "CAT", "Type": "Call", "Strike": "800", "Break Even": " $ 801.92 ", "Expiry": "13/02/26", "Days to expiry": "Expired", "Contracts": "1.00", "legs": "1.00", "Entry Price": "-$1.90", "Exit Price": "$0.00", "Exit Date": "13/02/26", "R": "$192.00", "Gross P&L": "$190.00", "Fees": "$2.00", "Net P&L": "$188.00", "Net P&L (%)": "98.95%", "Status": "Closed", "strategy": "Volatility Play", "confidence level (1-5)": "4", "Emotion (Entry)": "Patience, Confidence", "Emotion (Exite)": "Confidence", "Mistakes": "No Mistake", "comments": "RSI at 76 high after the stock is very stretched expiration time is near", "trade type": "Sell Call", "Days in Trade": "2"}, {"No.": "26", "Full name": "VRT FEB 20'26 270$ Sell Call", "Entry Date": "11/02/26", "Symbol": "VRT", "Type": "Call", "Strike": "270", "Break Even": " $ 272.70 ", "Expiry": "20/02/26", "Days to expiry": "Expired", "Contracts": "1.00", "legs": "1.00", "Entry Price": "-$2.66", "Exit Price": "-$0.48", "Exit Date": "18/02/26", "R": "$270.00", "Gross P&L": "$218.00", "Fees": "$4.00", "Net P&L": "$214.00", "Net P&L (%)": "80.45%", "Status": "Closed", "strategy": "Volatility Play", "confidence level (1-5)": "4", "Emotion (Entry)": "Patience, Confidence", "Emotion (Exite)": "Patience, Acceptance", "Mistakes": "No Mistake", "comments": "After a good report, the stock jumps 25%, the RSI rises to 77, a relatively short expiration time, the intention is to take money at 50%.", "trade type": "Sell Call", "Days in Trade": "7"}, {"No.": "27", "Full name": "AMZN FEB 20'26 200/205$ Bull Call", "Entry Date": "17/02/26", "Symbol": "AMZN", "Type": "Call spread debit", "Strike": "200/205", "Break Even": " $ 201.55 ", "Expiry": "20/02/26", "Days to expiry": "Expired", "Contracts": "1.00", "legs": "2.00", "Entry Price": "$1.47", "Exit Price": "$3.54", "Exit Date": "18/02/26", "R": "$155.00", "Gross P&L": "$207.00", "Fees": "$8.00", "Net P&L": "$199.00", "Net P&L (%)": "135.37%", "Status": "Closed", "strategy": "Technical Setup", "confidence level (1-5)": "2", "Emotion (Entry)": "Impulsive", "Emotion (Exite)": "Acceptance", "Mistakes": "Cut Winner Too Early", "comments": "I entered the trade because the RSI was low at 22.5 and the stock fell a lot. It may have been a mistake to take a small time interval of only 3 days.", "trade type": "Bull Call", "Days in Trade": "1"}, {"No.": "28", "Full name": "VIX FEB 24'26 21$ Buy Call", "Entry Date": "18/02/26", "Symbol": "VIX", "Type": "Call", "Strike": "21", "Break Even": " $ 21.83 ", "Expiry": "24/02/26", "Days to expiry": "Expired", "Contracts": "1.00", "legs": "1.00", "Entry Price": "$0.79", "Exit Price": "$1.35", "Exit Date": "19/02/26", "R": "$83.00", "Gross P&L": "$56.00", "Fees": "$4.00", "Net P&L": "$52.00", "Net P&L (%)": "65.82%", "Status": "Closed", "strategy": "Speculative Idea", "confidence level (1-5)": "2", "Emotion (Entry)": "Curiosity", "Emotion (Exite)": "Acceptance", "Mistakes": "No Mistake", "comments": "I entered the trade thinking there would be a development against Iran. - I exited because there were conflicting indications of an attack and the timing was uncertain. 19/02", "trade type": "Buy Call", "Days in Trade": "1"}, {"No.": "29", "Full name": "USO FEB 25'26 80$ Buy Call", "Entry Date": "18/02/26", "Symbol": "USO", "Type": "Call", "Strike": "80", "Break Even": " $ 81.77 ", "Expiry": "25/02/26", "Days to expiry": "Expired", "Contracts": "1.00", "legs": "1.00", "Entry Price": "$1.73", "Exit Price": "$2.49", "Exit Date": "19/02/26", "R": "$177.00", "Gross P&L": "$76.00", "Fees": "$4.00", "Net P&L": "$72.00", "Net P&L (%)": "41.62%", "Status": "Closed", "strategy": "Speculative Idea", "confidence level (1-5)": "2", "Emotion (Entry)": "Curiosity", "Emotion (Exite)": "Acceptance", "Mistakes": "No Mistake", "comments": "I entered the trade thinking there would be a development against Iran. I exited because there were conflicting indications of an attack and the timing was uncertain. 19/02", "trade type": "Buy Call", "Days in Trade": "1"}, {"No.": "30", "Full name": "ASTS MAR 06'26 80$ Buy Put", "Entry Date": "26/02/26", "Symbol": "ASTS", "Type": "Put", "Strike": "80", "Break Even": " $ 74.93 ", "Expiry": "06/03/26", "Days to expiry": "Expired", "Contracts": "1.00", "legs": "1.00", "Entry Price": "$5.05", "Exit Price": "$0.00", "Exit Date": "06/03/26", "R": "$507.00", "Gross P&L": "-$505.00", "Fees": "$2.00", "Net P&L": "-$507.00", "Net P&L (%)": "-100.40%", "Status": "Closed", "strategy": "Hedge or Protection", "confidence level (1-5)": "3", "Emotion (Entry)": "Confidence, Fear", "Emotion (Exite)": "Acceptance", "Mistakes": "No Mistake", "comments": "Hedging deal ahead of reports of fear of falling short of satellite launch schedules", "trade type": "Buy Put", "Days in Trade": "8"}, {"No.": "31", "Full name": "ACHC MAR 20'26 22.5$ Sell Call", "Entry Date": "04/03/26", "Symbol": "ACHC", "Type": "Call", "Strike": "22.5", "Break Even": " $ 24.66 ", "Expiry": "20/03/26", "Days to expiry": "Expired", "Contracts": "1.00", "legs": "1.00", "Entry Price": "-$2.12", "Exit Price": "-$0.35", "Exit Date": "20/03/26", "R": "$216.00", "Gross P&L": "$177.00", "Fees": "$4.00", "Net P&L": "$173.00", "Net P&L (%)": "81.60%", "Status": "Closed", "strategy": "Portfolio Income Strategy", "confidence level (1-5)": "4", "Emotion (Entry)": "Boredom, Confidence", "Emotion (Exite)": "Discipline, Patience", "Mistakes": "No Mistake", "comments": "I entered the trade to reduce some risk from the stock. RSI at 82.5. The goal is to exit with a 50% profit in the upcoming correction.", "trade type": "Sell Call", "Days in Trade": "16"}, {"No.": "32", "Full name": "ONDS MAR 20'26 10.5/12.5$ Bull Call", "Entry Date": "04/03/26", "Symbol": "ONDS", "Type": "Call spread debit", "Strike": "10.5/12.5", "Break Even": " $ 11.27 ", "Expiry": "20/03/26", "Days to expiry": "Expired", "Contracts": "1.00", "legs": "2.00", "Entry Price": "$0.73", "Exit Price": "$0.00", "Exit Date": "20/03/26", "R": "$77.00", "Gross P&L": "-$73.00", "Fees": "$4.00", "Net P&L": "-$77.00", "Net P&L (%)": "-105.48%", "Status": "Closed", "strategy": "Speculative Idea", "confidence level (1-5)": "3", "Emotion (Entry)": "Acceptance", "Emotion (Exite)": "Acceptance", "Mistakes": "Early Entry (No Confirmation)", "comments": "I entered the trade because of rising IBV versus static RSI in the middle of the company after many good messages that have not yet been responded to", "trade type": "Bull Call", "Days in Trade": "16"}, {"No.": "33", "Full name": "QQQ MAR 25'26 592$ Sell Call", "Entry Date": "25/03/26", "Symbol": "QQQ", "Type": "Call", "Strike": "592", "Break Even": " $ 592.70 ", "Expiry": "25/03/26", "Days to expiry": "Expired", "Contracts": "1.00", "legs": "1.00", "Entry Price": "-$0.68", "Exit Price": "$0.00", "Exit Date": "25/03/26", "R": "$70.00", "Gross P&L": "$68.00", "Fees": "$2.00", "Net P&L": "$66.00", "Net P&L (%)": "97.06%", "Status": "Closed", "strategy": "Speculative Idea", "confidence level (1-5)": "3", "Emotion (Entry)": "Boredom", "Emotion (Exite)": "Discipline", "Mistakes": "No Valid Setup", "comments": "I entered the trade with the speculative thought that the Nasdaq could not rise more than 1.4% after the Irish announced their exit from the deal.", "trade type": "Sell Call", "Days in Trade": "0"}, {"No.": "34", "Full name": "QQQ APR 17'26 170/180$ Bear Put", "Entry Date": "02/04/26", "Symbol": "QQQ", "Type": "Put spread debit", "Strike": "170/180", "Break Even": " $ 176.99 ", "Expiry": "17/04/26", "Days to expiry": "Closed", "Contracts": "1.00", "legs": "2.00", "Entry Price": "$2.93", "Exit Price": "$0.12", "Exit Date": "13/04/26", "R": "$301.00", "Gross P&L": "-$281.00", "Fees": "$8.00", "Net P&L": "-$289.00", "Net P&L (%)": "-98.63%", "Status": "Closed", "strategy": "Directional Bullish/Bearish", "confidence level (1-5)": "3", "Emotion (Entry)": "Boredom", "Emotion (Exite)": "Acceptance", "Mistakes": "Impulse Entry (FOMO)", "comments": "I entered the trade because oil is jumping and there is apparently no deal. In addition, volume is falling and RSI is rising.", "trade type": "Bear Put", "Days in Trade": "11"}, {"No.": "35", "Full name": "QQQ APR 08'26 590$ Buy Call", "Entry Date": "06/04/26", "Symbol": "QQQ", "Type": "Call", "Strike": "590", "Break Even": " $ 593.80 ", "Expiry": "08/04/26", "Days to expiry": "Expired", "Contracts": "1.00", "legs": "1.00", "Entry Price": "$3.76", "Exit Price": "$2.77", "Exit Date": "07/04/26", "R": "$380.00", "Gross P&L": "-$99.00", "Fees": "$4.00", "Net P&L": "-$103.00", "Net P&L (%)": "-27.39%", "Status": "Closed", "strategy": "Speculative Idea", "confidence level (1-5)": "3", "Emotion (Entry)": "FOMO", "Emotion (Exite)": "Acceptance, Confidence", "Mistakes": "Impulse Entry (FOMO)", "comments": "", "trade type": "Buy Call", "Days in Trade": "1"}, {"No.": "36", "Full name": "TQQQ APR 10'26 43.5$ Buy Call", "Entry Date": "07/04/26", "Symbol": "TQQQ", "Type": "Call", "Strike": "43.5", "Break Even": " $ 45.09 ", "Expiry": "10/04/26", "Days to expiry": "Expired", "Contracts": "1.00", "legs": "1.00", "Entry Price": "$1.55", "Exit Price": "$4.01", "Exit Date": "08/04/26", "R": "$159.00", "Gross P&L": "$246.00", "Fees": "$4.00", "Net P&L": "$242.00", "Net P&L (%)": "156.13%", "Status": "Closed", "strategy": "Speculative Idea", "confidence level (1-5)": "4", "Emotion (Entry)": "Curiosity", "Emotion (Exite)": "Acceptance", "Mistakes": "Impulse Entry (FOMO)", "comments": "", "trade type": "Buy Call", "Days in Trade": "1"}, {"No.": "37", "Full name": "QQQ APR 15'26 630/627$ Bull Call", "Entry Date": "14/04/26", "Symbol": "QQQ", "Type": "Call spread debit", "Strike": "630/627", "Break Even": " $ 630.61 ", "Expiry": "15/04/26", "Days to expiry": "Closed", "Contracts": "1.00", "legs": "2.00", "Entry Price": "-$0.53", "Exit Price": "-$1.44", "Exit Date": "14/04/26", "R": "$61.00", "Gross P&L": "-$91.00", "Fees": "$8.00", "Net P&L": "-$99.00", "Net P&L (%)": "-186.79%", "Status": "Closed", "strategy": "Volatility Play", "confidence level (1-5)": "3", "Emotion (Entry)": "Greed", "Emotion (Exite)": "frustrated", "Mistakes": "Impulse Entry (FOMO)", "comments": "entered the trade after 7 days up", "trade type": "Bull Call", "Days in Trade": "0"}];
 buildColUI();
-ingest(RAW_DATA,'All_Data.json');
+ingest(RAW_DATA,"All_Data.json");
 </script>
 </body>
 </html>
