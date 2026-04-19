@@ -28,6 +28,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--f);font-size:14px;
 .page{display:none;padding:24px;max-width:1200px;margin:0 auto;}.page.active{display:block;}
 .empty{text-align:center;padding:48px;color:var(--text3);font-family:var(--m);font-size:13px;line-height:2;}
 .mgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:20px;}
+.mgrid .mc:nth-child(5){margin-top:4px;}
 .mc{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;}
 .ml{font-size:11px;color:var(--text3);margin-bottom:4px;font-family:var(--m);text-transform:uppercase;letter-spacing:.5px;}
 .mv{font-size:21px;font-weight:500;font-family:var(--m);}.mv.pos{color:var(--green);}.mv.neg{color:var(--red);}
@@ -112,6 +113,20 @@ table.hm td.emp{background:var(--bg3);border:1px solid var(--border);}
 .cgr input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 8px;color:var(--text);font-family:var(--m);font-size:11px;outline:none;}
 .steps{font-size:12px;color:var(--text3);padding-left:18px;line-height:2.3;margin:8px 0;}
 .hint{background:var(--bg3);border-radius:var(--r);padding:10px 12px;font-family:var(--m);font-size:11px;color:var(--text3);word-break:break-all;margin-top:8px;}
+/* Streak tracker */
+.streak-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;margin-bottom:20px;}
+.streak-title{font-size:11px;color:var(--text3);font-family:var(--m);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;}
+.streak-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px;}
+.streak-card{background:var(--bg3);border-radius:var(--r);padding:12px 14px;}
+.streak-card-label{font-size:10px;color:var(--text3);font-family:var(--m);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
+.streak-card-val{font-size:22px;font-weight:500;font-family:var(--m);}
+.streak-card-sub{font-size:10px;color:var(--text3);margin-top:3px;}
+.streak-bar-wrap{margin-top:8px;}
+.streak-bar-label{font-size:10px;color:var(--text3);font-family:var(--m);margin-bottom:6px;}
+.streak-tiles{display:flex;flex-wrap:wrap;gap:3px;}
+.streak-tile{width:18px;height:18px;border-radius:3px;cursor:default;transition:transform .1s;}
+.streak-tile:hover{transform:scale(1.3);}
+
 </style>
 </head>
 <body>
@@ -147,6 +162,7 @@ table.hm td.emp{background:var(--bg3);border:1px solid var(--border);}
     <div class="mgrid" id="metrics"></div>
     <div id="expectancy-card"></div>
     <div class="cgrid"><div class="cc wide"><div class="ct">Cumulative Net P&L</div><div style="position:relative;height:160px"><canvas id="cumulChart"></canvas></div></div></div>
+    <div class="cgrid"><div class="cc wide"><div class="ct">Drawdown from Peak</div><div style="position:relative;height:140px"><canvas id="drawdownChart"></canvas></div></div></div>
     <div class="cgrid">
       <div class="cc"><div class="ct">P&L by Strategy</div><div style="position:relative;height:210px"><canvas id="stratChart"></canvas></div></div>
       <div class="cc"><div class="ct">P&L by Trade Type</div><div style="position:relative;height:210px"><canvas id="typeChart"></canvas></div></div>
@@ -154,6 +170,8 @@ table.hm td.emp{background:var(--bg3);border:1px solid var(--border);}
     <div class="cgrid">
       <div class="cc"><div class="ct">Mistakes Breakdown</div><div style="position:relative;height:220px"><canvas id="mistakeChart"></canvas></div></div>
       <div class="cc"><div class="ct">P&L by Symbol</div><div style="position:relative;height:220px"><canvas id="symChart"></canvas></div></div>
+    </div>
+    <div id="streak-section"></div>
     </div>
   </div>
 </div>
@@ -345,7 +363,7 @@ function loadFromJSON(){ingest(RAW_DATA,'All_Data.json');}
 function renderAll(){
   ['ov0','em0','cf0','pf0','gl0','lg0'].forEach(function(id){document.getElementById(id).style.display='none';});
   ['ov1','em1','cf1','pf1','gl1','lg1'].forEach(function(id){document.getElementById(id).style.display='block';});
-  renderOV();renderEM();renderConf();renderPerf();renderGoals();renderLog();
+  renderOV();renderEM();renderConf();renderPerf();renderGoals();renderLog();renderStreak();
 }
 
 function renderOV(){
@@ -356,11 +374,72 @@ function renderOV(){
   var best=trades.length?Math.max.apply(null,trades.map(function(t){return t.pnl;})):0,worst=trades.length?Math.min.apply(null,trades.map(function(t){return t.pnl;})):0;
   var rr=aL!==0?Math.abs(aW/aL).toFixed(2):'—';
   var exp=wins.length&&losses.length?(wr*aW)+((1-wr)*aL):0,expR=Math.round(exp*100)/100;
-  document.getElementById('metrics').innerHTML=[{l:'Net P&L',v:(total>=0?'+':'')+'$'+Math.round(total),c:total>=0?'pos':'neg',s:trades.length+' trades'},{l:'Win Rate',v:(wr*100).toFixed(1)+'%',c:'',s:wins.length+'W / '+losses.length+'L'},{l:'Avg Win / Loss',v:'$'+Math.round(aW)+' / $'+Math.round(aL),c:'',s:'R:R '+rr},{l:'Best / Worst',v:'$'+best,c:'pos',s:'worst: $'+worst}].map(function(m){return'<div class="mc"><div class="ml">'+m.l+'</div><div class="mv '+m.c+'">'+m.v+'</div><div class="msub">'+m.s+'</div></div>';}).join('');
-  var eC=expR>=0?G:R,eBg=expR>=0?'rgba(46,204,113,.06)':'rgba(231,76,60,.06)',eBd=expR>=0?'rgba(46,204,113,.35)':'rgba(231,76,60,.35)',eSign=expR>=0?'+':'',eLabel=expR>=50?'🔥 Strong edge':expR>=0?'✅ Positive edge':expR>=-20?'⚠️ Marginal negative':'❌ Negative edge';
-  document.getElementById('expectancy-card').innerHTML='<div style="background:'+eBg+';border:1px solid '+eBd+';border-radius:var(--r);padding:14px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;"><div><div style="font-size:11px;color:var(--text3);font-family:var(--m);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Expectancy per Trade</div><div style="font-size:28px;font-weight:500;font-family:var(--m);color:'+eC+';">'+eSign+'$'+Math.abs(expR).toFixed(2)+'</div></div><div style="font-size:12px;font-weight:500;color:'+eC+';font-family:var(--m);padding:6px 16px;border-radius:20px;border:1px solid '+eBd+';background:var(--bg2);">'+eLabel+'</div></div>';
+  // ── Max Drawdown ──
+  var runPeak=0,maxDrawdownPct=0,maxDrawdownDollar=0,runCum2=0;
+  trades.forEach(function(t){runCum2+=t.pnl;if(runCum2>runPeak)runPeak=runCum2;var dd=runPeak>0?((runCum2-runPeak)/runPeak*100):0;if(dd<maxDrawdownPct){maxDrawdownPct=dd;maxDrawdownDollar=runCum2-runPeak;}});
+
+  // ── Profit Factor (Gross) ──
+  var grossWins=0,grossLosses=0;
+  trades.forEach(function(t){var g=pm(t.grossPnl);if(g>0)grossWins+=g;else if(g<0)grossLosses+=Math.abs(g);});
+  var pf=grossLosses>0?Math.round(grossWins/grossLosses*100)/100:grossWins>0?999:0;
+  var pfLabel=pf>=2?'🔥 Excellent':pf>=1.5?'✅ Good':pf>=1?'⚠️ Marginal':'❌ Losing';
+  var pfColor=pf>=1.5?G:pf>=1?AM:R;
+
+  // ── Expectancy ──
+  var eC=expR>=0?G:R,eSign=expR>=0?'+':'';
+  var eLabel=expR>=50?'🔥 Strong edge':expR>=0?'✅ Positive edge':expR>=-20?'⚠️ Marginal negative':'❌ Negative edge';
+
+  // ── Best & Worst trade ──
+  var bestIdx=0,worstIdx=0;
+  trades.forEach(function(t,i){if(t.pnl>trades[bestIdx].pnl)bestIdx=i;if(t.pnl<trades[worstIdx].pnl)worstIdx=i;});
+  var bestT=trades[bestIdx],worstT=trades[worstIdx];
+  function tradeSub(t,i){return '#'+(i+1)+' | '+t.symbol+' | '+fmtDate(t.exitDate);}
+
+  // ── Row 1: Performance ──
+  var row1=[
+    {l:'Net P&L',v:(total>=0?'+':'')+'$'+Math.round(total),c:total>=0?'pos':'neg',s:trades.length+' trades'},
+    {l:'Win Rate',v:(wr*100).toFixed(1)+'%',c:'',s:wins.length+'W / '+losses.length+'L'},
+    {l:'Profit Factor',v:pf===999?'∞':pf.toFixed(2),c:pf>=1.5?'pos':pf>=1?'':'neg',s:pfLabel,sc:pfColor},
+    {l:'Max Drawdown',v:Math.round(maxDrawdownPct)+'%',c:'neg',s:'$'+Math.round(maxDrawdownDollar)+' from peak'}
+  ];
+  // ── Row 2: Edge & Risk ──
+  var row2=[
+    {l:'Expectancy',v:eSign+'$'+Math.abs(expR).toFixed(2),c:expR>=0?'pos':'neg',s:eLabel,sc:eC},
+    {l:'Avg Win / Avg Loss',v:'$'+Math.round(aW)+' / -$'+Math.round(Math.abs(aL)),c:'',s:'R:R '+rr},
+    {l:'Best Win',v:'+$'+bestT.pnl,c:'pos',s:tradeSub(bestT,bestIdx)},
+    {l:'Worst Loss',v:'$'+worstT.pnl,c:'neg',s:tradeSub(worstT,worstIdx)}
+  ];
+
+  function mcHtml(m){
+    var valStyle=m.sc?'color:'+m.sc+';':'';
+    return'<div class="mc"><div class="ml">'+m.l+'</div><div class="mv" style="'+valStyle+'">'+m.v+'</div><div class="msub">'+m.s+'</div></div>';
+  }
+  document.getElementById('metrics').innerHTML=row1.map(mcHtml).join('')+row2.map(mcHtml).join('');
+  document.getElementById('expectancy-card').innerHTML='';
   var cum=0,cL=[],cD=[],cN=[];trades.forEach(function(t,i){cum+=t.pnl;cL.push('#'+(i+1));cD.push(Math.round(cum));cN.push(t.name);});
   dc('cum');CX.cum=new Chart(document.getElementById('cumulChart'),{type:'line',data:{labels:cL,datasets:[{data:cD,fill:true,borderColor:cum>=0?G:R,backgroundColor:cum>=0?'rgba(46,204,113,.07)':'rgba(231,76,60,.07)',borderWidth:2,pointRadius:4,pointHoverRadius:7,tension:.3}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{title:function(items){return cN[items[0].dataIndex];},label:function(c){var tp=trades[c.dataIndex].pnl;return'Trade P&L: '+(tp>=0?'+':'')+'$'+tp+'   |   Cumulative: $'+c.raw;}}}},scales:{x:{ticks:{color:TC,font:{size:10},maxTicksLimit:15},grid:{color:GC}},y:{ticks:{color:TC,callback:function(v){return'$'+v;}},grid:{color:GC}}}}});
+
+  // ── Drawdown chart ──
+  var ddData=[],peak=0,maxDD=0,maxDDIdx=0;
+  cD.forEach(function(v,i){if(v>peak)peak=v;var dd=peak>0?Math.round((v-peak)/peak*100):v-peak;if(dd<maxDD){maxDD=dd;maxDDIdx=i;}ddData.push(dd);});
+  // Color each segment: red when in drawdown, green when at peak
+  var ddColors=ddData.map(function(v){return v<0?'rgba(231,76,60,.7)':'rgba(46,204,113,.5)';});
+  dc('dd');CX.dd=new Chart(document.getElementById('drawdownChart'),{
+    type:'bar',
+    data:{labels:cL,datasets:[{data:ddData,backgroundColor:ddColors,borderRadius:2,barPercentage:.95}]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},tooltip:{callbacks:{
+        title:function(items){return cN[items[0].dataIndex];},
+        label:function(c){return'Drawdown: '+c.raw+'%'+(c.raw===0?' (at peak)':'');},
+        afterLabel:function(c){return'Cumulative P&L: $'+cD[c.dataIndex];}
+      }}},
+      scales:{
+        x:{ticks:{color:TC,font:{size:10},maxTicksLimit:15},grid:{color:GC}},
+        y:{max:0,ticks:{color:TC,callback:function(v){return v+'%';}},grid:{color:GC}}
+      }
+    }
+  });
+
   function hbar(id,fn){var m={};trades.forEach(function(t){var k=fn(t);m[k]=(m[k]||0)+t.pnl;});var s=Object.entries(m).sort(function(a,b){return b[1]-a[1];});dc(id);CX[id]=new Chart(document.getElementById(id),{type:'bar',data:{labels:s.map(function(x){return x[0];}),datasets:[{data:s.map(function(x){return Math.round(x[1]);}),backgroundColor:s.map(function(x){return bc(x[1]);}),borderRadius:3}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return'$'+c.raw;}}}},scales:{x:{ticks:{color:TC,callback:function(v){return'$'+v;}},grid:{color:GC}},y:{ticks:{color:'#8891a4',font:{size:10}}}}}});}
   hbar('stratChart',function(t){return t.strategy;});hbar('typeChart',function(t){return t.type;});
   var sym={};trades.forEach(function(t){sym[t.symbol]=(sym[t.symbol]||0)+t.pnl;});var ss=Object.entries(sym).sort(function(a,b){return b[1]-a[1];});
@@ -516,6 +595,22 @@ function renderLogT(){
   document.getElementById('tlog').innerHTML=rows.map(function(t,i){var p=t.pnl>=0,hasNote=t.comments&&t.comments.trim(),te=t.timeEff!==null?'<div class="ts">⏱ '+t.timeEff+'% time used</div>':'',ni=hasNote?'<span style="font-size:9px;color:var(--blue);margin-left:4px;" title="Has notes">💬</span>':'';return'<div class="trow" onclick="onRowClick('+i+')" id="trow-'+i+'"><div><div class="tn">'+t.name+ni+'</div><div class="ts">'+t.strategy+' · '+t.mistakes+'</div>'+te+'</div><div style="color:var(--text2);font-size:11px">'+t.strategy+'</div><div>'+semo(t.entry).map(etag).join('')+'</div><div>'+semo(t.exit).map(etag).join('')+'</div><div style="color:var(--text3)">'+t.days+'d</div><div class="'+(p?'pp':'np')+'">'+(p?'+':'')+'$'+t.pnl+'</div><div class="'+(p?'pp':'np')+'">'+t.pct.toFixed(1)+'%</div></div>';}).join('');
 }
 
+function renderStreak(){
+  if(!trades.length)return;
+  var results=trades.map(function(t){return t.pnl>0?'W':'L';});
+  var curType=results[results.length-1],curLen=0;
+  for(var i=results.length-1;i>=0;i--){if(results[i]===curType)curLen++;else break;}
+  var maxW=0,runW=0;results.forEach(function(r){if(r==='W'){runW++;maxW=Math.max(maxW,runW);}else runW=0;});
+  var maxL=0,runL=0;results.forEach(function(r){if(r==='L'){runL++;maxL=Math.max(maxL,runL);}else runL=0;});
+  var wStreaks=[],lStreaks=[],wRun=0,lRun=0;
+  results.forEach(function(r){if(r==='W'){wRun++;if(lRun>0){lStreaks.push(lRun);lRun=0;}}else{lRun++;if(wRun>0){wStreaks.push(wRun);wRun=0;}}});
+  if(wRun>0)wStreaks.push(wRun);if(lRun>0)lStreaks.push(lRun);
+  var avgWS=wStreaks.length?Math.round(wStreaks.reduce(function(a,b){return a+b;},0)/wStreaks.length*10)/10:0;
+  var avgLS=lStreaks.length?Math.round(lStreaks.reduce(function(a,b){return a+b;},0)/lStreaks.length*10)/10:0;
+  var curColor=curType==='W'?G:R,curLabel=curType==='W'?'🔥 Win Streak':'❄️ Loss Streak';
+  var tiles=results.map(function(r,i){var t=trades[i];var col=r==='W'?G:R;return'<div class="streak-tile" style="background:'+col+';opacity:'+(r==='W'?'0.85':'0.7')+'" title="'+t.name+' | '+(t.pnl>=0?'+':'')+'$'+t.pnl+'"></div>';}).join('');
+  document.getElementById('streak-section').innerHTML='<div class="streak-wrap"><div class="streak-title">Streak Tracker</div><div class="streak-cards"><div class="streak-card" style="border-left:3px solid '+curColor+';"><div class="streak-card-label">Current Streak</div><div class="streak-card-val" style="color:'+curColor+';">'+curLen+(curType==='W'?'W':'L')+'</div><div class="streak-card-sub">'+curLabel+'</div></div><div class="streak-card" style="border-left:3px solid '+G+';"><div class="streak-card-label">Longest Win Streak</div><div class="streak-card-val" style="color:'+G+';">'+maxW+'W</div><div class="streak-card-sub">avg '+avgWS+' per run</div></div><div class="streak-card" style="border-left:3px solid '+R+';"><div class="streak-card-label">Longest Loss Streak</div><div class="streak-card-val" style="color:'+R+';">'+maxL+'L</div><div class="streak-card-sub">avg '+avgLS+' per run</div></div><div class="streak-card" style="border-left:3px solid '+B+';"><div class="streak-card-label">Win / Loss Runs</div><div class="streak-card-val" style="color:'+B+';">'+wStreaks.length+' / '+lStreaks.length+'</div><div class="streak-card-sub">total streaks</div></div></div><div class="streak-bar-wrap"><div class="streak-bar-label">Trade sequence — hover for details</div><div class="streak-tiles">'+tiles+'</div></div></div>';
+}
 var TABS=['overview','emotions','confidence','perf','goals','log','settings'];
 function sw(n){document.querySelectorAll('.tab').forEach(function(t,i){t.classList.toggle('active',TABS[i]===n);});document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});document.getElementById('page-'+n).classList.add('active');}
 function loadFromJSON(){ingest(RAW_DATA,'All_Data.json');}
