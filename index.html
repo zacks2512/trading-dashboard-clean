@@ -48,7 +48,8 @@ table.hm td.cell{width:82px;height:46px;border-radius:5px;text-align:center;vert
 table.hm td.emp{background:var(--bg3);border:1px solid var(--border);}
 .ca{font-size:12px;font-weight:500;}.cn{font-size:9px;opacity:.65;margin-top:1px;}
 .igrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
-.ins{padding:10px 14px;border-radius:var(--r);font-size:12px;line-height:1.5;display:flex;gap:8px;}
+.ins{padding:10px 14px;border-radius:var(--r);font-size:12px;line-height:1.6;display:flex;gap:8px;}
+.ins b{color:var(--text);font-weight:600;}
 .ins.pos{background:var(--gdim);border-left:2px solid var(--green);}
 .ins.neg{background:var(--rdim);border-left:2px solid var(--red);}
 .ins.neu{background:var(--bdim);border-left:2px solid var(--blue);}
@@ -510,13 +511,82 @@ function buildHM(eM){
   document.getElementById('heatmap').innerHTML=h+'</tbody></table>';
 }
 function buildIns(eM,xM){
-  var cT=trades.filter(function(t){return semo(t.entry).indexOf('Confidence')>=0;});var cWR=cT.length?Math.round(cT.filter(function(t){return t.pnl>0;}).length/cT.length*100):0;
-  var fT=trades.filter(function(t){return semo(t.entry).some(function(e){return['FOMO','Overconfidence','Impulsive'].indexOf(e)>=0;});});var fTot=Math.round(fT.reduce(function(a,t){return a+t.pnl;},0));
-  var gT=trades.filter(function(t){return semo(t.entry).indexOf('Greed')>=0;});var gWR=gT.length?Math.round(gT.filter(function(t){return t.pnl>0;}).length/gT.length*100):0;
-  var pT=trades.filter(function(t){return semo(t.entry).indexOf('Patience')>=0;});var pA=pT.length?Math.round(avg(pT.map(function(t){return t.pnl;}))):0;
-  var dT=trades.filter(function(t){return semo(t.exit).indexOf('Discipline')>=0;});var dWR=dT.length?Math.round(dT.filter(function(t){return t.pnl>0;}).length/dT.length*100):0;
-  var nM=trades.filter(function(t){return t.mistakes==='No Mistake';});var nWR=nM.length?Math.round(nM.filter(function(t){return t.pnl>0;}).length/nM.length*100):0;
-  document.getElementById('insights').innerHTML=[{c:'pos',i:'↑',t:'Confidence on entry: '+cWR+'% win rate — your best emotion'},{c:'pos',i:'↑',t:'Patience on entry: avg $'+pA+' — always wait for the setup'},{c:fTot<0?'neg':'pos',i:fTot<0?'↓':'→',t:'FOMO + Overconfidence + Impulsive: total '+(fTot<0?'':'+')+'$'+fTot+' — consider skipping these'},{c:'neg',i:'↓',t:'Greed on entry: '+gWR+'% win rate — correlated with early entries'},{c:'pos',i:'↑',t:'Discipline on exit: '+dWR+'% win rate — having an exit plan improves results'},{c:'neu',i:'→',t:'No mistakes: '+nWR+'% win rate — emotion management directly impacts performance'}].map(function(x){return'<div class="ins '+x.c+'"><span style="font-weight:500">'+x.i+'</span>&nbsp;<span>'+x.t+'</span></div>';}).join('');
+  var overallWR=trades.length?trades.filter(function(t){return t.pnl>0;}).length/trades.length*100:0;
+  var overallAvg=trades.length?avg(trades.map(function(t){return t.pnl;})):0;
+  var insights=[];
+
+  // ── 1. Best entry emotion vs baseline (min 3 trades) ──
+  var emList=Object.entries(eM).filter(function(e){return e[1].pnls.length>=3;});
+  if(emList.length){
+    var bestEmo=emList.reduce(function(b,e){return(e[1].wins/e[1].pnls.length)>(b[1].wins/b[1].pnls.length)?e:b;});
+    var bestWR=Math.round(bestEmo[1].wins/bestEmo[1].pnls.length*100);
+    var bestDelta=Math.round(bestWR-overallWR);
+    insights.push({c:'pos',i:'↑',t:'<b>'+bestEmo[0]+'</b> is your best entry emotion — '+bestWR+'% win rate, '+(bestDelta>=0?'+':'')+bestDelta+'% vs your '+Math.round(overallWR)+'% average ('+bestEmo[1].pnls.length+' trades)'});
+  }
+
+  // ── 2. Worst entry emotion vs baseline (min 3 trades) ──
+  if(emList.length){
+    var worstEmo=emList.reduce(function(b,e){return(e[1].wins/e[1].pnls.length)<(b[1].wins/b[1].pnls.length)?e:b;});
+    var worstWR=Math.round(worstEmo[1].wins/worstEmo[1].pnls.length*100);
+    var worstDelta=Math.round(worstWR-overallWR);
+    insights.push({c:'neg',i:'↓',t:'<b>'+worstEmo[0]+'</b> is your worst entry emotion — '+worstWR+'% win rate, '+(worstDelta>=0?'+':'')+worstDelta+'% vs your average. Consider skipping trades when feeling this way'});
+  }
+
+  // ── 3. Most expensive mistake ──
+  var mkMap={};
+  trades.forEach(function(t){if(t.mistakes&&t.mistakes!=='No Mistake'){if(!mkMap[t.mistakes])mkMap[t.mistakes]={total:0,n:0};mkMap[t.mistakes].total+=t.pnl;mkMap[t.mistakes].n++;}});
+  var mkList=Object.entries(mkMap).filter(function(e){return e[1].n>=2;});
+  if(mkList.length){
+    var worstMk=mkList.reduce(function(b,e){return e[1].total<b[1].total?e:b;});
+    insights.push({c:'neg',i:'↓',t:'<b>'+worstMk[0]+'</b> is your most expensive mistake — $'+Math.round(worstMk[1].total)+' total P&L damage across '+worstMk[1].n+' trades (avg $'+Math.round(worstMk[1].total/worstMk[1].n)+' per occurrence)'});
+  }
+
+  // ── 4. Surprise insight — expected bad emotion that outperforms, or expected good that underperforms ──
+  var EXPECTED_BAD=['FOMO','Greed','Stress','Overconfidence','Impulsive','Fear','Boredom'];
+  var EXPECTED_GOOD=['Confidence','Patience','Discipline','Curiosity','Acceptance'];
+  var surprises=[];
+  emList.forEach(function(e){
+    var wr=e[1].wins/e[1].pnls.length*100;
+    var avgP=avg(e[1].pnls);
+    if(EXPECTED_BAD.indexOf(e[0])>=0&&wr>overallWR+10){
+      surprises.push({c:'neu',i:'→',t:'Surprise: <b>'+e[0]+'</b> (usually a bad sign) actually gives you '+Math.round(wr)+'% win rate — '+(Math.round(wr-overallWR))+' pts above average. Worth investigating why'});
+    }
+    if(EXPECTED_GOOD.indexOf(e[0])>=0&&wr<overallWR-10){
+      surprises.push({c:'neu',i:'→',t:'Surprise: <b>'+e[0]+'</b> (usually a good sign) is underperforming at '+Math.round(wr)+'% win rate — '+(Math.round(overallWR-wr))+' pts below your average'});
+    }
+  });
+  if(surprises.length)insights.push(surprises[0]);
+
+  // ── 5. Best exit emotion ──
+  var xmList=Object.entries(xM).filter(function(e){return e[1].pnls.length>=3;});
+  if(xmList.length){
+    var bestExit=xmList.reduce(function(b,e){return avg(e[1].pnls)>avg(b[1].pnls)?e:b;});
+    var bestExitAvg=Math.round(avg(bestExit[1].pnls));
+    var worstExit=xmList.reduce(function(b,e){return avg(e[1].pnls)<avg(b[1].pnls)?e:b;});
+    var worstExitAvg=Math.round(avg(worstExit[1].pnls));
+    insights.push({c:'pos',i:'↑',t:'Best exit emotion: <b>'+bestExit[0]+'</b> (avg $'+(bestExitAvg>=0?'+':'')+bestExitAvg+') vs worst: <b>'+worstExit[0]+'</b> (avg $'+worstExitAvg+'). Your exit discipline matters as much as entry'});
+  }
+
+  // ── 6. Volume warning — most traded emotion that's unprofitable ──
+  var volumeWarning=null;
+  var sortedByVolume=emList.slice().sort(function(a,b){return b[1].pnls.length-a[1].pnls.length;});
+  for(var i=0;i<sortedByVolume.length;i++){
+    var e=sortedByVolume[i];var wr=e[1].wins/e[1].pnls.length*100;var tot=e[1].pnls.reduce(function(a,b){return a+b;},0);
+    if(wr<overallWR&&tot<0){
+      volumeWarning={c:'neg',i:'↓',t:'Volume alert: <b>'+e[0]+'</b> is your most common entry emotion ('+e[1].pnls.length+' trades) but is unprofitable — '+Math.round(wr)+'% WR, $'+Math.round(tot)+' total. High frequency + negative edge is a compounding problem'};
+      break;
+    }
+  }
+  if(volumeWarning)insights.push(volumeWarning);
+
+  // ── Fallback if not enough data ──
+  if(!insights.length){
+    insights.push({c:'neu',i:'→',t:'Not enough data yet for dynamic insights. Keep logging trades with emotions filled in.'});
+  }
+
+  document.getElementById('insights').innerHTML=insights.map(function(x){
+    return'<div class="ins '+x.c+'"><span style="font-weight:500;font-size:15px;line-height:1;">'+x.i+'</span>&nbsp;<span>'+x.t+'</span></div>';
+  }).join('');
 }
 
 function renderDOW(){
@@ -611,7 +681,7 @@ function renderConf(){
   dc('confScatter');if(scData.length){CX.confScatter=new Chart(document.getElementById('confScatter'),{type:'scatter',data:{datasets:[{data:scData,backgroundColor:scData.map(function(p){return p.y>=0?'rgba(46,204,113,.7)':'rgba(231,76,60,.7)';}),pointRadius:6,pointHoverRadius:9}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.raw.label;},afterLabel:function(c){return'Confidence: '+'★'.repeat(c.raw.x)+'  |  P&L: $'+c.raw.y;}}}},scales:{x:{title:{display:true,text:'Confidence Level',color:TC},min:0.5,max:5.5,ticks:{color:TC,stepSize:1,callback:function(v){return Number.isInteger(v)?'★'.repeat(v):''}},grid:{color:GC}},y:{title:{display:true,text:'Net P&L ($)',color:TC},ticks:{color:TC,callback:function(v){return'$'+v;}},grid:{color:GC}}}}});}
 }
 
-function groupByPeriod(fn){var m={};trades.forEach(function(t){var d=t.entryDate||t.exitDate;if(!d)return;var k=fn(d);if(!m[k])m[k]={pnl:0,wins:0,total:0};m[k].pnl+=t.pnl;m[k].total++;if(t.pnl>0)m[k].wins++;});return m;}
+function groupByPeriod(fn){var m={};trades.forEach(function(t){var d=t.exitDate||t.entryDate;if(!d)return;var k=fn(d);if(!m[k])m[k]={pnl:0,wins:0,total:0};m[k].pnl+=t.pnl;m[k].total++;if(t.pnl>0)m[k].wins++;});return m;}
 function setPeriod(p){perfPeriod=p;document.getElementById('tog-monthly').className='btn sm'+(p==='monthly'?' active-tog':'');document.getElementById('tog-weekly').className='btn sm'+(p==='weekly'?' active-tog':'');renderPerf();}
 function renderPerf(){
   var fn=perfPeriod==='monthly'?fmtMonth:fmtWeek;var m=groupByPeriod(fn);var keys=Object.keys(m).sort();if(!keys.length)return;
@@ -622,7 +692,7 @@ function renderPerf(){
   if(keys.length>=2){cA.value=pA&&m[pA]?pA:keys[keys.length-2];cB.value=pB&&m[pB]?pB:keys[keys.length-1];}
   var labels=keys.map(dK),pnls=keys.map(function(k){return Math.round(m[k].pnl);}),wrs=keys.map(function(k){return m[k].total?Math.round(m[k].wins/m[k].total*100):0;}),counts=keys.map(function(k){return m[k].total;});
   dc('perfPnl');CX.perfPnl=new Chart(document.getElementById('perfPnl'),{type:'bar',data:{labels:labels,datasets:[{data:pnls,backgroundColor:pnls.map(bc),borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return'$'+c.raw;}}}},scales:{x:{ticks:{color:TC,font:{size:10}}},y:{ticks:{color:TC,callback:function(v){return'$'+v;}},grid:{color:GC}}}}});
-  dc('perfWR');CX.perfWR=new Chart(document.getElementById('perfWR'),{type:'line',data:{labels:labels,datasets:[{data:wrs,borderColor:B,backgroundColor:'rgba(52,152,219,.08)',fill:true,borderWidth:2,pointRadius:4,pointBackgroundColor:B,tension:.3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.raw+'%';}}}},scales:{x:{ticks:{color:TC,font:{size:10}}},y:{min:0,max:100,ticks:{color:TC,callback:function(v){return v+'%';}},grid:{color:GC}}}}});
+  dc('perfWR');CX.perfWR=new Chart(document.getElementById('perfWR'),{type:'line',data:{labels:labels,datasets:[{data:wrs,borderColor:B,backgroundColor:'rgba(52,152,219,.08)',fill:true,borderWidth:2,pointRadius:4,pointBackgroundColor:B,tension:.3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.raw+'%';},afterLabel:function(c){return counts[c.dataIndex]+' trades';}}}},scales:{x:{ticks:{color:TC,font:{size:10}}},y:{min:0,max:100,ticks:{color:TC,callback:function(v){return v+'%';}},grid:{color:GC}}}}});
   dc('perfCount');CX.perfCount=new Chart(document.getElementById('perfCount'),{type:'bar',data:{labels:labels,datasets:[{data:counts,backgroundColor:'rgba(52,152,219,.6)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:TC,font:{size:10}}},y:{ticks:{color:TC},grid:{color:GC}}}}});
   var scData=trades.filter(function(t){return t.timeEff!==null;}).map(function(t){return{x:t.timeEff,y:t.pnl,label:t.symbol};});
   dc('perfScatter');if(scData.length){CX.perfScatter=new Chart(document.getElementById('perfScatter'),{type:'scatter',data:{datasets:[{data:scData,backgroundColor:scData.map(function(p){return p.y>=0?'rgba(46,204,113,.7)':'rgba(231,76,60,.7)';}),pointRadius:6,pointHoverRadius:8}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.raw.label+': '+c.raw.x+'% time | $'+c.raw.y;}}}},scales:{x:{title:{display:true,text:'% Time Used',color:TC},min:0,max:100,ticks:{color:TC,callback:function(v){return v+'%';}},grid:{color:GC}},y:{title:{display:true,text:'Net P&L',color:TC},ticks:{color:TC,callback:function(v){return'$'+v;}},grid:{color:GC}}}}});}
@@ -640,8 +710,8 @@ document.addEventListener('change',function(e){if(e.target.id==='cmp-a'||e.targe
 function renderGoals(){
   var gP=parseFloat(document.getElementById('g-monthly-pnl').value)||500,gWR=parseFloat(document.getElementById('g-wr').value)||60,gML=parseFloat(document.getElementById('g-max-loss').value)||200,gA=parseFloat(document.getElementById('g-annual-pnl').value)||6000,gRR=parseFloat(document.getElementById('g-rr').value)||1.5;
   var now=new Date(),curM=now.getFullYear()+'-'+(now.getMonth()+1);
-  var mT=trades.filter(function(t){var d=t.entryDate||t.exitDate;return d&&fmtMonth(d)===curM;});
-  if(!mT.length){var gm=groupByPeriod(fmtMonth);var gk=Object.keys(gm).sort();if(gk.length){var lM=gk[gk.length-1];mT=trades.filter(function(t){var d=t.entryDate||t.exitDate;return d&&fmtMonth(d)===lM;});}}
+  var mT=trades.filter(function(t){var d=t.exitDate||t.entryDate;return d&&fmtMonth(d)===curM;});
+  if(!mT.length){var gm=groupByPeriod(fmtMonth);var gk=Object.keys(gm).sort();if(gk.length){var lM=gk[gk.length-1];mT=trades.filter(function(t){var d=t.exitDate||t.entryDate;return d&&fmtMonth(d)===lM;})}}
   var mPnl=mT.reduce(function(a,t){return a+t.pnl;},0),mW=mT.filter(function(t){return t.pnl>0;}),mWR=mT.length?Math.round(mW.length/mT.length*100):0,bL=mT.filter(function(t){return t.pnl<-gML;});
   var tPnl=trades.reduce(function(a,t){return a+t.pnl;},0),aW=trades.filter(function(t){return t.pnl>0;}),aL=trades.filter(function(t){return t.pnl<0;}),aWR=trades.length?Math.round(aW.length/trades.length*100):0;
   var avgW=aW.length?avg(aW.map(function(t){return t.pnl;})):0,avgL=aL.length?avg(aL.map(function(t){return Math.abs(t.pnl);})):0,rr=avgL?Math.round(avgW/avgL*100)/100:0;
