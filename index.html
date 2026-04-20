@@ -246,8 +246,17 @@ table.hm td.emp{background:var(--bg3);border:1px solid var(--border);}
       <div class="cc"><div class="ct">Win Rate by Period</div><div style="position:relative;height:220px"><canvas id="perfWR"></canvas></div></div>
     </div>
     <div class="cgrid">
-      <div class="cc"><div class="ct">Trade Count by Period</div><div style="position:relative;height:200px"><canvas id="perfCount"></canvas></div></div>
-      <div class="cc"><div class="ct">Time Efficiency — % Time Used vs P&L</div><div style="position:relative;height:200px"><canvas id="perfScatter"></canvas></div></div>
+      <div class="cc"><div class="ct">Strategy Mix by Period</div><div style="position:relative;height:220px"><canvas id="stratMix"></canvas></div></div>
+      <div class="cc"><div class="ct">Trade Count by Period</div><div style="position:relative;height:220px"><canvas id="perfCount"></canvas></div></div>
+    </div>
+    <div class="stt" style="margin-top:4px;">Time Efficiency Analysis</div>
+    <div id="te-cards" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px;"></div>
+    <div class="cc wide" style="margin-bottom:20px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+        <div class="ct" style="margin-bottom:0;">% Time Used vs P&L — by Strategy</div>
+        <div id="te-legend" style="display:flex;gap:10px;flex-wrap:wrap;font-size:10px;font-family:var(--m);color:var(--text3);"></div>
+      </div>
+      <div style="position:relative;height:320px"><canvas id="perfScatter"></canvas></div>
     </div>
     <div class="stt">Period Comparison</div>
     <div class="comp-grid" id="compCards"></div>
@@ -694,8 +703,136 @@ function renderPerf(){
   dc('perfPnl');CX.perfPnl=new Chart(document.getElementById('perfPnl'),{type:'bar',data:{labels:labels,datasets:[{data:pnls,backgroundColor:pnls.map(bc),borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return'$'+c.raw;}}}},scales:{x:{ticks:{color:TC,font:{size:10}}},y:{ticks:{color:TC,callback:function(v){return'$'+v;}},grid:{color:GC}}}}});
   dc('perfWR');CX.perfWR=new Chart(document.getElementById('perfWR'),{type:'line',data:{labels:labels,datasets:[{data:wrs,borderColor:B,backgroundColor:'rgba(52,152,219,.08)',fill:true,borderWidth:2,pointRadius:4,pointBackgroundColor:B,tension:.3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.raw+'%';},afterLabel:function(c){return counts[c.dataIndex]+' trades';}}}},scales:{x:{ticks:{color:TC,font:{size:10}}},y:{min:0,max:100,ticks:{color:TC,callback:function(v){return v+'%';}},grid:{color:GC}}}}});
   dc('perfCount');CX.perfCount=new Chart(document.getElementById('perfCount'),{type:'bar',data:{labels:labels,datasets:[{data:counts,backgroundColor:'rgba(52,152,219,.6)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:TC,font:{size:10}}},y:{ticks:{color:TC},grid:{color:GC}}}}});
-  var scData=trades.filter(function(t){return t.timeEff!==null;}).map(function(t){return{x:t.timeEff,y:t.pnl,label:t.symbol};});
-  dc('perfScatter');if(scData.length){CX.perfScatter=new Chart(document.getElementById('perfScatter'),{type:'scatter',data:{datasets:[{data:scData,backgroundColor:scData.map(function(p){return p.y>=0?'rgba(46,204,113,.7)':'rgba(231,76,60,.7)';}),pointRadius:6,pointHoverRadius:8}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.raw.label+': '+c.raw.x+'% time | $'+c.raw.y;}}}},scales:{x:{title:{display:true,text:'% Time Used',color:TC},min:0,max:100,ticks:{color:TC,callback:function(v){return v+'%';}},grid:{color:GC}},y:{title:{display:true,text:'Net P&L',color:TC},ticks:{color:TC,callback:function(v){return'$'+v;}},grid:{color:GC}}}}});}
+
+  // ── Strategy Mix by Period ──
+  var allStrats=[...new Set(trades.map(function(t){return t.strategy==='no strategy'?'Fat Finger Mistake':t.strategy;}))].sort();
+  var stratPalette=['#3498db','#f39c12','#9b59b6','#2ecc71','#e67e22','#1abc9c','#e74c3c','#00bcd4','#8bc34a','#ff5722'];
+  var stratColorMap={};allStrats.forEach(function(s,i){stratColorMap[s]=stratPalette[i%stratPalette.length];});
+  var mixDatasets=allStrats.map(function(s){
+    return{
+      label:s,
+      data:keys.map(function(k){
+        return trades.filter(function(t){
+          var d=t.exitDate||t.entryDate;
+          var ts=t.strategy==='no strategy'?'Fat Finger Mistake':t.strategy;
+          return d&&fn(d)===k&&ts===s;
+        }).length;
+      }),
+      backgroundColor:stratColorMap[s]+'cc',
+      borderColor:stratColorMap[s],
+      borderWidth:0,
+      borderRadius:2
+    };
+  });
+  dc('stratMix');CX.stratMix=new Chart(document.getElementById('stratMix'),{
+    type:'bar',
+    data:{labels:labels,datasets:mixDatasets},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{
+          label:function(c){return c.dataset.label+': '+c.raw+(c.raw===1?' trade':' trades');}
+        }}
+      },
+      scales:{
+        x:{stacked:true,ticks:{color:TC,font:{size:10}},grid:{color:GC}},
+        y:{stacked:true,ticks:{color:TC,precision:0},grid:{color:GC}}
+      }
+    }
+  });
+  // ── Time Efficiency — enhanced ──
+  var teData=trades.filter(function(t){return t.timeEff!==null;});
+  if(teData.length){
+    // Metric cards
+    var teWins=teData.filter(function(t){return t.pnl>0;});
+    var teLosses=teData.filter(function(t){return t.pnl<=0;});
+    var avgTeWin=teWins.length?Math.round(teWins.reduce(function(a,t){return a+t.timeEff;},0)/teWins.length):0;
+    var avgTeLoss=teLosses.length?Math.round(teLosses.reduce(function(a,t){return a+t.timeEff;},0)/teLosses.length):0;
+    var avgTeAll=Math.round(teData.reduce(function(a,t){return a+t.timeEff;},0)/teData.length);
+    var fastWins=teData.filter(function(t){return t.pnl>0&&t.timeEff<=50;});
+    var slowLoss=teData.filter(function(t){return t.pnl<=0&&t.timeEff>50;});
+    document.getElementById('te-cards').innerHTML=[
+      {l:'Avg Time — Winners',v:avgTeWin+'%',c:'pos',s:teWins.length+' trades',note:'exit early on wins'},
+      {l:'Avg Time — Losers',v:avgTeLoss+'%',c:'neg',s:teLosses.length+' trades',note:'exit late on losses'},
+      {l:'Fast Wins (≤50%)',v:fastWins.length,c:'pos',s:Math.round(fastWins.length/teData.length*100)+'% of all trades',note:'sweet spot'},
+      {l:'Slow Losses (>50%)',v:slowLoss.length,c:'neg',s:Math.round(slowLoss.length/teData.length*100)+'% of all trades',note:'hope trades'}
+    ].map(function(m){var col=m.c==='pos'?G:R;return'<div class="mc" style="border-top:3px solid '+col+';"><div class="ml">'+m.l+'</div><div class="mv" style="color:'+col+';">'+m.v+'</div><div class="msub">'+m.s+'</div></div>';}).join('');
+
+    // Strategy color palette
+    var strats=[...new Set(teData.map(function(t){return t.strategy;}))];
+    var palette=['#3498db','#f39c12','#9b59b6','#1abc9c','#e67e22','#e91e63','#00bcd4','#8bc34a'];
+    var stratColor={};strats.forEach(function(s,i){stratColor[s]=palette[i%palette.length];});
+
+    // Legend
+    document.getElementById('te-legend').innerHTML=strats.map(function(s){
+      return'<span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:'+stratColor[s]+';display:inline-block;"></span>'+s+'</span>';
+    }).join('');
+
+    // Build datasets per strategy
+    var datasets=strats.map(function(s){
+      var pts=teData.filter(function(t){return t.strategy===s;}).map(function(t){
+        return{x:t.timeEff,y:t.pnl,label:t.name,strategy:t.strategy,days:t.days,sym:t.symbol};
+      });
+      var base=stratColor[s];
+      return{
+        label:s,
+        data:pts,
+        backgroundColor:pts.map(function(p){return p.y>=0?base+'cc':base+'66';}),
+        pointRadius:7,pointHoverRadius:10,
+        borderColor:pts.map(function(p){return p.y>=0?base:'rgba(231,76,60,.8)';}),
+        borderWidth:pts.map(function(p){return p.y>=0?0:1.5;})
+      };
+    });
+
+    // Quadrant lines via annotation plugin fallback — use afterDraw plugin
+    var avgPnlAll=avg(teData.map(function(t){return t.pnl;}));
+    dc('perfScatter');
+    CX.perfScatter=new Chart(document.getElementById('perfScatter'),{
+      type:'scatter',
+      data:{datasets:datasets},
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{
+          legend:{display:false},
+          tooltip:{callbacks:{
+            label:function(c){return c.raw.sym+' — '+c.raw.strategy;},
+            afterLabel:function(c){return c.raw.label+'\n'+c.raw.x+'% time used  |  '+c.raw.days+'d held  |  $'+c.raw.y;}
+          }}
+        },
+        scales:{
+          x:{title:{display:true,text:'% of Available Time Used',color:TC},min:0,max:100,ticks:{color:TC,callback:function(v){return v+'%';}},grid:{color:GC}},
+          y:{title:{display:true,text:'Net P&L ($)',color:TC},ticks:{color:TC,callback:function(v){return'$'+v;}},grid:{color:GC}}
+        }
+      },
+      plugins:[{
+        id:'quadrants',
+        afterDraw:function(chart){
+          var ctx=chart.ctx,xA=chart.scales.x,yA=chart.scales.y;
+          var x50=xA.getPixelForValue(50),y0=yA.getPixelForValue(0);
+          var left=xA.left,right=xA.right,top=yA.top,bottom=yA.bottom;
+          ctx.save();
+          // quadrant fills
+          var quads=[
+            {x:left,y:top,w:x50-left,h:y0-top,col:'rgba(46,204,113,.04)',label:'Fast Wins',lx:left+8,ly:top+14},
+            {x:x50,y:top,w:right-x50,h:y0-top,col:'rgba(52,152,219,.04)',label:'Patient Wins',lx:x50+8,ly:top+14},
+            {x:left,y:y0,w:x50-left,h:bottom-y0,col:'rgba(243,156,18,.04)',label:'Fast Losses',lx:left+8,ly:bottom-8},
+            {x:x50,y:y0,w:right-x50,h:bottom-y0,col:'rgba(231,76,60,.05)',label:'Slow Losses ⚠️',lx:x50+8,ly:bottom-8}
+          ];
+          quads.forEach(function(q){
+            ctx.fillStyle=q.col;ctx.fillRect(q.x,q.y,q.w,q.h);
+            ctx.fillStyle='rgba(255,255,255,.18)';ctx.font='10px IBM Plex Mono, monospace';
+            ctx.fillText(q.label,q.lx,q.ly);
+          });
+          // divider lines
+          ctx.strokeStyle='rgba(255,255,255,.12)';ctx.lineWidth=1;ctx.setLineDash([4,4]);
+          ctx.beginPath();ctx.moveTo(x50,top);ctx.lineTo(x50,bottom);ctx.stroke();
+          ctx.beginPath();ctx.moveTo(left,y0);ctx.lineTo(right,y0);ctx.stroke();
+          ctx.setLineDash([]);ctx.restore();
+        }
+      }]
+    });
+  }
   renderComparison(m,keys,dK);
 }
 function renderComparison(m,keys,dK){
