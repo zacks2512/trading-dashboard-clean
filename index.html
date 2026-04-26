@@ -96,8 +96,13 @@ table.hm td.emp{background:var(--bg3);border:1px solid var(--border);}
 .goal-label{font-size:12px;color:var(--text2);}.goal-val{font-family:var(--m);font-size:13px;}
 .pbar-wrap{height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;}
 .pbar{height:100%;border-radius:4px;transition:width .6s ease;}
-.pbar.green{background:var(--green);}.pbar.amber{background:var(--amber);}.pbar.red{background:var(--red);}
+.pbar.green{background:var(--green);}.pbar.amber{background:var(--amber);}.pbar.red{background:var(--red);}.pbar.blue{background:var(--blue);}
 .goal-sub{font-size:10px;color:var(--text3);margin-top:6px;}
+.mile-wrap{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:4px;}
+.mile-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px 12px;text-align:center;}
+.mile-card.done{border-color:var(--green);}.mile-card.active{border-color:var(--blue);}.mile-card.locked{opacity:.4;}
+.mile-icon{font-size:20px;margin-bottom:6px;}.mile-amt{font-family:var(--m);font-size:13px;font-weight:500;margin-bottom:2px;}
+.mile-lbl{font-size:9px;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px;}.mile-sub{font-size:10px;color:var(--text3);margin-top:6px;}
 .goal-input-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
 .goal-input-row label{font-size:11px;color:var(--text3);min-width:180px;}
 .goal-input-row input{background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 8px;color:var(--text);font-family:var(--m);font-size:12px;outline:none;width:110px;}
@@ -258,6 +263,11 @@ table.hm td.emp{background:var(--bg3);border:1px solid var(--border);}
       </div>
       <div style="position:relative;height:320px"><canvas id="perfScatter"></canvas></div>
     </div>
+    <div class="stt" style="margin-top:4px;">Days to Expiry (DTE) Analysis</div>
+    <div class="cgrid" style="margin-bottom:20px;">
+      <div class="cc"><div class="ct">Win Rate by DTE at Entry</div><div style="position:relative;height:220px"><canvas id="dteWR"></canvas></div></div>
+      <div class="cc"><div class="ct">Avg P&amp;L by DTE at Entry</div><div style="position:relative;height:220px"><canvas id="dtePnl"></canvas></div></div>
+    </div>
     <div class="stt">Period Comparison</div>
     <div class="comp-grid" id="compCards"></div>
   </div>
@@ -280,6 +290,7 @@ table.hm td.emp{background:var(--bg3);border:1px solid var(--border);}
       <div><div class="stt" style="margin-bottom:16px;">Progress — Current Month</div><div id="goalCards"></div></div>
     </div>
     <div style="margin-top:24px;"><div class="stt" style="margin-bottom:16px;">Overall Progress</div><div id="goalCardsAll"></div></div>
+    <div style="margin-top:24px;"><div class="stt" style="margin-bottom:16px;">Win Milestones</div><div id="goalMilestones"></div></div>
   </div>
 </div>
 
@@ -295,6 +306,8 @@ table.hm td.emp{background:var(--bg3);border:1px solid var(--border);}
       <select id="srch-emo" onchange="renderLogT()"><option value="">All Emotions</option></select>
       <button class="btn sm" onclick="clearSearch()">Clear</button>
     </div>
+    <div id="dte-chip" style="display:none;margin-bottom:6px;"></div>
+    <div id="period-chip" style="display:none;margin-bottom:6px;"></div>
     <div style="font-size:11px;color:var(--text3);margin-bottom:8px;" id="srch-count"></div>
     <div id="detail-panel"></div>
     <div class="hint-click">💡 Click any row to view full trade details &amp; notes</div>
@@ -333,7 +346,7 @@ table.hm td.emp{background:var(--bg3);border:1px solid var(--border);}
 <script>
 var DEFS={name:{l:'Full Name',d:'Full name'},symbol:{l:'Symbol',d:'Symbol'},type:{l:'Trade Type',d:'trade type'},strategy:{l:'Strategy',d:'strategy'},entry_date:{l:'Entry Date',d:'Entry Date'},exit_date:{l:'Exit Date',d:'Exit Date'},expiry:{l:'Expiry Date',d:'Expiry'},pnl:{l:'Net P&L',d:'Net P&L'},pct:{l:'Net P&L (%)',d:'Net P&L (%)'},days:{l:'Days in Trade',d:'Days in Trade'},mistakes:{l:'Mistakes',d:'Mistakes'},emotion_entry:{l:'Entry Emotion',d:'Emotion (Entry)'},emotion_exit:{l:'Exit Emotion',d:'Emotion (Exite)'}};
 var COL={};Object.entries(DEFS).forEach(function(e){COL[e[0]]=e[1].d;});
-var trades=[],CX={},sortKey='',sortDir=1,perfPeriod='monthly',activeTradeIdx=null,_currentRows=[];
+var trades=[],CX={},sortKey='',sortDir=1,perfPeriod='monthly',activeTradeIdx=null,_currentRows=[],dteFilter=null,periodFilter=null;
 var G='#2ecc71',R='#e74c3c',B='#3498db',AM='#f39c12',GC='rgba(255,255,255,.04)',TC='#5a6070';
 
 function buildColUI(){document.getElementById('colset').innerHTML=Object.entries(DEFS).map(function(e){return'<div><label>'+e[1].l+'</label><input id="col-'+e[0]+'" value="'+COL[e[0]]+'"></div>';}).join('');}
@@ -702,7 +715,7 @@ function renderPerf(){
   var labels=keys.map(dK),pnls=keys.map(function(k){return Math.round(m[k].pnl);}),wrs=keys.map(function(k){return m[k].total?Math.round(m[k].wins/m[k].total*100):0;}),counts=keys.map(function(k){return m[k].total;});
   dc('perfPnl');CX.perfPnl=new Chart(document.getElementById('perfPnl'),{type:'bar',data:{labels:labels,datasets:[{data:pnls,backgroundColor:pnls.map(bc),borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return'$'+c.raw;}}}},scales:{x:{ticks:{color:TC,font:{size:10}}},y:{ticks:{color:TC,callback:function(v){return'$'+v;}},grid:{color:GC}}}}});
   dc('perfWR');CX.perfWR=new Chart(document.getElementById('perfWR'),{type:'line',data:{labels:labels,datasets:[{data:wrs,borderColor:B,backgroundColor:'rgba(52,152,219,.08)',fill:true,borderWidth:2,pointRadius:4,pointBackgroundColor:B,tension:.3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.raw+'%';},afterLabel:function(c){return counts[c.dataIndex]+' trades';}}}},scales:{x:{ticks:{color:TC,font:{size:10}}},y:{min:0,max:100,ticks:{color:TC,callback:function(v){return v+'%';}},grid:{color:GC}}}}});
-  dc('perfCount');CX.perfCount=new Chart(document.getElementById('perfCount'),{type:'bar',data:{labels:labels,datasets:[{data:counts,backgroundColor:'rgba(52,152,219,.6)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:TC,font:{size:10}}},y:{ticks:{color:TC},grid:{color:GC}}}}});
+  dc('perfCount');CX.perfCount=new Chart(document.getElementById('perfCount'),{type:'bar',data:{labels:labels,datasets:[{data:counts,backgroundColor:'rgba(52,152,219,.6)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,onClick:function(evt,els){if(els.length){var idx=els[0].index;periodFilter={key:keys[idx],label:dK(keys[idx]),type:perfPeriod};sw('log');renderLogT();}},onHover:function(evt,els){evt.native.target.style.cursor=els.length?'pointer':'default';},plugins:{legend:{display:false}},scales:{x:{ticks:{color:TC,font:{size:10}}},y:{ticks:{color:TC},grid:{color:GC}}}}});
 
   // ── Strategy Mix by Period ──
   var allStrats=[...new Set(trades.map(function(t){return t.strategy==='no strategy'?'Fat Finger Mistake':t.strategy;}))].sort();
@@ -833,6 +846,26 @@ function renderPerf(){
       }]
     });
   }
+  // ── DTE Analysis ──
+  var dteBuckets=[{l:'0–7d',min:0,max:7},{l:'8–21d',min:8,max:21},{l:'22–45d',min:22,max:45},{l:'46–90d',min:46,max:90},{l:'90+d',min:91,max:Infinity}];
+  var dteGroups=dteBuckets.map(function(b){
+    var ts=trades.filter(function(t){
+      if(!t.entryDate||!t.expiry)return false;
+      var exp=parseDate(t.expiry);if(!exp)return false;
+      var dte=Math.round((exp-t.entryDate)/86400000);
+      return dte>=b.min&&dte<=b.max;
+    });
+    var wins=ts.filter(function(t){return t.pnl>0;});
+    return{l:b.l,n:ts.length,wr:ts.length?Math.round(wins.length/ts.length*100):null,ap:ts.length?Math.round(ts.reduce(function(a,t){return a+t.pnl;},0)/ts.length):null};
+  });
+  var dteLabels=dteGroups.map(function(g){return g.l;});
+  var dteWRs=dteGroups.map(function(g){return g.wr;});
+  var dteAPs=dteGroups.map(function(g){return g.ap;});
+  var dteCounts=dteGroups.map(function(g){return g.n;});
+  function onDteClick(evt,els){if(els.length){var b=dteBuckets[els[0].index];dteFilter={min:b.min,max:b.max,label:b.l};sw('log');renderLogT();}}
+  function onDteHover(evt,els){evt.native.target.style.cursor=els.length?'pointer':'default';}
+  dc('dteWR');CX.dteWR=new Chart(document.getElementById('dteWR'),{type:'bar',data:{labels:dteLabels,datasets:[{data:dteWRs,backgroundColor:'rgba(52,152,219,.7)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,onClick:onDteClick,onHover:onDteHover,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.raw!==null?c.raw+'%':'No data';},afterLabel:function(c){return dteCounts[c.dataIndex]+' trades';}}}},scales:{x:{ticks:{color:TC,font:{size:10}}},y:{min:0,max:100,ticks:{color:TC,callback:function(v){return v+'%';}},grid:{color:GC}}}}});
+  dc('dtePnl');CX.dtePnl=new Chart(document.getElementById('dtePnl'),{type:'bar',data:{labels:dteLabels,datasets:[{data:dteAPs,backgroundColor:dteAPs.map(function(v){return v===null?'rgba(255,255,255,.1)':v>=0?'rgba(46,204,113,.7)':'rgba(231,76,60,.7)';}),borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,onClick:onDteClick,onHover:onDteHover,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.raw!==null?'$'+c.raw:'No data';},afterLabel:function(c){return dteCounts[c.dataIndex]+' trades';}}}},scales:{x:{ticks:{color:TC,font:{size:10}}},y:{ticks:{color:TC,callback:function(v){return'$'+v;}},grid:{color:GC}}}}});
   renderComparison(m,keys,dK);
 }
 function renderComparison(m,keys,dK){
@@ -856,6 +889,22 @@ function renderGoals(){
   function card(lbl,cur,goal,p,sub){return'<div class="goal-card"><div class="goal-header"><div class="goal-label">'+lbl+'</div><div class="goal-val" style="color:'+(p.ok?G:R)+'">'+cur+' / '+goal+'</div></div><div class="pbar-wrap"><div class="pbar '+p.cls+'" style="width:'+p.pct+'%"></div></div><div class="goal-sub">'+p.pct+'% of target'+(sub?' · '+sub:'')+'</div></div>';}
   document.getElementById('goalCards').innerHTML=card('Monthly P&L','$'+Math.round(mPnl),'$'+gP,pb(mPnl,gP,false),mT.length+' trades this month')+card('Monthly Win Rate',mWR+'%',gWR+'%',pb(mWR,gWR,false),mW.length+'W / '+(mT.length-mW.length)+'L')+card('Trades Exceeding Loss Limit',bL.length+' trades','0',pb(bL.length,0,true),'max $'+gML+' loss per trade');
   document.getElementById('goalCardsAll').innerHTML=card('Annual P&L (All Time)','$'+Math.round(tPnl),'$'+gA,pb(tPnl,gA,false),trades.length+' total trades')+card('Overall Win Rate',aWR+'%',gWR+'%',pb(aWR,gWR,false),aW.length+'W / '+aL.length+'L')+card('Average R:R',rr,gRR,pb(rr,gRR,false),'avg win $'+Math.round(avgW)+' / avg loss $'+Math.round(avgL));
+  var MILES=[200,2000,7000,20000,70000];
+  var bestWin=trades.length?Math.max.apply(null,trades.map(function(t){return t.pnl;})):0;
+  var nextSet=false;
+  var mHtml='<div class="mile-wrap">'+MILES.map(function(m){
+    var done=bestWin>=m;
+    var isNext=!done&&!nextSet;
+    if(isNext)nextSet=true;
+    var cls=done?'done':isNext?'active':'locked';
+    var icon=done?'✓':isNext?'◎':'○';
+    var col=done?G:isNext?B:'var(--text3)';
+    var pct=done?100:isNext?Math.min(Math.round(bestWin/m*100),99):0;
+    var sub=done?'Best win: $'+Math.round(bestWin):isNext?pct+'% · Best: $'+Math.round(bestWin):'Locked';
+    var bar=isNext?'<div class="pbar-wrap" style="margin-top:6px"><div class="pbar blue" style="width:'+pct+'%"></div></div>':'';
+    return'<div class="mile-card '+cls+'"><div class="mile-icon" style="color:'+col+'">'+icon+'</div><div class="mile-amt" style="color:'+col+'">$'+m.toLocaleString()+'</div><div class="mile-lbl">Single Win</div>'+bar+'<div class="mile-sub">'+sub+'</div></div>';
+  }).join('')+'</div>';
+  document.getElementById('goalMilestones').innerHTML=mHtml;
 }
 
 var BAD=['FOMO','Greed','Stress','Overconfidence','Impulsive'],GOOD=['Confidence','Patience','Discipline'];
@@ -876,11 +925,17 @@ function renderLog(){
   var se=document.getElementById('srch-emo'),ce=se.value;se.innerHTML='<option value="">All Emotions</option>'+emos.map(function(e){return'<option>'+e+'</option>';}).join('');if(ce)se.value=ce;
   renderLogT();
 }
-function clearSearch(){document.getElementById('srch-text').value='';document.getElementById('srch-sym').value='';document.getElementById('srch-strat').value='';document.getElementById('srch-result').value='';document.getElementById('srch-emo').value='';sortKey='';sortDir=1;closeDetail();renderLogT();}
+function clearDteFilter(){dteFilter=null;document.getElementById('dte-chip').style.display='none';renderLogT();}
+function clearPeriodFilter(){periodFilter=null;document.getElementById('period-chip').style.display='none';renderLogT();}
+function clearSearch(){dteFilter=null;periodFilter=null;document.getElementById('dte-chip').style.display='none';document.getElementById('period-chip').style.display='none';document.getElementById('srch-text').value='';document.getElementById('srch-sym').value='';document.getElementById('srch-strat').value='';document.getElementById('srch-result').value='';document.getElementById('srch-emo').value='';sortKey='';sortDir=1;closeDetail();renderLogT();}
 function sortLog(key){if(sortKey===key)sortDir*=-1;else{sortKey=key;sortDir=1;}renderLogT();}
 function renderLogT(){
   var txt=(document.getElementById('srch-text').value||'').toLowerCase(),sym=document.getElementById('srch-sym').value,strat=document.getElementById('srch-strat').value,res=document.getElementById('srch-result').value,emo=document.getElementById('srch-emo').value;
-  var rows=trades.filter(function(t){if(txt&&!(t.name.toLowerCase().includes(txt)||t.symbol.toLowerCase().includes(txt)||t.strategy.toLowerCase().includes(txt)||t.mistakes.toLowerCase().includes(txt)))return false;if(sym&&t.symbol!==sym)return false;if(strat&&t.strategy!==strat)return false;if(res==='win'&&t.pnl<=0)return false;if(res==='loss'&&t.pnl>0)return false;if(emo&&!semo(t.entry).includes(emo))return false;return true;});
+  var rows=trades.filter(function(t){if(txt&&!(t.name.toLowerCase().includes(txt)||t.symbol.toLowerCase().includes(txt)||t.strategy.toLowerCase().includes(txt)||t.mistakes.toLowerCase().includes(txt)))return false;if(sym&&t.symbol!==sym)return false;if(strat&&t.strategy!==strat)return false;if(res==='win'&&t.pnl<=0)return false;if(res==='loss'&&t.pnl>0)return false;if(emo&&!semo(t.entry).includes(emo))return false;if(dteFilter){var exp=parseDate(t.expiry);if(!exp||!t.entryDate)return false;var dte=Math.round((exp-t.entryDate)/86400000);if(dte<dteFilter.min||dte>dteFilter.max)return false;}if(periodFilter){var pd=t.exitDate||t.entryDate;if(!pd)return false;var pfn=periodFilter.type==='monthly'?fmtMonth:fmtWeek;if(pfn(pd)!==periodFilter.key)return false;}return true;});
+  var chip=document.getElementById('dte-chip');
+  if(dteFilter){chip.style.display='block';chip.innerHTML='<span style="display:inline-flex;align-items:center;gap:6px;background:var(--bdim);border:1px solid var(--blue);border-radius:12px;padding:3px 10px;font-size:11px;color:var(--blue);font-family:var(--m);">DTE: '+dteFilter.label+' <span onclick="clearDteFilter()" style="cursor:pointer;opacity:.7;margin-left:2px;">✕</span></span>';}else{chip.style.display='none';}
+  var pchip=document.getElementById('period-chip');
+  if(periodFilter){pchip.style.display='block';pchip.innerHTML='<span style="display:inline-flex;align-items:center;gap:6px;background:var(--bdim);border:1px solid var(--blue);border-radius:12px;padding:3px 10px;font-size:11px;color:var(--blue);font-family:var(--m);">Period: '+periodFilter.label+' <span onclick="clearPeriodFilter()" style="cursor:pointer;opacity:.7;margin-left:2px;">✕</span></span>';}else{pchip.style.display='none';}
   if(sortKey){rows=rows.slice().sort(function(a,b){var av=a[sortKey]||0,bv=b[sortKey]||0;if(typeof av==='string')return av.localeCompare(bv)*sortDir;return(av-bv)*sortDir;});}
   _currentRows=rows;
   var sum=rows.reduce(function(a,t){return a+t.pnl;},0),sPos=sum>=0,wC=rows.filter(function(t){return t.pnl>0;}).length,lC=rows.filter(function(t){return t.pnl<=0;}).length;
