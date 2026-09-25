@@ -1,11 +1,15 @@
 // Rendering entry point, tab switching and startup.
 function renderAll() {
-  ["ov0", "em0", "cf0", "pf0", "gl0", "lg0"].forEach(function (id) {
-    document.getElementById(id).style.display = "none";
-  });
-  ["ov1", "em1", "cf1", "pf1", "gl1", "lg1"].forEach(function (id) {
-    document.getElementById(id).style.display = "block";
-  });
+  ["ov0", "co0", "pt0", "em0", "cf0", "pf0", "rk0", "gl0", "lg0"].forEach(
+    function (id) {
+      document.getElementById(id).style.display = "none";
+    },
+  );
+  ["ov1", "co1", "pt1", "em1", "cf1", "pf1", "rk1", "gl1", "lg1"].forEach(
+    function (id) {
+      document.getElementById(id).style.display = "block";
+    },
+  );
   renderOV();
   renderEM();
   renderConf();
@@ -13,13 +17,19 @@ function renderAll() {
   renderGoals();
   renderLog();
   renderStreak();
+  renderCoach();
+  renderRisk();
+  renderPretrade();
 }
 
 var TABS = [
   "overview",
+  "coach",
+  "pretrade",
   "emotions",
   "confidence",
   "perf",
+  "risk",
   "goals",
   "log",
   "settings",

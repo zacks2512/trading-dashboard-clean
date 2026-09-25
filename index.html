@@ -26,9 +26,12 @@
 </div>
 <div class="tabs">
   <div class="tab active" onclick="sw('overview')">Overview</div>
+  <div class="tab" onclick="sw('coach')">🎯 Coach</div>
+  <div class="tab" onclick="sw('pretrade')">✅ Pre-Trade Check</div>
   <div class="tab" onclick="sw('emotions')">Emotion Analysis</div>
   <div class="tab" onclick="sw('confidence')">Confidence Analysis</div>
   <div class="tab" onclick="sw('perf')">Performance</div>
+  <div class="tab" onclick="sw('risk')">Risk (R)</div>
   <div class="tab" onclick="sw('goals')">Goals</div>
   <div class="tab" onclick="sw('log')">Trade Log</div>
   <div class="tab" onclick="sw('settings')">Settings</div>
@@ -51,6 +54,54 @@
       <div class="cc"><div class="ct">P&L by Symbol</div><div style="position:relative;height:220px"><canvas id="symChart"></canvas></div></div>
     </div>
     <div id="streak-section"></div>
+    </div>
+  </div>
+</div>
+
+<!-- COACH -->
+<div class="page" id="page-coach">
+  <div id="co0" class="empty">⬆ Load data first</div>
+  <div id="co1" style="display:none">
+    <div class="mgrid" id="coach-kpis"></div>
+    <div class="stt">Your Rules — generated from your own trades</div>
+    <div id="coach-rules" style="margin-bottom:24px;"></div>
+    <div class="stt">What-If — your results if you had followed these rules</div>
+    <div id="whatif-chips" class="wi-chips"></div>
+    <div class="mgrid" id="whatif-res"></div>
+    <div class="cc" style="margin-bottom:6px;"><div class="ct">Cumulative Net P&amp;L — Actual vs With Your Rules</div><div style="position:relative;height:220px"><canvas id="coachWhatIf"></canvas></div></div>
+    <div class="note">Hindsight simulation: it shows where your money leaks, not a guaranteed result. Skipping many trades on small samples is overfitting — focus on the rules with the most trades behind them. The stop-loss part assumes losers could be closed at −50% of the premium.</div>
+    <div class="stt" style="margin-top:20px;">Edge Map — where you make and lose money</div>
+    <div id="edge-dims" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;"></div>
+    <div class="ttbl" id="edge-table"></div>
+    <div class="note">Edge = 3+ trades, positive expectancy and ≥ 50% win rate. Leak = 3+ trades losing money overall. *Avg R counts debit trades only.</div>
+  </div>
+</div>
+
+<!-- PRE-TRADE CHECK -->
+<div class="page" id="page-pretrade">
+  <div id="pt0" class="empty">⬆ Load data first</div>
+  <div id="pt1" style="display:none">
+    <div class="pt-grid">
+      <div class="cc">
+        <div class="ct">Planned Trade</div>
+        <div class="pt-form" oninput="evalPretrade()">
+          <label>Symbol<input type="text" id="pt-symbol" list="pt-syms" placeholder="e.g. QQQ"><datalist id="pt-syms"></datalist></label>
+          <label>Trade Type<select id="pt-type" onchange="evalPretrade()"></select></label>
+          <label>Strategy<select id="pt-strategy" onchange="evalPretrade()"></select></label>
+          <label>Risk / Premium ($)<input type="number" id="pt-risk" min="0" step="1" placeholder="max loss, or credit if selling"></label>
+          <label>DTE at Entry<input type="number" id="pt-dte" min="0" step="1" placeholder="days to expiry"></label>
+          <label>Confidence<select id="pt-conf" onchange="evalPretrade()"><option value="">—</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label>
+        </div>
+        <div class="ct" style="margin-top:16px;">How do I feel right now?</div>
+        <div id="pt-emos" class="pt-emos"></div>
+        <div class="ct" style="margin-top:16px;">Checklist</div>
+        <div id="pt-checklist"></div>
+        <div style="display:flex;gap:8px;margin-top:16px;">
+          <button class="btn p" id="pt-copy" onclick="copyPlan()">📋 Copy Plan</button>
+          <button class="btn" onclick="resetPretrade()">Reset</button>
+        </div>
+      </div>
+      <div id="pt-result"></div>
     </div>
   </div>
 </div>
@@ -146,6 +197,29 @@
   </div>
 </div>
 
+<!-- RISK (R) -->
+<div class="page" id="page-risk">
+  <div id="rk0" class="empty">⬆ Load data first</div>
+  <div id="rk1" style="display:none">
+    <div class="stt">Directional Buying — measured in R (1R = premium paid = max loss)</div>
+    <div class="mgrid" id="r-debit-kpis"></div>
+    <div class="cgrid">
+      <div class="cc"><div class="ct">R-Multiple Distribution</div><div style="position:relative;height:220px"><canvas id="rDist"></canvas></div></div>
+      <div class="cc"><div class="ct">Cumulative R</div><div style="position:relative;height:220px"><canvas id="rCum"></canvas></div></div>
+    </div>
+    <div class="stt">Stop-Loss Simulation — debit trades</div>
+    <div class="mgrid" id="r-stops" style="grid-template-columns:repeat(3,minmax(0,1fr));"></div>
+    <div class="note" style="margin-top:-12px;margin-bottom:20px;">Upper bound: winners that dipped below the stop before recovering can't be seen in the data.</div>
+    <div class="stt">Premium Selling — measured in % of max profit captured</div>
+    <div class="mgrid" id="r-prem-kpis"></div>
+    <div class="cgrid">
+      <div class="cc"><div class="ct">Max Profit Captured</div><div style="position:relative;height:220px"><canvas id="rCap"></canvas></div></div>
+      <div class="cc"><div class="ct">Worst Debit Trades in R</div><div id="r-worst"></div></div>
+    </div>
+    <div class="note">For sold options the R column holds the credit received — that's the max profit, not the risk. That's why premium trades are measured by how much of the credit you kept.</div>
+  </div>
+</div>
+
 <!-- GOALS -->
 <div class="page" id="page-goals">
   <div id="gl0" class="empty">⬆ Load data first</div>
@@ -227,6 +301,10 @@
 <script src="js/performance.js"></script>
 <script src="js/goals.js"></script>
 <script src="js/log.js"></script>
+<script src="js/edge.js"></script>
+<script src="js/coach.js"></script>
+<script src="js/risk.js"></script>
+<script src="js/pretrade.js"></script>
 <script src="js/streak.js"></script>
 <script src="js/app.js"></script>
 </body>

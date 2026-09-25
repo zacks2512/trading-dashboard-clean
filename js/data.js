@@ -79,6 +79,7 @@ function rtt(row) {
     fees: row["Fees"] || "",
     contracts: row["Contracts"] || "",
     expiry: row["Expiry"] || "",
+    risk: pm(row["R"] || ""),
   };
 }
 

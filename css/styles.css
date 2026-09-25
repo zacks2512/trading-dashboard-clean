@@ -891,3 +891,221 @@ table.hm td.emp {
 .streak-tile:hover {
   transform: scale(1.3);
 }
+
+/* Coach */
+.note {
+  font-size: 11px;
+  color: var(--text3);
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+.ins.rule {
+  margin-bottom: 8px;
+  align-items: flex-start;
+}
+.ins.warn {
+  background: rgba(243, 156, 18, 0.1);
+  border-left: 2px solid var(--amber);
+}
+.rule-n {
+  font-family: var(--m);
+  font-size: 12px;
+  color: var(--text3);
+  min-width: 18px;
+}
+.rule-why {
+  font-size: 11px;
+  color: var(--text2);
+  margin-top: 2px;
+}
+.edge-row {
+  display: grid;
+  grid-template-columns: 2fr 70px 70px 100px 100px 80px 120px;
+  gap: 8px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  align-items: center;
+  font-family: var(--m);
+}
+.edge-row:last-child {
+  border-bottom: none;
+}
+.edge-row.edge-head {
+  background: var(--bg3);
+  font-size: 11px;
+  color: var(--text3);
+}
+.vtag {
+  display: inline-block;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+.vtag.edge {
+  background: var(--gdim);
+  color: var(--green);
+}
+.vtag.leak {
+  background: var(--rdim);
+  color: var(--red);
+}
+.vtag.neutral {
+  background: var(--bdim);
+  color: var(--blue);
+}
+.vtag.few {
+  background: var(--bg3);
+  color: var(--text3);
+}
+.wi-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.wi-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  padding: 5px 10px;
+  border: 1px solid var(--border2);
+  border-radius: 14px;
+  color: var(--text3);
+  cursor: pointer;
+  user-select: none;
+}
+.wi-chip.on {
+  border-color: var(--green);
+  color: var(--text);
+  background: var(--gdim);
+}
+.wi-chip input {
+  accent-color: var(--green);
+}
+
+/* Pre-Trade Check */
+.pt-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 16px;
+  align-items: start;
+}
+.pt-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.pt-form label {
+  font-size: 11px;
+  color: var(--text3);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pt-form input,
+.pt-form select {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  padding: 7px 10px;
+  color: var(--text);
+  font-family: var(--m);
+  font-size: 12px;
+  outline: none;
+}
+.pt-form input:focus,
+.pt-form select:focus {
+  border-color: var(--blue);
+}
+.pt-emos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.pt-emo {
+  font-family: var(--f);
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border2);
+  background: transparent;
+  color: var(--text3);
+  cursor: pointer;
+}
+.pt-emo.on.bd {
+  background: var(--rdim);
+  border-color: var(--red);
+  color: var(--red);
+}
+.pt-emo.on.gd {
+  background: var(--gdim);
+  border-color: var(--green);
+  color: var(--green);
+}
+.pt-emo.on.nu {
+  background: var(--bdim);
+  border-color: var(--blue);
+  color: var(--blue);
+}
+.pt-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text2);
+  padding: 4px 0;
+  cursor: pointer;
+}
+.pt-check input {
+  accent-color: var(--green);
+}
+.pt-verdict {
+  border-radius: var(--r);
+  padding: 16px 18px;
+  margin-bottom: 12px;
+  border: 1px solid;
+}
+.pt-verdict.pos {
+  background: var(--gdim);
+  border-color: var(--green);
+}
+.pt-verdict.warn {
+  background: rgba(243, 156, 18, 0.1);
+  border-color: var(--amber);
+}
+.pt-verdict.neg {
+  background: var(--rdim);
+  border-color: var(--red);
+}
+.pt-vt {
+  font-family: var(--m);
+  font-size: 22px;
+  font-weight: 500;
+}
+.pt-verdict.pos .pt-vt {
+  color: var(--green);
+}
+.pt-verdict.warn .pt-vt {
+  color: var(--amber);
+}
+.pt-verdict.neg .pt-vt {
+  color: var(--red);
+}
+.pt-vs {
+  font-size: 12px;
+  color: var(--text2);
+  margin-top: 2px;
+}
+@media (max-width: 800px) {
+  .pt-grid {
+    grid-template-columns: 1fr;
+  }
+  .edge-row {
+    grid-template-columns: 2fr 50px 60px 90px;
+  }
+  .edge-row > span:nth-child(n + 5) {
+    display: none;
+  }
+}

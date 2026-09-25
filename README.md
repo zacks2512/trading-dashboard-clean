@@ -19,6 +19,10 @@ js/performance.js     Performance tab (periods, time efficiency, DTE, comparison
 js/goals.js           Goals tab
 js/log.js             Trade Log tab (search, sort, filters, detail panel)
 js/streak.js          Win/loss streak tracker (Overview)
+js/edge.js            Shared analytics: trade style, R-multiples, segment stats, leak rules
+js/coach.js           Coach tab (rules from your data, what-if simulator, edge map)
+js/risk.js            Risk (R) tab (R-multiples for debit trades, % max profit for premium)
+js/pretrade.js        Pre-Trade Check tab (checks a planned trade against your history)
 js/app.js             renderAll(), tab switching, startup
 ```
 
