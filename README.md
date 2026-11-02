@@ -5,9 +5,9 @@ An English options journal on GitHub Pages, with private Google Sheets storage. 
 ## First use — no manual column setup
 
 1. Make a backup copy of your private spreadsheet in Google Sheets (File → Make a copy). Keep the working file restricted, not published.
-2. Save your restricted Picker browser API key in dashboard Settings if needed, connect the dedicated Google account, and select your editable private spreadsheet.
+2. Save your restricted Picker browser API key in Connection & import if needed, connect the dedicated Google account, and select your editable private spreadsheet.
 3. Select the existing `All Data` worksheet. Its first row must have the existing journal headings (including Full name or Symbol, or your configured mapping). Original dates should be DD/MM/YY or DD/MM/YYYY.
-4. Open **Open trades → Set up journal tabs**. Enter the first account name and your commission per contract, then click **Create journal tabs**.
+4. Open **Trades → Set up journal tabs**. Enter the first account name and your commission per contract, then click **Create journal tabs**.
 5. The app creates eight new worksheets in this same file. Existing worksheets stay untouched.
 
 | Worksheet | Purpose |
@@ -30,8 +30,10 @@ Click **New trade**, choose an account (default preselected), and enter the name
 - **One total strategy price** tracks whole packages. Enter debit/long or credit/short, the multiplier and contracts per package for commission calculation. Optional leg details describe the package; when present, their ratios determine commission contract count.
 - **Individual leg prices** tracks separate legs. Add Call/Put, long/short, strike, expiry, ratio and multiplier per leg. Choose this mode if you may close individual legs. The accounting mode is fixed after the first execution; package prices are never silently allocated to individual legs.
 - Planning/review fields are optional. Fill strategy, reason, target/loss limit, confidence, emotions, mistakes and notes as needed.
-- Click **Prepare opening details** and enter quantities, per-share prices and fees. Re-prepare fills after changing legs or accounting mode. For a historical closed trade, check the closed-trade option and enter its closing fills/date too.
+- Opening quantities, per-share prices and fees appear immediately. Advanced accounting and legs expand when needed; valid leg changes update the fills while preserving entered values for unchanged legs. For a historical closed trade, check the closed-trade option and enter its closing fills/date too.
 - Click **Save trade** to write the trade and initial executions together. Nothing is saved before this click.
+
+Use the unified **Trades** table with **Open / Closed / All**, text search, symbol/strategy filters and the global account filter. Statistics reflect the visible filters. Click a trade to open a side drawer; remaining positions, planning/review, legs and execution history are collapsible. Strategies use single-select tags; emotions and mistakes use multi-select tags. Positive P&L is green, negative is red, zero is neutral, and unavailable values remain distinct.
 
 Click an open trade for **Add execution**, **Update prices**, **Roll**, editing, history or deletion. Set a leg quantity to zero to skip it. Closings cannot exceed remaining quantities. Worthless expiry requires price zero. Exercise/assignment requires an option-only settlement price and a broker-evidence note; stock positions and later stock P&L are outside this version.
 
@@ -80,9 +82,12 @@ No build is needed for static hosting. Install development tools with npm instal
 
 ```
 npm test
+npm run test:ui
 npx playwright install chromium
 npm run test:browser
 ```
+
+The DOM suite (`test:ui`) uses the real accounting/store with a mocked Sheets transport to check the shortened form, cash preview, tags, drawer sections, focused search, filters, actual commissions, detailed-leg fill preservation, edits and recycle-bin recovery. It does not verify browser layout, native dialog focus or OAuth. Optional `JOURNAL_JSDOM_MODULE` selects an external jsdom installation.
 
 The browser suite isolates Google OAuth/Picker/Sheets with fixtures, never a user's account. Chart.js 4.4.1 renders actual charts in the test. Coverage includes setup preserving All Data, both price modes, partial/final closes, marks, multi-account/default/filter, legacy adoption, linked roll, soft delete/restore, monthly P&L, mobile layout, XSS and disconnect. Node tests cover accounting/risk, validation, revisions, stale writes and lost-response recovery. Final live Google write permission must be checked by the signed-in user.
 
