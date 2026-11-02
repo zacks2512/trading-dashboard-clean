@@ -28,63 +28,63 @@ function records(name){return(sheets.get(name)?.rows||[]).slice(1).map(r=>({...J
  await page.click('#google-connect');await page.waitForFunction(()=>!document.getElementById('google-pick').disabled);await page.click('#google-pick');
  await page.waitForFunction(()=>document.getElementById('badge').textContent.includes('1 closed trades'));
  assert.equal(await page.evaluate(()=>window.pwned),undefined);
- await page.locator('.tab[data-page="open-trades"]').click();await page.getByRole('button',{name:'Set up journal tabs',exact:true}).click();
+ await page.locator('.tab[data-page="open-trades"]').click();if(await page.locator('[data-status="open"]').count())await page.locator('[data-status="open"]').click();await page.getByRole('button',{name:'Set up journal tabs',exact:true}).click();
  await page.getByLabel('First account name').fill('IBKR Main');await page.getByLabel('Default commission per contract (USD)').fill('0.65');
  await page.getByRole('button',{name:'Create journal tabs',exact:true}).click();await page.waitForFunction(()=>!document.querySelector('dialog[open]'));
  assert.equal(sheets.size,9);assert.equal(sheets.get('All Data').rows.length,2);
  const create=async(name,price='2',quantity='2')=>{
   await page.locator('#page-open-trades').getByRole('button',{name:'New trade',exact:true}).click();
   await page.getByLabel('Trade name',{exact:true}).fill(name);await page.getByLabel('Underlying symbol').fill('TEST');await page.getByLabel('Entry date',{exact:true}).fill('2026-11-02');await page.getByLabel('Strike (single option)',{exact:true}).fill('100');await page.getByLabel('Expiry (package)',{exact:true}).fill('2026-12-18');
-  await page.getByRole('button',{name:'Prepare opening details',exact:true}).click();
+  
   await page.getByLabel('Whole strategy — quantity (0 to skip)',{exact:true}).fill(quantity);await page.getByLabel('Price per share / strategy unit (USD)',{exact:true}).fill(price);
   await page.getByRole('button',{name:'Save trade',exact:true}).click();await page.waitForFunction(()=>!document.querySelector('dialog[open]'));
  };
  await create('UI Call');assert.equal(records('TJ_Trades').size,1);assert.equal(records('TJ_Actions').size,1);
- await page.locator('#page-open-trades strong').filter({hasText:'UI Call'}).click();
+ await page.locator('#page-open-trades .journal-trade-link').filter({hasText:'UI Call'}).click();
  await page.getByRole('button',{name:'Add execution',exact:true}).click();await page.getByLabel('Date',{exact:true}).fill('2026-11-03');
  await page.getByLabel('Whole strategy — quantity (0 to skip)',{exact:true}).fill('1');await page.getByLabel('Price per share / strategy unit (USD)',{exact:true}).fill('3');
  await page.getByRole('button',{name:'Save',exact:true}).click();await page.waitForFunction(()=>!document.querySelector('dialog[open]'));
  assert((await page.locator('#page-open-trades').innerText()).includes('$98.70'));
- await page.locator('#page-open-trades strong').filter({hasText:'UI Call'}).click();await page.getByRole('button',{name:'Update prices',exact:true}).click();
+ await page.locator('#page-open-trades .journal-trade-link').filter({hasText:'UI Call'}).click();await page.getByRole('button',{name:'Update prices',exact:true}).click();
  await page.getByLabel('Price observation time (your local time)').fill('2026-11-04T12:00');await page.getByLabel('Whole strategy — price per share / package').fill('4');await page.getByRole('button',{name:'Save',exact:true}).click();await page.waitForFunction(()=>!document.querySelector('dialog[open]'));
  assert((await page.locator('#page-open-trades').innerText()).includes('$199.35'));
  await page.screenshot({path:'/tmp/tj-open.png',fullPage:true});
- await page.locator('#page-open-trades strong').filter({hasText:'UI Call'}).click();await page.getByRole('button',{name:'Add execution',exact:true}).click();await page.getByLabel('Date',{exact:true}).fill('2026-11-05');await page.getByLabel('Whole strategy — quantity (0 to skip)',{exact:true}).fill('1');await page.getByLabel('Price per share / strategy unit (USD)',{exact:true}).fill('4');await page.getByRole('button',{name:'Save',exact:true}).click();await page.waitForFunction(()=>!document.querySelector('dialog[open]'));
- await page.locator('.tab[data-page="closed-trades"]').click();assert((await page.locator('#page-closed-trades').innerText()).includes('$297.40'));
+ await page.locator('#page-open-trades .journal-trade-link').filter({hasText:'UI Call'}).click();await page.getByRole('button',{name:'Add execution',exact:true}).click();await page.getByLabel('Date',{exact:true}).fill('2026-11-05');await page.getByLabel('Whole strategy — quantity (0 to skip)',{exact:true}).fill('1');await page.getByLabel('Price per share / strategy unit (USD)',{exact:true}).fill('4');await page.getByRole('button',{name:'Save',exact:true}).click();await page.waitForFunction(()=>!document.querySelector('dialog[open]'));
+ await page.locator('[data-status="closed"]').click();assert((await page.locator('#page-open-trades').innerText()).includes('$297.40'));
  // A legacy row is adopted without doubling its analytics count or changing All Data.
  await page.getByRole('button',{name:'Manage summary',exact:true}).click();await page.getByRole('button',{name:'Create managed summary',exact:true}).click();await page.waitForFunction(()=>!document.querySelector('dialog[open]'));
  assert.equal(sheets.get('All Data').rows.length,2);assert.equal(await page.evaluate(()=>trades.length),2);
  // A roll closes the old position and opens the new linked record in one write.
- await page.locator('.tab[data-page="open-trades"]').click();await create('Old roll','1','1');await page.locator('#page-open-trades strong').filter({hasText:'Old roll'}).click();await page.getByRole('button',{name:'Roll',exact:true}).click();await page.getByLabel('Date',{exact:true}).fill('2026-11-06');await page.getByLabel('Whole strategy — quantity (0 to skip)',{exact:true}).fill('1');await page.getByLabel('Price per share / strategy unit (USD)',{exact:true}).fill('0.5');await page.getByRole('button',{name:'Next: new linked trade',exact:true}).click();
- await page.getByLabel('Trade name',{exact:true}).fill('New roll');await page.getByLabel('Expiry (package)',{exact:true}).fill('2027-01-15');await page.getByRole('button',{name:'Prepare opening details',exact:true}).click();await page.getByLabel('Price per share / strategy unit (USD)',{exact:true}).fill('2');await page.getByRole('button',{name:'Save roll & linked opening',exact:true}).click();await page.waitForFunction(()=>!document.querySelector('dialog[open]'));
+ await page.locator('.tab[data-page="open-trades"]').click();if(await page.locator('[data-status="open"]').count())await page.locator('[data-status="open"]').click();await create('Old roll','1','1');await page.locator('#page-open-trades .journal-trade-link').filter({hasText:'Old roll'}).click();await page.getByRole('button',{name:'Roll',exact:true}).click();await page.getByLabel('Date',{exact:true}).fill('2026-11-06');await page.getByLabel('Whole strategy — quantity (0 to skip)',{exact:true}).fill('1');await page.getByLabel('Price per share / strategy unit (USD)',{exact:true}).fill('0.5');await page.getByRole('button',{name:'Next: new linked trade',exact:true}).click();
+ await page.getByLabel('Trade name',{exact:true}).fill('New roll');await page.getByLabel('Expiry (package)',{exact:true}).fill('2027-01-15');await page.getByLabel('Price per share / strategy unit (USD)',{exact:true}).fill('2');await page.getByRole('button',{name:'Save roll & linked opening',exact:true}).click();await page.waitForFunction(()=>!document.querySelector('dialog[open]'));
  const rolled=[...records('TJ_Trades').values()].find(t=>t.title==='New roll');assert(rolled.rollFromId);assert.equal([...records('TJ_Trades').values()].find(t=>t.id===rolled.rollFromId).title,'Old roll');
  // Recycle bin preserves the position and restores it.
- await page.locator('#page-open-trades strong').filter({hasText:'New roll'}).click();await page.getByRole('button',{name:'Delete trade',exact:true}).click();await page.getByRole('button',{name:'Move to recycle bin',exact:true}).click();await page.waitForFunction(()=>!document.querySelector('dialog[open]'));
+ await page.locator('#page-open-trades .journal-trade-link').filter({hasText:'New roll'}).click();await page.getByRole('button',{name:'Delete trade',exact:true}).click();await page.getByRole('button',{name:'Move to recycle bin',exact:true}).click();await page.waitForFunction(()=>!document.querySelector('dialog[open]'));
  assert(records('TJ_Trades').get(rolled.id)._deleted);
  await page.locator('.tab[data-page="journal-settings"]').click();await page.getByRole('button',{name:'History & recycle bin',exact:true}).click();await page.getByRole('button',{name:'Restore deleted record',exact:true}).click();await page.waitForFunction(()=>!document.querySelector('dialog[open]'));assert(!records('TJ_Trades').get(rolled.id)._deleted);
  await page.locator('.tab[data-page="realized"]').click();assert((await page.locator('#page-realized').innerText()).includes('2026-11'));
 
  // Detailed-leg accounting and closing just one leg.
- await page.locator('.tab[data-page="open-trades"]').click();
+ await page.locator('.tab[data-page="open-trades"]').click();if(await page.locator('[data-status="open"]').count())await page.locator('[data-status="open"]').click();
  await page.locator('#page-open-trades').getByRole('button',{name:'New trade',exact:true}).click();
- await page.getByLabel('Trade name',{exact:true}).fill('Detailed spread');await page.getByLabel('Underlying symbol').fill('ABC');await page.getByLabel('Entry date',{exact:true}).fill('2026-11-02');await page.getByLabel('Price accounting mode').selectOption('legs');await page.getByLabel('Structure',{exact:true}).selectOption('Debit Vertical');
+ await page.getByLabel('Trade name',{exact:true}).fill('Detailed spread');await page.getByLabel('Underlying symbol').fill('ABC');await page.getByLabel('Entry date',{exact:true}).fill('2026-11-02');await page.getByText('Advanced accounting & option legs',{exact:true}).click();await page.getByLabel('Price accounting mode').selectOption('legs');await page.getByLabel('Structure',{exact:true}).selectOption('Debit Vertical');
  await page.getByRole('button',{name:'Add leg',exact:true}).click();await page.getByRole('button',{name:'Add leg',exact:true}).click();
- const legRows=page.locator('dialog .journal-leg');
+ const legRows=page.locator('dialog .journal-section .journal-leg');
  for(let i=0;i<2;i++){await legRows.nth(i).getByLabel('Strike',{exact:true}).fill(i?'105':'100');await legRows.nth(i).getByLabel('Expiry',{exact:true}).fill('2026-12-18');}
  await legRows.nth(1).getByLabel('Position',{exact:true}).selectOption('short');
- await page.getByRole('button',{name:'Prepare opening details',exact:true}).click();
+ 
  await page.getByLabel('Price per share / strategy unit (USD)',{exact:true}).nth(0).fill('3');await page.getByLabel('Price per share / strategy unit (USD)',{exact:true}).nth(1).fill('1');
  await page.getByRole('button',{name:'Save trade',exact:true}).click();await page.waitForFunction(()=>!document.querySelector('dialog[open]'));
- await page.locator('#page-open-trades strong').filter({hasText:'Detailed spread'}).click();await page.getByRole('button',{name:'Add execution',exact:true}).click();await page.getByLabel('Date',{exact:true}).fill('2026-11-04');
+ await page.locator('#page-open-trades .journal-trade-link').filter({hasText:'Detailed spread'}).click();await page.getByRole('button',{name:'Add execution',exact:true}).click();await page.getByLabel('Date',{exact:true}).fill('2026-11-04');
  await page.getByLabel('long Call 100 / 2026-12-18 — quantity (0 to skip)',{exact:true}).fill('1');await page.getByLabel('Price per share / strategy unit (USD)',{exact:true}).nth(0).fill('4');await page.getByRole('button',{name:'Save',exact:true}).click();await page.waitForFunction(()=>!document.querySelector('dialog[open]'));
  const spread=[...records('TJ_Trades').values()].find(t=>t.title==='Detailed spread');assert.equal(spread.mode,'legs');assert.equal([...records('TJ_Actions').values()].filter(a=>a.tradeId===spread.id).length,2);
  // Multiple accounts, default account selection, and filtering.
  await page.locator('.tab[data-page="journal-settings"]').click();await page.getByRole('button',{name:'Add account',exact:true}).click();await page.getByLabel('Account name',{exact:true}).fill('Second account');await page.getByRole('button',{name:'Save',exact:true}).click();await page.waitForFunction(()=>!document.querySelector('dialog[open]'));
  const second=[...records('TJ_Accounts').values()].find(a=>a.name==='Second account');await page.getByLabel('Default account',{exact:true}).selectOption(second.id);await page.getByRole('button',{name:'Save settings',exact:true}).click();await page.waitForFunction(()=>document.getElementById('loadStatus').textContent.includes('Saved'));
- await page.locator('.tab[data-page="open-trades"]').click();await create('Other account trade','1','1');
+ await page.locator('.tab[data-page="open-trades"]').click();if(await page.locator('[data-status="open"]').count())await page.locator('[data-status="open"]').click();await create('Other account trade','1','1');
  assert.equal([...records('TJ_Trades').values()].find(t=>t.title==='Other account trade').accountId,second.id);
  await page.locator('#journal-account').selectOption(second.id);assert(!(await page.locator('#page-open-trades').innerText()).includes('Detailed spread'));assert((await page.locator('#page-open-trades').innerText()).includes('Other account trade'));await page.locator('#journal-account').selectOption('');
- await page.setViewportSize({width:390,height:844});await page.locator('.tab[data-page="open-trades"]').click();await page.screenshot({path:'/tmp/tj-mobile.png',fullPage:true});
+ await page.setViewportSize({width:390,height:844});await page.locator('.tab[data-page="open-trades"]').click();if(await page.locator('[data-status="open"]').count())await page.locator('[data-status="open"]').click();await page.screenshot({path:'/tmp/tj-mobile.png',fullPage:true});
  await page.click('#google-disconnect');assert.equal(await page.evaluate(()=>trades.length),0);assert(!await page.evaluate(()=>document.body.innerHTML.includes('UI Call')));assert(!await page.evaluate(()=>JSON.stringify({...localStorage}).includes('TEST_TOKEN')));
  assert.deepEqual(errors,[]);console.log('PASS: browser setup; real Chart.js rendering; package and individual-leg actions; multi-account/default/filter; partial close/mark/final close; legacy adoption; linked roll; soft delete/restore; realized period view; mobile; XSS; disconnect. Google APIs mocked.');await browser.close();
 })().catch(e=>{console.error(e);process.exit(1)});

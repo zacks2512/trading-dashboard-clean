@@ -1,1 +1,15 @@
-{"name":"private-options-journal","version":"2.0.0","private":true,"scripts":{"test":"node --test tests/connection.cjs tests/journal.cjs","test:browser":"node tests/browser.cjs"},"devDependencies":{"chart.js":"4.4.1","playwright":"1.64.1"}}
+{
+  "name": "private-options-journal",
+  "version": "2.0.0",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/connection.cjs tests/journal.cjs",
+    "test:browser": "node tests/browser.cjs",
+    "test:ui": "node tests/ui.cjs"
+  },
+  "devDependencies": {
+    "chart.js": "4.4.1",
+    "playwright": "1.64.1",
+    "jsdom": "26.1.0"
+  }
+}
