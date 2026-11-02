@@ -147,14 +147,26 @@ table.hm td.emp{background:var(--bg3);border:1px solid var(--border);}
     <button class="btn p" onclick="exportJSON()">Export JSON</button>
   </div>
 </div>
-<div class="ibar">
-  <button class="btn p" id="google-connect" onclick="connectGoogle()">Connect Google</button>
-  <button class="btn" id="google-pick" onclick="choosePrivateSheet()" disabled>Choose private sheet</button>
-  <select id="private-tab" aria-label="Worksheet" onchange="loadPrivateTab()" disabled></select>
-  <button class="btn" id="google-refresh" onclick="refreshPrivateData()" disabled>Refresh</button>
-  <button class="btn" id="google-disconnect" onclick="disconnectGoogle()" disabled>Disconnect & clear</button>
-  <span id="loadStatus" role="status" aria-live="polite" style="font-size:12px;display:none;"></span>
+<div class="ibar workspace-toolbar" id="journal-toolbar" role="region" aria-label="Account and connection">
+  <div class="workspace-account"><label for="journal-account">Account</label><select id="journal-account" aria-label="Account"><option value="">All accounts</option></select></div>
+  <span id="journal-save-state" role="status" aria-live="polite"></span>
+  <div class="workspace-connection">
+    <span id="connection-state" class="connection-state" role="status" data-state="disconnected">Disconnected</span>
+    <button class="btn" id="google-refresh" onclick="refreshPrivateData()" disabled>Refresh</button>
+    <details id="connection-menu" class="connection-menu">
+      <summary class="btn">Connection <span aria-hidden="true">⌄</span></summary>
+      <div class="connection-panel">
+        <p>Google Sheets connection</p>
+        <button class="btn p" id="google-connect" onclick="connectGoogle()">Connect Google</button>
+        <button class="btn" id="google-pick" onclick="choosePrivateSheet()" disabled>Choose private sheet</button>
+        <label for="private-tab">Historical worksheet</label>
+        <select id="private-tab" aria-label="Worksheet" onchange="loadPrivateTab()" disabled></select>
+        <button class="btn" id="google-disconnect" onclick="disconnectGoogle()" disabled>Disconnect &amp; clear</button>
+      </div>
+    </details>
+  </div>
 </div>
+<div id="loadStatus" role="status" aria-live="polite" style="display:none;"></div>
 <nav class="tabs" aria-label="Main navigation">
   <div class="nav-section-label">WORKSPACE</div>
   <button type="button" class="tab active" data-page="open-trades" onclick="sw('open-trades')"><span aria-hidden="true">▤</span> Trades</button>
@@ -396,7 +408,14 @@ function rtt(row){if(!row||typeof row!=='object')return null;row=Object.fromEntr
   return{name:name||sym,symbol:sym,type:row[COL.type]||'—',strategy:row[COL.strategy]||'—',pnl:pnlVal,pct:pm(row[COL.pct]||''),days:parseInt(row[COL.days])||0,mistakes:row[COL.mistakes]||'—',entry:row[COL.emotion_entry]||'—',exit:row[COL.emotion_exit]||'—',entryDate:entryD,exitDate:exitD,timeEff:timeEff,comments:row['comments']||'',confidence:row['confidence level (1-5)']||'',strike:row['Strike']||'',entryPrice:row['Entry Price']||'',exitPrice:row['Exit Price']||'',grossPnl:row['Gross P&L']||'',fees:row['Fees']||'',contracts:row['Contracts']||'',expiry:row[COL.expiry]||''};
 }
 
-function showStatus(msg,isErr){var el=document.getElementById('loadStatus');el.textContent=msg;el.style.color=isErr?R:G;el.style.display=msg?'inline':'none';}
+var statusTimer=null;
+function showStatus(msg,isErr){
+  clearTimeout(statusTimer);statusTimer=null;
+  var el=document.getElementById('loadStatus');el.textContent=msg;el.dataset.kind=isErr?'error':'success';el.setAttribute('role',isErr?'alert':'status');el.setAttribute('aria-live',isErr?'assertive':'polite');el.style.display=msg?'block':'none';
+  if(msg&&!isErr)statusTimer=setTimeout(function(){el.style.display='none';el.textContent='';statusTimer=null;},5000);
+}
+document.addEventListener('click',function(event){var menu=document.getElementById('connection-menu');if(menu&&menu.open&&!menu.contains(event.target))menu.open=false;});
+document.addEventListener('keydown',function(event){var menu=document.getElementById('connection-menu');if(event.key==='Escape'&&menu&&menu.open){menu.open=false;menu.querySelector('summary').focus();event.preventDefault();}});
 function ingest(rows,src){if(!Array.isArray(rows))throw new Error('Expected rows');if(window.JournalApp){JournalApp.setLegacy(rows,'local-import');showStatus('Local import loaded. It has not been written to Google Sheets.');return;}var parsed=rows.map(rtt).filter(Boolean);resetPrivateView();if(!parsed.length){showStatus('No trades found',true);return;}trades=parsed;document.getElementById('badge').textContent='— '+src+' · '+trades.length+' trades';showStatus('');renderAll();}
 function loadFile(evt){if(window.disconnectGoogle)disconnectGoogle();var f=evt.target.files[0];if(!f)return;var reader=new FileReader();reader.onload=function(e){var txt=e.target.result;if(f.name.endsWith('.json')){try{var d=JSON.parse(txt);var arr=Array.isArray(d)?d:d.trades||[];ingest(arr,f.name);}catch(ex){showStatus('JSON error: '+ex.message,true);}}else{ingest(parseCSV(txt),f.name);}};reader.readAsText(f);}
 function exportJSON(){var b=new Blob([JSON.stringify(trades,null,2)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='trading_journal.json';a.click();}

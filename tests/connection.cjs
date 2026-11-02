@@ -7,9 +7,9 @@ const ctx={console,Map,Date,Number,String,Boolean,Error,Object,encodeURIComponen
 ctx.window=ctx;ctx.google={accounts:{oauth2:{initTokenClient(c){callback=c.callback;scope=c.scope;assert.equal(c.include_granted_scopes,false);return{requestAccessToken(){callback({access_token:'TEST_TOKEN',expires_in:3600})}}},hasGrantedAllScopes:()=>true,revoke(){}}}};
 vm.createContext(ctx);vm.runInContext(fs.readFileSync('private-sheets.js','utf8'),ctx);
 async function run(){
- assert(element('google-pick').disabled);assert.equal(ingested.length,0);
- await ctx.connectGoogle();assert.equal(scope,'https://www.googleapis.com/auth/drive.file');assert(!element('google-pick').disabled);
- await vm.runInContext("openPrivateSheet('test-file', sessionGeneration)",ctx);assert.equal(ingested.length,1);assert.equal(element('private-tab').value,'623391435');
+ assert(element('google-pick').disabled);assert.equal(element('connection-state').textContent,'Disconnected');assert.equal(ingested.length,0);
+ await ctx.connectGoogle();assert.equal(scope,'https://www.googleapis.com/auth/drive.file');assert(!element('google-pick').disabled);assert.equal(element('connection-state').textContent,'Select a sheet');
+ await vm.runInContext("openPrivateSheet('test-file', sessionGeneration)",ctx);assert.equal(ingested.length,1);assert.equal(element('private-tab').value,'623391435');assert.equal(element('connection-state').textContent,'Connected');
  assert.equal(saved.size,0);
  mode='empty';await ctx.loadPrivateTab();assert.equal(ingested.length,0);
  mode='normal';await ctx.loadPrivateTab();assert.equal(ingested.length,1);

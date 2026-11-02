@@ -11,6 +11,8 @@ w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEven
 const errors=[];w.addEventListener('error',e=>errors.push(e.error));
 for(const file of ['vendor/purify.min.js','journal-engine.js','journal-store.js'])w.eval(fs.readFileSync(path.join(root,file),'utf8'));
 for(const script of d.querySelectorAll('script:not([src])'))w.eval(script.textContent);
+// Use a deterministic clock to verify status lifetimes without waiting five seconds.
+const timers=new Map();let nextTimer=0;w.setTimeout=(fn,ms)=>{const id=++nextTimer;timers.set(id,{fn:()=>{timers.delete(id);fn()},ms});return id};w.clearTimeout=id=>timers.delete(id);
 // Analytics canvas drawing is covered separately by the browser suite, not emulated here.
 w.renderAll=()=>{};
 w.eval(fs.readFileSync(path.join(root,'journal-app.js'),'utf8'));
@@ -37,6 +39,16 @@ function fillPackage(name,price='5',quantity='1'){
  w.JournalApp.tradeEditor();set('Trade name',name);set('Underlying symbol','AAPL');set('Entry date','2026-11-02');set('Expiry (package)','2026-12-18');set('Strike (single option)','250');set('Whole strategy — quantity (0 to skip)',quantity);set('Price per share / strategy unit (USD)',price);
 }
 (async()=>{
+ assert.equal(d.querySelectorAll('.workspace-toolbar').length,1);assert.equal(d.querySelectorAll('#journal-account').length,1);assert(!d.querySelector('.journal-toolbar'));
+ assert.equal(d.querySelector('#journal-account').closest('.workspace-toolbar'),d.querySelector('#google-refresh').closest('.workspace-toolbar'));
+ for(const id of ['google-connect','google-pick','private-tab','google-disconnect'])assert(d.querySelector('#connection-menu').contains(d.getElementById(id)));
+ assert(!d.querySelector('#connection-menu').open);
+ const menu=d.querySelector('#connection-menu');menu.open=true;d.querySelector('.logo').click();assert(!menu.open);menu.open=true;d.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));assert(!menu.open);assert.equal(d.activeElement,menu.querySelector('summary'));
+ const statusBox=d.querySelector('#loadStatus');w.showStatus('Success');assert.equal(statusBox.style.display,'block');assert.equal([...timers.values()][0].ms,5000);
+ w.showStatus('Persistent error',true);assert.equal(timers.size,0);assert.equal(statusBox.getAttribute('role'),'alert');assert.equal(statusBox.dataset.kind,'error');assert.equal(statusBox.style.display,'block');
+ w.showStatus('New success');assert.equal(statusBox.getAttribute('role'),'status');assert.equal(timers.size,1);[...timers.values()][0].fn();assert.equal(statusBox.style.display,'none');assert.equal(statusBox.textContent,'');
+ w.showStatus('First success');w.showStatus('Second success');assert.equal(timers.size,1);
+ w.showStatus('');assert.equal(statusBox.style.display,'none');timers.clear();
  await w.JournalApp.connect(transport);click('Set up journal tabs');set('First account name','Main');set('Default commission per contract (USD)','2');await save();assert.equal(rows.size,8);
  fillPackage('One Call');assert(!dialog().textContent.includes('Prepare opening details'));
  assert.equal(dialog().querySelector('.journal-order-preview strong').textContent,'$502.00');
@@ -72,7 +84,7 @@ function fillPackage(name,price='5',quantity='1'){
  const lossRow=tradeLink('Loss Call').closest('tr');assert.equal(lossRow.querySelector('.journal-negative').textContent,'-$102.00');tradeLink('Loss Call').click();assert([...dialog().querySelectorAll('.journal-stat strong.journal-negative')].some(x=>x.textContent==='-$102.00'));click('Close',dialog());
  // Delete and restore remain revisioned through the same real store implementation.
  tradeLink('One Call').click();click('Delete trade');click('Move to recycle bin');await settled();assert(saved('TJ_Trades').get(t.id)._deleted);assert(![...d.querySelectorAll('.journal-trade-link')].some(b=>b.textContent==='One Call'));
- click('Journal settings');click('History & recycle bin');click('Restore deleted record');await settled();assert(!saved('TJ_Trades').get(t.id)._deleted);
+ d.querySelector('.tab[data-page="journal-settings"]').click();click('History & recycle bin');click('Restore deleted record');await settled();assert(!saved('TJ_Trades').get(t.id)._deleted);
  assert.equal(errors.length,0);w.JournalApp.clear();assert(!d.body.textContent.includes('One Call'));
- console.log('PASS: DOM integration — setup, immediate opening fields, cash preview, single/multiple tags, selection persistence, drawer sections, marks, net P&L and zero colors, focused search, filters, closing and actual commissions, short defaults, detailed legs and fill preservation, edit, revisioned delete/restore, disconnect. Sheets mocked; visual/browser QA not covered.');dom.window.close();
+ console.log('PASS: DOM integration — consolidated account/connection toolbar, menu containment/outside-click/Escape, temporary success and persistent errors, setup, immediate opening fields, cash preview, single/multiple tags, selection persistence, drawer sections, marks, net P&L and zero colors, focused search, filters, closing and actual commissions, short defaults, detailed legs and fill preservation, edit, revisioned delete/restore, disconnect. Sheets mocked; visual/browser QA not covered.');dom.window.close();
 })().catch(e=>{console.error(e);dom.window.close();process.exit(1)});

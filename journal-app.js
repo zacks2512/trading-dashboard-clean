@@ -314,8 +314,8 @@
   legacy=rows.map((raw,i)=>({raw,parsed:rtt(raw),key:source+':'+(raw['No.']||i+2)})).filter(l=>l.parsed&&(!l.raw.Status||String(l.raw.Status).toLowerCase()==='closed'||l.parsed.exitDate));render();
  }
  function clearLegacy(){legacy=[];render();}
- const toolbar=node('div',{class:'journal-toolbar'},node('label',{for:'journal-account'},'Account'),node('select',{id:'journal-account',onchange:e=>{accountFilter=e.target.value;render()}}),button('New trade',()=>tradeEditor(),true),button('Journal settings',()=>sw('journal-settings')),node('span',{id:'journal-save-state',role:'status'}));
- document.querySelector('.tabs').before(toolbar,node('div',{id:'journal-banner'}));
+ $('journal-account').addEventListener('change',event=>{accountFilter=event.target.value;render()});
+ document.querySelector('.tabs').before(node('div',{id:'journal-banner'}));
  const searchInput=input('search','',{class:'journal-search',placeholder:'Search trades…','aria-label':'Search trades',oninput:e=>{search=e.target.value;listPage()}});
  const symbolSelect=select([['','All symbols']],'',{'aria-label':'Filter by symbol',onchange:e=>{symbolFilter=e.target.value;listPage()}}),strategySelect=select([['','All strategies']],'',{'aria-label':'Filter by strategy',onchange:e=>{strategyFilter=e.target.value;listPage()}});
  const filters=node('div',{class:'journal-filters'},searchInput,symbolSelect,strategySelect,button('Clear filters',()=>{search='';symbolFilter='';strategyFilter='';accountFilter='';searchInput.value='';render()}));
