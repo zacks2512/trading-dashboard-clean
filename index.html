@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Trading Journal Dashboard</title>
+<link rel="stylesheet" href="journal.css">
 <script src="vendor/purify.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -149,20 +150,28 @@ table.hm td.emp{background:var(--bg3);border:1px solid var(--border);}
   <button class="btn p" id="google-connect" onclick="connectGoogle()">Connect Google</button>
   <button class="btn" id="google-pick" onclick="choosePrivateSheet()" disabled>Choose private sheet</button>
   <select id="private-tab" aria-label="Worksheet" onchange="loadPrivateTab()" disabled></select>
-  <button class="btn" id="google-refresh" onclick="loadPrivateTab()" disabled>Refresh</button>
+  <button class="btn" id="google-refresh" onclick="refreshPrivateData()" disabled>Refresh</button>
   <button class="btn" id="google-disconnect" onclick="disconnectGoogle()" disabled>Disconnect & clear</button>
   <span id="loadStatus" role="status" aria-live="polite" style="font-size:12px;display:none;"></span>
 </div>
 <div class="tabs">
-  <div class="tab active" onclick="sw('overview')">Overview</div>
-  <div class="tab" onclick="sw('emotions')">Emotion Analysis</div>
-  <div class="tab" onclick="sw('confidence')">Confidence Analysis</div>
-  <div class="tab" onclick="sw('perf')">Performance</div>
-  <div class="tab" onclick="sw('goals')">Goals</div>
-  <div class="tab" onclick="sw('log')">Trade Log</div>
-  <div class="tab" onclick="sw('settings')">Settings</div>
+  <div class="tab" data-page="open-trades" onclick="sw('open-trades')">Open trades</div>
+  <div class="tab" data-page="closed-trades" onclick="sw('closed-trades')">Closed trades</div>
+  <div class="tab" data-page="realized" onclick="sw('realized')">Realized P&amp;L</div>
+  <div class="tab" data-page="journal-settings" onclick="sw('journal-settings')">Journal settings</div>
+  <div class="tab active" data-page="overview" onclick="sw('overview')">Overview</div>
+  <div class="tab" data-page="emotions" onclick="sw('emotions')">Emotion Analysis</div>
+  <div class="tab" data-page="confidence" onclick="sw('confidence')">Confidence Analysis</div>
+  <div class="tab" data-page="perf" onclick="sw('perf')">Performance</div>
+  <div class="tab" data-page="goals" onclick="sw('goals')">Goals</div>
+  <div class="tab" data-page="log" onclick="sw('log')">Trade Log</div>
+  <div class="tab" data-page="settings" onclick="sw('settings')">Settings</div>
 </div>
 
+<div class="page journal" id="page-open-trades"></div>
+<div class="page journal" id="page-closed-trades"></div>
+<div class="page journal" id="page-realized"></div>
+<div class="page journal" id="page-journal-settings"></div>
 <!-- OVERVIEW -->
 <div class="page active" id="page-overview">
   <div id="ov0" class="empty">Connect Google and choose your private sheet, or load a local file.</div>
@@ -334,7 +343,7 @@ table.hm td.emp{background:var(--bg3);border:1px solid var(--border);}
     <div style="display:flex;gap:8px;margin-bottom:20px"><button class="btn p" onclick="saveCols()">Save</button><button class="btn" onclick="resetCols()">Reset</button></div>
     <div style="border-top:1px solid var(--border);padding-top:16px">
       <div class="stt">Private Google Sheets connection</div>
-      <p style="line-height:1.7;color:var(--text2)">Keep your spreadsheet restricted. Connect Google, then explicitly choose the file. This version reads data only; it never writes to your sheet.</p>
+      <p style="line-height:1.7;color:var(--text2)">Keep your spreadsheet restricted. Connect Google, then explicitly choose the file. Journal entries are saved only when you press Save. Set up the TJ_ tabs once in Journal settings. Existing All Data history is preserved.</p>
       <label for="picker-api-key">Restricted Google Picker API key</label>
       <input id="picker-api-key" type="password" autocomplete="off" spellcheck="false" style="width:100%;margin:10px 0;padding:10px" placeholder="Paste the website-restricted Picker API key">
       <button class="btn" onclick="savePickerKey()">Save key on this browser</button>
@@ -350,7 +359,7 @@ var trades=[],CX={},sortKey='',sortDir=1,perfPeriod='monthly',activeTradeIdx=nul
 var G='#2ecc71',R='#e74c3c',B='#3498db',AM='#f39c12',GC='rgba(255,255,255,.04)',TC='#5a6070';
 
 function buildColUI(){document.getElementById('colset').innerHTML=DOMPurify.sanitize(Object.entries(DEFS).map(function(e){return'<div><label>'+e[1].l+'</label><input id="col-'+e[0]+'" value="'+COL[e[0]]+'"></div>';}).join(''), {USE_PROFILES:{html:true},FORBID_TAGS:['img','svg','math','iframe','style','link','form','video','audio','object','embed']});}
-function saveCols(){Object.keys(DEFS).forEach(function(k){var el=document.getElementById('col-'+k);if(el)COL[k]=el.value.trim();});if(trades.length)renderAll();alert('Saved!');}
+function saveCols(){Object.keys(DEFS).forEach(function(k){var el=document.getElementById('col-'+k);if(el)COL[k]=el.value.trim();});if(window.JournalApp)loadPrivateTab();else if(trades.length)renderAll();alert('Saved! Refresh the legacy worksheet if needed.');}
 function resetCols(){Object.entries(DEFS).forEach(function(e){COL[e[0]]=e[1].d;});buildColUI();}
 function pm(s){var str=String(s||'').trim();var neg=str.charAt(0)==='('&&str.charAt(str.length-1)===')';var n=parseFloat(str.replace(/[$,%\s()]/g,'').replace(/,/g,'').replace(/[^0-9.\-]/g,''))||0;return neg?-Math.abs(n):n;}
 function avg(a){return a.length?a.reduce(function(s,v){return s+v;},0)/a.length:0;}
@@ -383,7 +392,7 @@ function rtt(row){if(!row||typeof row!=='object')return null;row=Object.fromEntr
 }
 
 function showStatus(msg,isErr){var el=document.getElementById('loadStatus');el.textContent=msg;el.style.color=isErr?R:G;el.style.display=msg?'inline':'none';}
-function ingest(rows,src){if(!Array.isArray(rows))throw new Error('Expected rows');var parsed=rows.map(rtt).filter(Boolean);resetPrivateView();if(!parsed.length){showStatus('No trades found',true);return;}trades=parsed;document.getElementById('badge').textContent='— '+src+' · '+trades.length+' trades';showStatus('');renderAll();}
+function ingest(rows,src){if(!Array.isArray(rows))throw new Error('Expected rows');if(window.JournalApp){JournalApp.setLegacy(rows,'local-import');showStatus('Local import loaded. It has not been written to Google Sheets.');return;}var parsed=rows.map(rtt).filter(Boolean);resetPrivateView();if(!parsed.length){showStatus('No trades found',true);return;}trades=parsed;document.getElementById('badge').textContent='— '+src+' · '+trades.length+' trades';showStatus('');renderAll();}
 function loadFile(evt){if(window.disconnectGoogle)disconnectGoogle();var f=evt.target.files[0];if(!f)return;var reader=new FileReader();reader.onload=function(e){var txt=e.target.result;if(f.name.endsWith('.json')){try{var d=JSON.parse(txt);var arr=Array.isArray(d)?d:d.trades||[];ingest(arr,f.name);}catch(ex){showStatus('JSON error: '+ex.message,true);}}else{ingest(parseCSV(txt),f.name);}};reader.readAsText(f);}
 function exportJSON(){var b=new Blob([JSON.stringify(trades,null,2)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='trading_journal.json';a.click();}
 
@@ -960,7 +969,7 @@ function renderStreak(){
   document.getElementById('streak-section').innerHTML=DOMPurify.sanitize('<div class="streak-wrap"><div class="streak-title">Streak Tracker</div><div class="streak-cards"><div class="streak-card" style="border-left:3px solid '+curColor+';"><div class="streak-card-label">Current Streak</div><div class="streak-card-val" style="color:'+curColor+';">'+curLen+(curType==='W'?'W':'L')+'</div><div class="streak-card-sub">'+curLabel+'</div></div><div class="streak-card" style="border-left:3px solid '+G+';"><div class="streak-card-label">Longest Win Streak</div><div class="streak-card-val" style="color:'+G+';">'+maxW+'W</div><div class="streak-card-sub">avg '+avgWS+' per run</div></div><div class="streak-card" style="border-left:3px solid '+R+';"><div class="streak-card-label">Longest Loss Streak</div><div class="streak-card-val" style="color:'+R+';">'+maxL+'L</div><div class="streak-card-sub">avg '+avgLS+' per run</div></div><div class="streak-card" style="border-left:3px solid '+B+';"><div class="streak-card-label">Win / Loss Runs</div><div class="streak-card-val" style="color:'+B+';">'+wStreaks.length+' / '+lStreaks.length+'</div><div class="streak-card-sub">total streaks</div></div></div><div class="streak-bar-wrap"><div class="streak-bar-label">Trade sequence — hover for details</div><div class="streak-tiles">'+tiles+'</div></div></div>', {USE_PROFILES:{html:true},FORBID_TAGS:['img','svg','math','iframe','style','link','form','video','audio','object','embed']});
 }
 var TABS=['overview','emotions','confidence','perf','goals','log','settings'];
-function sw(n){document.querySelectorAll('.tab').forEach(function(t,i){t.classList.toggle('active',TABS[i]===n);});document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});document.getElementById('page-'+n).classList.add('active');}
+function sw(n){document.querySelectorAll('.tab').forEach(function(t){t.classList.toggle('active',t.dataset.page===n);});document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});document.getElementById('page-'+n).classList.add('active');}
 
 function resetPrivateView(){
   trades=[];_currentRows=[];activeTradeIdx=null;dteFilter=null;periodFilter=null;
@@ -984,6 +993,9 @@ document.addEventListener('click',function(event){
 buildColUI();
 resetPrivateView();
 </script>
+<script src="journal-engine.js"></script>
+<script src="journal-store.js"></script>
+<script src="journal-app.js"></script>
 <script src="private-sheets.js"></script>
 </body>
 </html>
