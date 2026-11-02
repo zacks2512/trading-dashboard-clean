@@ -51,6 +51,7 @@ function clearGoogleSession() {
   clearTimeout(expiryTimer);
   googleToken = null; tokenDeadline = 0; selectedFile = null; worksheets = []; oauthPending = false;
   document.getElementById('private-tab').replaceChildren();
+  if(window.JournalApp)JournalApp.clear();
   resetPrivateView(); connectionControls();
 }
 function disconnectGoogle() {
@@ -144,18 +145,24 @@ async function choosePrivateSheet() {
 async function openPrivateSheet(fileId, generation) {
   const request = ++readGeneration;
   selectedFile = null; worksheets = [];
+  if(window.JournalApp)JournalApp.clear();
   document.getElementById('private-tab').replaceChildren();
   resetPrivateView(); connectionControls(); showStatus('Opening private spreadsheet.');
   try {
     const metadata = await googleRead(encodeURIComponent(fileId) + '?fields=spreadsheetId,sheets(properties(sheetId,title,gridProperties))', generation);
     if (request !== readGeneration || generation !== sessionGeneration) return;
-    worksheets = (metadata.sheets || []).map(s => s.properties).filter(s => s.gridProperties);
+    worksheets = (metadata.sheets || []).map(s => s.properties).filter(s => s.gridProperties && !s.title.startsWith('TJ_'));
     if (!worksheets.length) throw new Error('This spreadsheet has no supported worksheets.');
     const select = document.getElementById('private-tab');
     for (const sheet of worksheets) { const option = document.createElement('option'); option.value = String(sheet.sheetId); option.textContent = sheet.title; select.append(option); }
     // Initial journal tab from the user's link, if it exists in the chosen file.
     if (worksheets.some(s => s.sheetId === 623391435)) select.value = '623391435';
     selectedFile = fileId; connectionControls();
+    if(window.JournalApp)await JournalApp.connect(createJournalTransport());
+    if(generation !== sessionGeneration)return;
+    const legacyTitle=window.JournalApp?.legacyTitle?.()||'All Data';
+    const legacySheet=worksheets.find(s=>s.title===legacyTitle);
+    if(legacySheet)select.value=String(legacySheet.sheetId);
     await loadPrivateTab();
   } catch (error) { if (request === readGeneration && generation === sessionGeneration) showStatus(error.message, true); }
 }
@@ -163,6 +170,7 @@ async function openPrivateSheet(fileId, generation) {
 async function loadPrivateTab() {
   const generation = sessionGeneration;
   const request = ++readGeneration;
+  if(window.JournalApp)JournalApp.clearLegacy();
   resetPrivateView();
   try {
     validSession();
@@ -177,11 +185,31 @@ async function loadPrivateTab() {
     const headers = (values[0] || []).map(String).map(s => s.trim());
     if (!headers.includes(COL.name) && !headers.includes(COL.symbol)) throw new Error('Expected column headings in the first row. Check the selected tab and column mapping in Settings.');
     const rows = values.slice(1).filter(row => row.some(cell => String(cell).trim())).map(row => Object.fromEntries(headers.map((header, i) => [header, String(row[i] ?? '')])));
-    ingest(rows, 'Private Google Sheet');
-    if (rows.length) showStatus('Private worksheet loaded. Read-only connection.');
+    if(window.JournalApp)JournalApp.setLegacy(rows,selectedFile+':'+sheet.sheetId);else ingest(rows,'Private Google Sheet');
+    if(rows.length)showStatus('Private worksheet loaded. Journal entries use the separate TJ_ tabs.');
   } catch (error) {
     if (request === readGeneration && generation === sessionGeneration) showStatus(error.message, true);
     else if (!googleToken) showStatus('Google access expired. Connect again.', true);
   }
 }
 connectionControls();
+
+// A transport is bound to one selected file and one OAuth session. It cannot follow a later file switch.
+function createJournalTransport(){
+ const fileId=selectedFile,generation=sessionGeneration;
+ return {async request(path,{method='GET',body}={}){
+  if(generation!==sessionGeneration||fileId!==selectedFile)throw new Error('The Google connection changed. Reconnect and reload.');
+  validSession();const isWrite=method!=='GET';let response;
+  try{response=await fetch('https://sheets.googleapis.com/v4/spreadsheets/'+encodeURIComponent(fileId)+path,{method,headers:{Authorization:'Bearer '+googleToken,...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{}),cache:'no-store',credentials:'omit',referrerPolicy:'no-referrer'});}
+  catch(_){const error=new Error(isWrite?'Save response was lost. Reload to verify whether it reached Google before trying again.':'Cannot reach Google Sheets. Check your connection.');error.uncertain=isWrite;throw error;}
+  if(generation!==sessionGeneration||fileId!==selectedFile){const error=new Error('Connection changed during the request. Reload this file to verify its latest data.');error.uncertain=isWrite;throw error;}
+  if(response.status===401){clearGoogleSession();throw new Error('Google access expired. Reconnect before saving again.');}
+  if(!response.ok){const error=new Error(response.status===403?'Google denied access. Select an editable copy owned by your dedicated account.':response.status===429?'Google request limit reached. Wait briefly, then reload.':'Google Sheets request failed ('+response.status+'). Reload before retrying.');error.uncertain=isWrite&&response.status>=500;throw error;}
+  return response.json();
+ }};
+}
+
+async function refreshPrivateData(){
+ await loadPrivateTab();
+ if(window.JournalApp)await JournalApp.reload();
+}
