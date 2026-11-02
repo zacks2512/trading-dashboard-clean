@@ -25,7 +25,7 @@ function records(name){return(sheets.get(name)?.rows||[]).slice(1).map(r=>({...J
  await page.route('https://journal.test/**',r=>{const name=new URL(r.request().url()).pathname.slice(1)||'index.html';const file=path.join(root,name);return r.fulfill({contentType:name.endsWith('.js')?'text/javascript':name.endsWith('.css')?'text/css':'text/html',body:fs.readFileSync(file)});});
  await page.goto('https://journal.test/');
  await page.evaluate(()=>{document.getElementById('picker-api-key').value='AIza'+'a'.repeat(35);savePickerKey()});
- await page.click('#google-connect');await page.waitForFunction(()=>!document.getElementById('google-pick').disabled);await page.click('#google-pick');
+ await page.locator('#connection-menu > summary').click();await page.click('#google-connect');await page.waitForFunction(()=>!document.getElementById('google-pick').disabled);await page.click('#google-pick');
  await page.waitForFunction(()=>document.getElementById('badge').textContent.includes('1 closed trades'));
  assert.equal(await page.evaluate(()=>window.pwned),undefined);
  await page.locator('.tab[data-page="open-trades"]').click();if(await page.locator('[data-status="open"]').count())await page.locator('[data-status="open"]').click();await page.getByRole('button',{name:'Set up journal tabs',exact:true}).click();
@@ -85,6 +85,6 @@ function records(name){return(sheets.get(name)?.rows||[]).slice(1).map(r=>({...J
  assert.equal([...records('TJ_Trades').values()].find(t=>t.title==='Other account trade').accountId,second.id);
  await page.locator('#journal-account').selectOption(second.id);assert(!(await page.locator('#page-open-trades').innerText()).includes('Detailed spread'));assert((await page.locator('#page-open-trades').innerText()).includes('Other account trade'));await page.locator('#journal-account').selectOption('');
  await page.setViewportSize({width:390,height:844});await page.locator('.tab[data-page="open-trades"]').click();if(await page.locator('[data-status="open"]').count())await page.locator('[data-status="open"]').click();await page.screenshot({path:'/tmp/tj-mobile.png',fullPage:true});
- await page.click('#google-disconnect');assert.equal(await page.evaluate(()=>trades.length),0);assert(!await page.evaluate(()=>document.body.innerHTML.includes('UI Call')));assert(!await page.evaluate(()=>JSON.stringify({...localStorage}).includes('TEST_TOKEN')));
+ await page.locator('#connection-menu > summary').click();await page.click('#google-disconnect');assert.equal(await page.evaluate(()=>trades.length),0);assert(!await page.evaluate(()=>document.body.innerHTML.includes('UI Call')));assert(!await page.evaluate(()=>JSON.stringify({...localStorage}).includes('TEST_TOKEN')));
  assert.deepEqual(errors,[]);console.log('PASS: browser setup; real Chart.js rendering; package and individual-leg actions; multi-account/default/filter; partial close/mark/final close; legacy adoption; linked roll; soft delete/restore; realized period view; mobile; XSS; disconnect. Google APIs mocked.');await browser.close();
 })().catch(e=>{console.error(e);process.exit(1)});

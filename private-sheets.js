@@ -29,6 +29,8 @@ function loadGoogleScript(url) {
 
 function connectionControls() {
   const signedIn = Boolean(googleToken);
+  const state = document.getElementById('connection-state');
+  if(state){state.textContent=oauthPending?'Connecting…':signedIn?(selectedFile?'Connected':'Select a sheet'):'Disconnected';if(state.dataset)state.dataset.state=oauthPending?'pending':signedIn?(selectedFile?'connected':'authorized'):'disconnected';}
   document.getElementById('google-connect').disabled = oauthPending;
   document.getElementById('google-connect').textContent = signedIn ? 'Reconnect Google' : 'Connect Google';
   document.getElementById('google-pick').disabled = !signedIn;
