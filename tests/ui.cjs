@@ -15,6 +15,7 @@ for(const script of d.querySelectorAll('script:not([src])'))w.eval(script.textCo
 const timers=new Map();let nextTimer=0;w.setTimeout=(fn,ms)=>{const id=++nextTimer;timers.set(id,{fn:()=>{timers.delete(id);fn()},ms});return id};w.clearTimeout=id=>timers.delete(id);
 // Analytics canvas drawing is covered separately by the browser suite, not emulated here.
 w.renderAll=()=>{};
+w.eval(fs.readFileSync(path.join(root,'ibkr-import.js'),'utf8'));
 w.eval(fs.readFileSync(path.join(root,'journal-app.js'),'utf8'));
 const rows=new Map(),headers=['id','revision','change_id','updated_at','deleted','data'];let lastWrite=[];
 const transport={request:async(endpoint,options={})=>{
@@ -85,6 +86,31 @@ function fillPackage(name,price='5',quantity='1'){
  // Delete and restore remain revisioned through the same real store implementation.
  tradeLink('One Call').click();click('Delete trade');click('Move to recycle bin');await settled();assert(saved('TJ_Trades').get(t.id)._deleted);assert(![...d.querySelectorAll('.journal-trade-link')].some(b=>b.textContent==='One Call'));
  d.querySelector('.tab[data-page="journal-settings"]').click();click('History & recycle bin');click('Restore deleted record');await settled();assert(!saved('TJ_Trades').get(t.id)._deleted);
+ const csv = [
+  'AssetClass,Symbol,Conid,UnderlyingSymbol,Multiplier,Strike,Expiry,Put/Call,Buy/Sell,CurrencyPrimary,TradeID,DateTime,Quantity,TradePrice,IBCommission,IBCommissionCurrency,Open/CloseIndicator,IBOrderID,IBExecID,Notes/Codes',
+  'OPT,IBKR Test,123,IMPORT,100,50,20/03/2026,C,BUY,USD,1,01/02/2026;10:00:00,1,3,-1,USD,O,1,,',
+  'OPT,IBKR Test,123,IMPORT,100,50,20/03/2026,C,SELL,USD,2,20/03/2026;10:00:00,-1,0,0,USD,C,2,,Ep'
+ ].join('\n');
+ const accountId = [...saved('TJ_Accounts').keys()][0];
+ async function previewIBKR(){
+  d.querySelector('.tab[data-page="open-trades"]').click();
+  click('Import from IBKR');
+  set('Journal account',accountId);
+  const file = control('IBKR CSV');
+  Object.defineProperty(file,'files',{value:[{size:csv.length,text:async()=>csv}]});
+  file.dispatchEvent(new w.Event('change',{bubbles:true}));
+  await settled();
+ }
+ await previewIBKR();
+ assert(dialog().textContent.includes('1 new trades'));
+ assert(![...saved('TJ_Trades').values()].some(t=>t.symbol==='IMPORT'));
+ await save();
+ assert([...saved('TJ_Trades').values()].some(t=>t.symbol==='IMPORT'));
+ assert([...saved('TJ_Actions').values()].some(a=>a.id==='ibkr:'+accountId+':2' && a.kind==='expire'));
+ await previewIBKR();
+ assert(dialog().querySelector('button[type="submit"]').disabled);
+ assert.equal([...dialog().querySelectorAll('.journal-stat strong')][2].textContent,'2');
+ click('Cancel',dialog());
  assert.equal(errors.length,0);w.JournalApp.clear();assert(!d.body.textContent.includes('One Call'));
- console.log('PASS: DOM integration — consolidated account/connection toolbar, menu containment/outside-click/Escape, temporary success and persistent errors, setup, immediate opening fields, cash preview, single/multiple tags, selection persistence, drawer sections, marks, net P&L and zero colors, focused search, filters, closing and actual commissions, short defaults, detailed legs and fill preservation, edit, revisioned delete/restore, disconnect. Sheets mocked; visual/browser QA not covered.');dom.window.close();
+ console.log('PASS: DOM integration — consolidated account/connection toolbar, menu containment/outside-click/Escape, temporary success and persistent errors, setup, immediate opening fields, cash preview, single/multiple tags, selection persistence, drawer sections, marks, net P&L and zero colors, focused search, filters, closing and actual commissions, short defaults, detailed legs and fill preservation, edit, revisioned delete/restore, IBKR preview, commit and repeat import, disconnect. Sheets mocked; visual/browser QA not covered.');dom.window.close();
 })().catch(e=>{console.error(e);dom.window.close();process.exit(1)});

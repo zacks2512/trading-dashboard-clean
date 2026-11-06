@@ -62,7 +62,10 @@
   if(busy)return false;busy=true;const generation=epoch,db=store;
   if($('journal-save-state'))$('journal-save-state').textContent='Saving…';
   if(d)d.querySelectorAll('button').forEach(b=>b.disabled=true);
-  try{await db.commit(mutations,{...options,validate:validateState});if(generation!==epoch)return false;if(d)d.close();render();showStatus('Saved to your private Google Sheet.');return true;}
+  try{await db.commit(mutations,{...options,validate:(latest,changes)=>{
+   options.preflight?.(latest);
+   validateState(latest,changes);
+  }});if(generation!==epoch)return false;if(d)d.close();render();showStatus('Saved to your private Google Sheet.');return true;}
   catch(error){if(generation===epoch){if(d)errorIn(d,error);else showStatus(error.message,true);}return false;}
   finally{busy=false;if(generation===epoch&&$('journal-save-state'))$('journal-save-state').textContent='';if(d?.isConnected)d.querySelectorAll('button').forEach(b=>b.disabled=false);}
  }
@@ -254,6 +257,92 @@
   const d=openDialog('Manage historical summary');d.append(notice('This creates an editable historical summary in TJ_Trades. The original All Data row is left untouched and excluded from duplicate display while this record exists. No execution history is invented.'));
   d.append(button('Create managed summary',()=>saveChanges([mutation('trades',t)],{note:'Legacy summary adopted'},d),true),button('Cancel',()=>d.close()));
  }
+ function importIBKR(){
+  if(!requireSetup() || busy) return;
+  const accounts = records('accounts').filter(a => !a.archived);
+  if(!accounts.length){showStatus('Add an active journal account before importing.',true);return;}
+  const d = openDialog('Import from IBKR');
+  d.classList.add('journal');
+  const account = select(accounts.map(a => [a.id,a.name]),'');
+  account.prepend(node('option',{value:''},'Choose the account used in IBKR'));
+  account.value = '';
+  const file = input('file','',{accept:'.csv,text/csv'});
+  const preview = node('div',{'aria-live':'polite'});
+  const form = node('form',{},notice('Choose an Activity Flex CSV and the journal account it belongs to. Setup tags and emotions can be added later.'),
+   field('Journal account',account),field('IBKR CSV',file),preview);
+  const save = formFooter(d,form,'Import ready executions');
+  save.disabled = true;
+  d.append(form);
+
+  const db = store, generation = epoch;
+  let request = 0, prepared = null;
+  const snapshot = current => JSON.stringify(['accounts','trades','actions','legs'].map(
+   name => current.all(name,true).map(r => [r.id,S.version(r)]).sort((a,b) => a[0].localeCompare(b[0]))
+  ));
+  const iso = value => value ? new Date(value.getTime()-value.getTimezoneOffset()*60000).toISOString().slice(0,10) : null;
+  async function inspect(){
+   if(busy) return;
+   const current = ++request;
+   prepared = null;
+   save.disabled = true;
+   d.querySelector('.journal-error')?.remove();
+   preview.replaceChildren();
+   const selected = file.files?.[0], accountId = account.value;
+   if(!selected || !accountId) return;
+   try{
+    if(selected.size > 5000000) throw new Error('Choose an IBKR CSV smaller than 5 MB.');
+    const rows = IBKRImport.readCSV(await selected.text());
+    if(current !== request || !d.open || generation !== epoch) return;
+    const sourceAccounts = new Set(rows.filter(r => r.AssetClass === 'OPT' && r.AccountId).map(r => r.AccountId));
+    if(sourceAccounts.size > 1) throw new Error('Export one IBKR account per file.');
+    const historical = accountId === setting('legacyAccount',setting('defaultAccount','')) ?
+     legacy.map(({parsed:p}) => ({symbol:String(p.symbol).toUpperCase(),start:iso(p.entryDate),end:iso(p.exitDate)})) : [];
+    const plan = IBKRImport.plan(rows,{
+     accountId,engine:E,trades:db.all('trades'),actions:db.all('actions',true),
+     legs:db.all('legs'),legacy:historical
+    });
+    const counts = Object.fromEntries(['ready','review','duplicate'].map(status => [
+     status,plan.results.filter(r => r.status === status).length
+    ]));
+    preview.append(node('div',{class:'journal-stats'},
+     stat('Ready executions',counts.ready),stat('Needs review',counts.review),
+     stat('Already recorded / repeated',counts.duplicate),stat('Other assets skipped',plan.ignored)));
+    preview.append(node('p',{},plan.newTrades+' new trades · '+plan.updatedTrades+' trades to update'));
+    if(counts.review) preview.append(notice('Rows marked for review will be skipped. Import any missing opening history or review these events in IBKR before recording them manually.','warn'));
+    if(plan.results.length) preview.append(section('Execution details',table(['CSV row','Contract','Time','Status','Details'],
+     [...plan.results].sort((a,b) => Number(b.status === 'review') - Number(a.status === 'review')).map(r => node('tr',{},node('td',{},r.line),node('td',{class:'wrap'},r.symbol),
+      node('td',{},r.date),node('td',{},r.status),node('td',{class:'wrap'},r.reason)))),Boolean(counts.review)));
+    prepared = {plan,state:snapshot(db)};
+    save.disabled = !counts.ready;
+   }catch(error){
+    if(current === request && d.open && generation === epoch) errorIn(d,error);
+   }
+  }
+  file.addEventListener('change',inspect);
+  account.addEventListener('change',inspect);
+  form.onsubmit = async event => {
+   event.preventDefault();
+   if(busy || !prepared?.plan.mutations.length || generation !== epoch) return;
+   const {plan,state} = prepared;
+   file.disabled = account.disabled = true;
+   const success = await saveChanges(plan.mutations.map(m => mutation(m.table,m.data)),{
+    note:'IBKR Activity Flex import',
+    preflight:latest=>{
+     if(snapshot(latest) !== state) throw new Error('The journal changed after preview. Recheck the file before importing.');
+    }
+   },d);
+   if(!success && d.open){
+    prepared = null;
+    file.disabled = account.disabled = false;
+    save.disabled = true;
+    if(!form.querySelector('[data-import-recheck]')){
+     const recheck = button('Recheck file',inspect);
+     recheck.dataset.importRecheck = '';
+     form.querySelector('footer').prepend(recheck);
+    }
+   }
+  };
+ }
  function matchesFilters(t){return(!search||(t.title+' '+t.symbol+' '+(t.strategy||'')).toLowerCase().includes(search.toLowerCase()))&&(!symbolFilter||t.symbol===symbolFilter)&&(!strategyFilter||(t.strategy||'')===strategyFilter);}
  function filteredTrades(){return activeTrades().filter(matchesFilters);}
  function filteredLegacy(){return legacyItems().filter(l=>matchesFilters({title:l.parsed.name,symbol:l.parsed.symbol,strategy:l.parsed.strategy}));}
@@ -263,6 +352,9 @@
   target.append(node('div',{class:'journal-heading'},node('div',{},node('p',{class:'journal-eyebrow'},'YOUR JOURNAL'),node('h1',{},'Trades'),node('small',{},'Your positions, from first entry to final close.')),button('New trade',()=>tradeEditor(),true)));
   if(!store){target.append(node('div',{class:'journal-welcome'},node('div',{class:'journal-welcome-icon'},'↗'),node('h2',{},'Your next trade starts here'),node('p',{},'Connect Google and select your private spreadsheet to view positions and record trades.'),button('Connect Google',()=>connectGoogle(),true)));return;}
   if(!store.initialized){target.append(notice('Set up the journal once to start. Your existing worksheets stay untouched.'),button('Set up journal tabs',setup,true));return;}
+  const heading = target.querySelector('.journal-heading');
+  const newTrade = heading.lastElementChild;
+  heading.append(node('div',{class:'journal-actions'},button('Import from IBKR',importIBKR),newTrade));
   const all=[];for(const t of filteredTrades()){try{all.push({t,s:sum(t)})}catch(error){all.push({t,error})}}
   const historical=filteredLegacy(),visible=all.filter(({s})=>!s||tradeStatus==='all'||(tradeStatus==='open'?s.status!=='closed':s.status==='closed'));
   const realized=visible.reduce((n,x)=>n+(x.s?.realized||0),0)+(tradeStatus==='open'?0:historical.reduce((n,l)=>n+l.parsed.pnl,0)),open=visible.filter(x=>x.s&&x.s.status!=='closed'),missing=open.some(x=>x.s.unrealized==null),unrealized=missing?null:open.reduce((n,x)=>n+x.s.unrealized,0),outcomes=[...visible.filter(x=>x.s?.status==='closed').map(x=>x.s.realized),...(tradeStatus==='open'?[]:historical.map(l=>l.parsed.pnl))];
