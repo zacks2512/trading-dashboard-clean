@@ -257,7 +257,8 @@
   const d=openDialog('Manage historical summary');d.append(notice('This creates an editable historical summary in TJ_Trades. The original All Data row is left untouched and excluded from duplicate display while this record exists. No execution history is invented.'));
   d.append(button('Create managed summary',()=>saveChanges([mutation('trades',t)],{note:'Legacy summary adopted'},d),true),button('Cancel',()=>d.close()));
  }
- function importIBKR(){
+ function importIBKR(initialFile){
+  let suppliedFile = typeof initialFile?.text === 'function' ? initialFile : null;
   if(!requireSetup() || busy) return;
   const accounts = records('accounts').filter(a => !a.archived);
   if(!accounts.length){showStatus('Add an active journal account before importing.',true);return;}
@@ -270,6 +271,8 @@
   const preview = node('div',{'aria-live':'polite'});
   const form = node('form',{},notice('Choose an Activity Flex CSV and the journal account it belongs to. Setup tags and emotions can be added later.'),
    field('Journal account',account),field('IBKR CSV',file),preview);
+  const fileName = node('small',{},suppliedFile ? 'Selected file: '+suppliedFile.name : '');
+  file.after(fileName);
   const save = formFooter(d,form,'Import ready executions');
   save.disabled = true;
   d.append(form);
@@ -287,7 +290,7 @@
    save.disabled = true;
    d.querySelector('.journal-error')?.remove();
    preview.replaceChildren();
-   const selected = file.files?.[0], accountId = account.value;
+   const selected = file.files?.[0] || suppliedFile, accountId = account.value;
    if(!selected || !accountId) return;
    try{
     if(selected.size > 5000000) throw new Error('Choose an IBKR CSV smaller than 5 MB.');
@@ -318,7 +321,11 @@
     if(current === request && d.open && generation === epoch) errorIn(d,error);
    }
   }
-  file.addEventListener('change',inspect);
+  file.addEventListener('change',()=>{
+   suppliedFile = null;
+   fileName.textContent = file.files?.[0] ? 'Selected file: '+file.files[0].name : '';
+   inspect();
+  });
   account.addEventListener('change',inspect);
   form.onsubmit = async event => {
    event.preventDefault();
@@ -413,5 +420,5 @@
  const filters=node('div',{class:'journal-filters'},searchInput,symbolSelect,strategySelect,button('Clear filters',()=>{search='';symbolFilter='';strategyFilter='';accountFilter='';searchInput.value='';render()}));
  const updateFilters=()=>{searchInput.value=search;for(const [control,key,label,value]of [[symbolSelect,'symbol','All symbols',symbolFilter],[strategySelect,'strategy','All strategies',strategyFilter]]){const values=[...new Set([...records('trades').map(t=>t[key]),...legacy.map(l=>l.parsed[key])].filter(Boolean))].sort();control.replaceChildren(node('option',{value:''},label),...values.map(v=>node('option',{value:v},v)));control.value=value;}const page=$('page-open-trades');const tabs=page?.querySelector('.journal-status-tabs');if(tabs)tabs.after(filters);};
  const originalListPage=listPage;listPage=function(){const focused=document.activeElement,restoreFocus=filters.contains(focused),selection=focused===searchInput?[searchInput.selectionStart,searchInput.selectionEnd]:null;originalListPage();updateFilters();if(restoreFocus&&focused.isConnected){focused.focus({preventScroll:true});if(selection)searchInput.setSelectionRange(...selection)}};
- window.JournalApp={connect,clear,setLegacy,clearLegacy,reload,setup,render,tradeEditor,detail,setTradeStatus,legacyTitle:()=>setting('legacyTab','All Data')};render();
+ window.JournalApp={connect,clear,setLegacy,clearLegacy,reload,setup,render,tradeEditor,detail,setTradeStatus,importIBKR,legacyTitle:()=>setting('legacyTab','All Data')};render();
 })();

@@ -234,7 +234,13 @@
   return {ignored,results:results.sort((a,b) => a.line-b.line),mutations,newTrades:newTrades.size,updatedTrades:updatedTrades.size};
  }
 
- const api = {readCSV,plan};
+ function isCSV(text){
+  const header = text.replace(/^\uFEFF/,'').split(/\r?\n/,1)[0];
+  return ['AssetClass','TradeID'].every(key =>
+   new RegExp('(?:^|,)\\s*"?' + key + '"?\\s*(?:,|$)').test(header));
+ }
+
+ const api = {readCSV,plan,isCSV};
  if(typeof module !== 'undefined' && module.exports) module.exports = api;
  else root.IBKRImport = api;
 })(typeof window !== 'undefined' ? window : globalThis);

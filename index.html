@@ -417,7 +417,34 @@ function showStatus(msg,isErr){
 document.addEventListener('click',function(event){var menu=document.getElementById('connection-menu');if(menu&&menu.open&&!menu.contains(event.target))menu.open=false;});
 document.addEventListener('keydown',function(event){var menu=document.getElementById('connection-menu');if(event.key==='Escape'&&menu&&menu.open){menu.open=false;menu.querySelector('summary').focus();event.preventDefault();}});
 function ingest(rows,src){if(!Array.isArray(rows))throw new Error('Expected rows');if(window.JournalApp){JournalApp.setLegacy(rows,'local-import');showStatus('Local import loaded. It has not been written to Google Sheets.');return;}var parsed=rows.map(rtt).filter(Boolean);resetPrivateView();if(!parsed.length){showStatus('No trades found',true);return;}trades=parsed;document.getElementById('badge').textContent='— '+src+' · '+trades.length+' trades';showStatus('');renderAll();}
-function loadFile(evt){if(window.disconnectGoogle)disconnectGoogle();var f=evt.target.files[0];if(!f)return;var reader=new FileReader();reader.onload=function(e){var txt=e.target.result;if(f.name.endsWith('.json')){try{var d=JSON.parse(txt);var arr=Array.isArray(d)?d:d.trades||[];ingest(arr,f.name);}catch(ex){showStatus('JSON error: '+ex.message,true);}}else{ingest(parseCSV(txt),f.name);}};reader.readAsText(f);}
+function loadFile(evt){
+  var file=evt.target.files[0];
+  if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(event){
+    var text=event.target.result;
+    try{
+      if(!file.name.toLowerCase().endsWith('.json') && window.IBKRImport?.isCSV(text)){
+        if(!window.JournalApp?.importIBKR)throw new Error('Reload the dashboard to enable IBKR import.');
+        JournalApp.importIBKR(file);
+        return;
+      }
+      var data=file.name.toLowerCase().endsWith('.json')?JSON.parse(text):parseCSV(text);
+      var rows=Array.isArray(data)?data:data.trades||[];
+      if(window.disconnectGoogle)disconnectGoogle();
+      ingest(rows,file.name);
+    }catch(error){
+      showStatus('Import error: '+error.message,true);
+    }finally{
+      evt.target.value='';
+    }
+  };
+  reader.onerror=function(){
+    showStatus('The file could not be read. Choose it again.',true);
+    evt.target.value='';
+  };
+  reader.readAsText(file);
+}
 function exportJSON(){var b=new Blob([JSON.stringify(trades,null,2)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='trading_journal.json';a.click();}
 
 function renderAll(){
