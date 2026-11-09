@@ -237,9 +237,18 @@ function fillPackage(name,price='5',quantity='1'){
  chartClick('stratChart',w.CX.stratChart.data.labels.indexOf('Technical Setup'));
  assert(!dialog().textContent.includes('Bulk partial'));assert(!dialog().textContent.includes('Other account'));click('Close',dialog());
  accountFilter.value='';accountFilter.dispatchEvent(new w.Event('change',{bubbles:true}));assert(w.trades.some(t=>t.symbol==='BULK'));
+ // Raw IBKR contract names are formatted at display time; stored titles and
+ // accounting remain intact, and Date objects never render as verbose strings.
+ chartClick('cumulChart',pointIndex('Original imported option'));click('Edit trade');set('Trade name','IMPORT  260320C00050000');submit();await settled();
+ const readable="IMPORT MAR 20'26 50$ Buy Call";
+ assert.equal(dialog().querySelector('h2').textContent,readable);
+ assert.equal([...saved('TJ_Trades').values()].find(t=>t.symbol==='IMPORT').title,'IMPORT  260320C00050000');
+ assert.equal(w.trades.find(t=>t.symbol==='IMPORT').name,readable);assert.equal(w.trades.find(t=>t.symbol==='IMPORT').pnl,-301);click('Close',dialog());
+ chartClick('symChart',w.CX.sym.data.labels.indexOf('IMPORT'));
+ assert(dialog().textContent.includes(readable));assert(dialog().textContent.includes('20/03/2026'));assert(!dialog().textContent.includes('GMT'));click('Close',dialog());
  // Repeated rerenders replace handlers; disconnected charts cannot reopen data.
  let opens=0;const openAnalytics=w.JournalApp.openAnalytics;w.JournalApp.openAnalytics=s=>{opens++;return openAnalytics(s)};
  w.JournalApp.render();w.JournalApp.render();chartClick('cumulChart',pointIndex('One Call'));assert.equal(opens,1);click('Close',dialog());
  assert.equal(errors.length,0);w.JournalApp.clear();assert(!d.body.textContent.includes('One Call'));chartClick('cumulChart',0);assert(!dialog());assert.equal(opens,1);
- console.log('PASS: DOM integration — journal forms, accounting, revisions and imports; all six Overview chart routes, tick labels/legend/keyboard, drawer editing and back navigation, live group membership and totals, historical summary editing without execution invention/duplicates, account isolation, replaced listeners and disconnect cleanup. Charts and Sheets mocked; visual/browser QA not covered.');dom.window.close();
+ console.log('PASS: DOM integration — journal forms, accounting, revisions and imports; all six Overview chart routes, tick labels/legend/keyboard, drawer editing and back navigation, live group membership and totals, historical summary editing without execution invention/duplicates, account isolation, readable IBKR labels and short dates without changing stored titles or P&L, replaced listeners and disconnect cleanup. Charts and Sheets mocked; visual/browser QA not covered.');dom.window.close();
 })().catch(e=>{console.error(e);dom.window.close();process.exit(1)});

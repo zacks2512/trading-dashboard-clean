@@ -7,7 +7,26 @@
  const node=(tag,props={},...children)=>{const n=document.createElement(tag);for(const[k,v]of Object.entries(props)){if(k==='class')n.className=v;else if(k.startsWith('on'))n.addEventListener(k.slice(2),v);else if(k==='text')n.textContent=v;else if(k==='value')n.value=val(v);else if(k==='checked'||k==='disabled'||k==='required'||k==='multiple')n[k]=Boolean(v);else n.setAttribute(k,v);}for(const c of children.flat(Infinity))if(c!==null&&c!==undefined)n.append(c instanceof Node?c:document.createTextNode(val(c)));return n;};
  const button=(text,fn,primary=false)=>node('button',{class:'btn'+(primary?' p':''),type:'button',onclick:fn},text);
  const notice=(text,kind='')=>node('div',{class:'journal-notice '+kind},text);
- const fmtDate=iso=>iso||'—';
+ const fmtDate=value=>{
+  if(!value)return '—';
+  const match=typeof value==='string'&&value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const date=match?new Date(+match[1],+match[2]-1,+match[3]):new Date(value);
+  if(!Number.isFinite(date.getTime())||(match&&(date.getFullYear()!==+match[1]||date.getMonth()!==+match[2]-1||date.getDate()!==+match[3])))return '—';
+  return [String(date.getDate()).padStart(2,'0'),String(date.getMonth()+1).padStart(2,'0'),date.getFullYear()].join('/');
+ };
+ function tradeLabel(t){
+  const original=t.title||t.name||'';
+  if(!t.ibkrConid&&!t.ibkrImported)return original;
+  const m=original.match(/^([A-Z0-9.\/-]+)\s+(\d{2})(\d{2})(\d{2})([CP])(\d{8})$/);
+  if(!m)return original;
+  const expiry='20'+m[2]+'-'+m[3]+'-'+m[4],strike=Number(m[6])/1000;
+  const parsed=new Date(expiry+'T12:00:00Z');
+  if(!Number.isFinite(+parsed)||parsed.toISOString().slice(0,10)!==expiry||
+   (t.expiry&&t.expiry!==expiry)||(t.strike!==''&&t.strike!=null&&Number(t.strike)!==strike))return original;
+  const month=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'][Number(m[3])-1];
+  const side=t.side==='short'?'Sell ':t.side==='long'?'Buy ':'';
+  return m[1]+' '+month+' '+m[4]+"'"+m[2]+' '+strike+'$ '+side+(m[5]==='C'?'Call':'Put');
+ }
  let fieldCounter=0;
  function field(label,input,full=false){if(!input.id)input.id='journal-field-'+(++fieldCounter);const labelId=input.id+'-label';if(input.getAttribute('role')==='group')input.setAttribute('aria-labelledby',labelId);return node('div',{class:'journal-field'+(full?' full':'')+(input.type==='checkbox'?' journal-check':'')},node('label',{for:input.id,id:labelId},label),input);}
  function input(type,value='',extra={}){return node('input',{type,value,...extra});}
@@ -230,7 +249,7 @@
  }
  function detail(id){
   const t=store.get('trades',id);if(!t||t._deleted)return;selectedId=id;
-  const d=openDialog(t.title,true);d.classList.add('journal');let s;try{s=sum(t)}catch(error){d.append(notice(error.message,'error'));}
+  const d=openDialog(tradeLabel(t),true);d.classList.add('journal');let s;try{s=sum(t)}catch(error){d.append(notice(error.message,'error'));}
   const actions=node('div',{class:'journal-actions'},button('Edit trade',()=>tradeEditor(t)),button('History',()=>historyView(t.id)),button('Delete trade',()=>deleteRecord('trades',t)),button('Close',()=>d.close()));
   [...actions.children].find(b=>b.textContent==='Delete trade').classList.add('journal-danger');
   if(analyticsContext)analyticsBack(d,analyticsContext.selection.field?'Back to results':'Back to Overview',()=>analyticsContext.selection.field?analyticsList():d.close());
@@ -243,7 +262,7 @@
   const ls=related('legs',id);if(ls.length)d.append(node('h3',{},'Legs'),table(['Position','Type','Strike','Expiry','Ratio','Multiplier'],ls.map(l=>node('tr',{},...['side','kind','strike','expiry','ratio','multiplier'].map(k=>node('td',{},l[k]))))));
   if(!t.legacySummary)d.append(node('h3',{},'Execution history'),table(['Date','Event','Fills','Fees','Actions'],related('actions',id).slice().sort((a,b)=>a.date.localeCompare(b.date)||(a.order||0)-(b.order||0)).map(a=>node('tr',{},node('td',{},a.date),node('td',{},a.kind),node('td',{class:'wrap'},a.fills.map(f=>f.quantity+' × '+money(f.price)+' ['+(ls.find(l=>l.id===f.unitId)?.kind||'package')+']').join('; ')),currencyCell(E.feeOf(a,t,ls,setting('feeRate',0)),false),node('td',{},button('Edit',()=>actionEditor(t,a)),button('Delete',()=>deleteRecord('actions',a)))))));
   const summaries=new Map();for(const x of records('trades'))try{summaries.set(x.id,sum(x))}catch(_){}
-  const chain=E.chain(id,records('trades'),summaries);if(chain.length>1){const net=chain.reduce((n,c)=>n+(c.summary?.realized||0),0);d.append(node('h3',{},'Roll chain — realized '+money(net)),table(['Trade','Status','Realized'],chain.map(c=>node('tr',{},node('td',{},button(c.trade.title,()=>detail(c.trade.id))),node('td',{},c.summary?.status||'Invalid'),currencyCell(c.summary?.realized)))));}
+  const chain=E.chain(id,records('trades'),summaries);if(chain.length>1){const net=chain.reduce((n,c)=>n+(c.summary?.realized||0),0);d.append(node('h3',{},'Roll chain — realized '+money(net)),table(['Trade','Status','Realized'],chain.map(c=>node('tr',{},node('td',{},button(tradeLabel(c.trade),()=>detail(c.trade.id))),node('td',{},c.summary?.status||'Invalid'),currencyCell(c.summary?.realized)))));}
   // Keep the overview and primary actions visible; expand the rest on demand.
   const headers=[...d.querySelectorAll(':scope > h3')];for(const heading of headers){const content=[];let sibling=heading.nextSibling;while(sibling&&!(sibling.nodeType===1&&sibling.tagName==='H3')){const next=sibling.nextSibling;content.push(sibling);sibling=next;}const title=heading.textContent;heading.replaceWith(section(title,content,title==='Remaining positions'));}
 
@@ -455,7 +474,7 @@
    }
   };
  }
- function matchesFilters(t){return(!search||(t.title+' '+t.symbol+' '+(t.strategy||'')).toLowerCase().includes(search.toLowerCase()))&&(!symbolFilter||t.symbol===symbolFilter)&&(!strategyFilter||(t.strategy||'')===strategyFilter);}
+ function matchesFilters(t){return(!search||(t.title+' '+tradeLabel(t)+' '+t.symbol+' '+(t.strategy||'')).toLowerCase().includes(search.toLowerCase()))&&(!symbolFilter||t.symbol===symbolFilter)&&(!strategyFilter||(t.strategy||'')===strategyFilter);}
  function filteredTrades(){return activeTrades().filter(matchesFilters);}
  function filteredLegacy(){return legacyItems().filter(l=>matchesFilters({title:l.parsed.name,symbol:l.parsed.symbol,strategy:l.parsed.strategy}));}
  function setTradeStatus(status){tradeStatus=status;listPage();sw('open-trades');}
@@ -473,7 +492,7 @@
   target.append(node('div',{class:'journal-stats'},stat('Trades in view',visible.length+(tradeStatus==='open'?0:historical.length)),stat('Realized net P&L',money(realized),realized),stat('Unrealized net P&L',open.length?(missing?'Prices needed':money(unrealized)):'—',open.length?unrealized:null),stat('Closed-trade win rate',outcomes.length?(100*outcomes.filter(x=>x>0).length/outcomes.length).toFixed(1)+'%':'—')));
   const tabs=node('div',{class:'journal-status-tabs',role:'group','aria-label':'Trade status'});for(const [key,label]of [['open','Open'],['closed','Closed'],['all','All']]){const count=all.filter(x=>!x.s||key==='all'||(key==='closed'?x.s.status==='closed':x.s.status!=='closed')).length+(key==='open'?0:historical.length);const b=button(label+' '+count,()=>setTradeStatus(key));b.dataset.status=key;b.setAttribute('aria-pressed',String(tradeStatus===key));b.classList.toggle('selected',tradeStatus===key);tabs.append(b)}
   target.append(tabs);
-  const rows=[];for(const {t,s,error}of visible){const openTrade=()=>detail(t.id),titleButton=button(t.title,openTrade);titleButton.classList.add('journal-trade-link');
+  const rows=[];for(const {t,s,error}of visible){const openTrade=()=>detail(t.id),titleButton=button(tradeLabel(t),openTrade);titleButton.classList.add('journal-trade-link');
    if(error){rows.push(node('tr',{},node('td',{class:'wrap'},titleButton),node('td',{colspan:6},notice(error.message,'error'))));continue;}
    const status=t.legacySummary?'Historical':s.status==='closed'?'Closed':s.status==='draft'?'Draft':'Open';
    rows.push(node('tr',{class:'clickable',onclick:e=>{if(!e.target.closest('button'))openTrade()}},node('td',{class:'wrap'},titleButton,node('div',{class:'journal-row-subtitle'},node('span',{class:'journal-symbol'},t.symbol),t.strategy||'No strategy')),node('td',{},accountName(t.accountId)),node('td',{},fmtDate(s.status==='closed'?s.closedDate:s.firstDate)),currencyCell(s.realized),currencyCell(s.status==='closed'?(tradeStatus==='closed'?s.combined:null):s.unrealized),node('td',{class:'wrap'},s.status==='closed'?pct(s.riskReturn):s.positions.map(p=>p.quantity+' '+p.label).join('; ')),node('td',{},node('span',{class:'journal-badge '+(s.status==='closed'?'closed':'open')},status))));
@@ -502,7 +521,7 @@
  }
  function syncAnalytics(){
   const normalized=legacyItems().map(l=>{analyticsRefs.set(l.parsed,{kind:'legacy',key:l.key});return l.parsed});
-  for(const t of activeTrades())try{const s=sum(t);if(s.status!=='closed')continue;const isoDate=iso=>iso?new Date(iso+'T12:00:00'):null;const parsed={name:t.title,symbol:t.symbol,type:(t.legacySummary&&t.legacyType)||t.structure||'—',strategy:t.strategy||'—',pnl:s.realized,pct:s.premiumReturn,days:Math.max(0,Math.round((isoDate(s.closedDate)-isoDate(s.firstDate))/86400000)),mistakes:(t.mistakes||[]).join(', ')||'—',entry:(t.entryEmotions||[]).join(', ')||'—',exit:(t.exitEmotions||[]).join(', ')||'—',entryDate:isoDate(s.firstDate),exitDate:isoDate(s.closedDate),timeEff:null,comments:t.notes||'',confidence:t.confidence??'',strike:t.strike||'',entryPrice:'',exitPrice:'',grossPnl:s.gross,fees:s.fees,contracts:'',expiry:t.expiry||''};analyticsRefs.set(parsed,{kind:'managed',id:t.id});normalized.push(parsed);}catch(_){}
+  for(const t of activeTrades())try{const s=sum(t);if(s.status!=='closed')continue;const isoDate=iso=>iso?new Date(iso+'T12:00:00'):null;const parsed={name:tradeLabel(t),symbol:t.symbol,type:(t.legacySummary&&t.legacyType)||t.structure||'—',strategy:t.strategy||'—',pnl:s.realized,pct:s.premiumReturn,days:Math.max(0,Math.round((isoDate(s.closedDate)-isoDate(s.firstDate))/86400000)),mistakes:(t.mistakes||[]).join(', ')||'—',entry:(t.entryEmotions||[]).join(', ')||'—',exit:(t.exitEmotions||[]).join(', ')||'—',entryDate:isoDate(s.firstDate),exitDate:isoDate(s.closedDate),timeEff:null,comments:t.notes||'',confidence:t.confidence??'',strike:t.strike||'',entryPrice:'',exitPrice:'',grossPnl:s.gross,fees:s.fees,contracts:'',expiry:t.expiry||''};analyticsRefs.set(parsed,{kind:'managed',id:t.id});normalized.push(parsed);}catch(_){}
   resetPrivateView();trades=normalized.sort((a,b)=>(a.exitDate||a.entryDate||0)-(b.exitDate||b.entryDate||0));
   if(trades.length){$('badge').textContent='— Private journal · '+trades.length+' closed trades';renderAll();}
  }
