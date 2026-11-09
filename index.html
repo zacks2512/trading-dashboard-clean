@@ -153,6 +153,7 @@ table.hm td.emp{background:var(--bg3);border:1px solid var(--border);}
   <div class="workspace-connection">
     <span id="connection-state" class="connection-state" role="status" data-state="disconnected">Disconnected</span>
     <button class="btn" id="google-refresh" onclick="refreshPrivateData()" disabled>Refresh</button>
+    <button class="btn" id="google-disconnect" onclick="disconnectGoogle()" disabled>Disconnect</button>
     <details id="connection-menu" class="connection-menu">
       <summary class="btn">Connection <span aria-hidden="true">⌄</span></summary>
       <div class="connection-panel">
@@ -161,7 +162,7 @@ table.hm td.emp{background:var(--bg3);border:1px solid var(--border);}
         <button class="btn" id="google-pick" onclick="choosePrivateSheet()" disabled>Choose private sheet</button>
         <label for="private-tab">Historical worksheet</label>
         <select id="private-tab" aria-label="Worksheet" onchange="loadPrivateTab()" disabled></select>
-        <button class="btn" id="google-disconnect" onclick="disconnectGoogle()" disabled>Disconnect &amp; clear</button>
+        <small id="google-session-info">Connect Google to open your private journal.</small>
       </div>
     </details>
   </div>
@@ -363,7 +364,7 @@ table.hm td.emp{background:var(--bg3);border:1px solid var(--border);}
       <label for="picker-api-key">Restricted Google Picker API key</label>
       <input id="picker-api-key" type="password" autocomplete="off" spellcheck="false" style="width:100%;margin:10px 0;padding:10px" placeholder="Paste the website-restricted Picker API key">
       <button class="btn" onclick="savePickerKey()">Save key on this browser</button>
-      <p style="line-height:1.7;color:var(--text3);margin-top:10px">Only this public browser API key is saved locally. Access tokens and trades are never saved to browser storage. Google may ask you to reconnect when access expires. Imported files remain local to this page.</p>
+      <p style="line-height:1.7;color:var(--text3);margin-top:10px">The public Picker key is saved on this browser. A temporary Google access token and your sheet selection are kept in this tab’s session storage so refresh can restore the connection. Disconnect or expiry clears that saved connection. Trades, imported files and unsaved changes are not stored there. Google access is not extended by refreshing.</p>
     </div>
   </div>
 </div>
@@ -1056,6 +1057,6 @@ resetPrivateView();
 <script src="ibkr-import.js?v=20261109-reconcile"></script>
 <script src="ibkr-reconcile.js?v=20261109-reconcile"></script>
 <script src="journal-app.js?v=20261109-reconcile"></script>
-<script src="private-sheets.js"></script>
+<script src="private-sheets.js?v=20261109-tab-session"></script>
 </body>
 </html>

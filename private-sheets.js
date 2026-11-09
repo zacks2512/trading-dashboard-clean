@@ -4,6 +4,8 @@
 const GOOGLE_CLIENT_ID = '462464331711-65qlv4a6gu0shke4gb5229nm2umntbmk.apps.googleusercontent.com';
 const GOOGLE_PROJECT_NUMBER = '462464331711';
 const FILE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+const GOOGLE_SESSION_KEY = 'trading-dashboard-clean.googleTabSession.v1';
+const TAB_SESSION_MAX_SECONDS = 3600;
 let googleToken = null;
 let tokenDeadline = 0;
 let expiryTimer = null;
@@ -12,7 +14,60 @@ let readGeneration = 0;
 let selectedFile = null;
 let worksheets = [];
 let oauthPending = false;
+let sessionSaved = false;
 const scriptPromises = new Map();
+
+// Only this tab's short-lived authorization and file selection survive reload.
+// No trades, drafts, client secrets or refresh tokens are stored here.
+function forgetGoogleSession() {
+  sessionSaved = false;
+  try { sessionStorage.removeItem(GOOGLE_SESSION_KEY); } catch (_) {}
+}
+function rememberGoogleSession() {
+  if (!googleToken || tokenDeadline <= Date.now()) { forgetGoogleSession(); return false; }
+  try {
+    sessionStorage.setItem(GOOGLE_SESSION_KEY, JSON.stringify({
+      version: 1, clientId: GOOGLE_CLIENT_ID, scope: FILE_SCOPE,
+      accessToken: googleToken, expiresAt: tokenDeadline, fileId: selectedFile,
+      worksheetId: selectedFile ? document.getElementById('private-tab').value : ''
+    }));
+    sessionSaved = true;
+  } catch (_) { forgetGoogleSession(); }
+  return sessionSaved;
+}
+function armGoogleExpiry() {
+  clearTimeout(expiryTimer);
+  const generation = sessionGeneration;
+  expiryTimer = setTimeout(() => {
+    if (generation !== sessionGeneration) return;
+    clearGoogleSession();
+    showStatus('Google access expired. Connect again to reload your data.', true);
+  }, Math.max(0, tokenDeadline - Date.now()));
+}
+async function restoreGoogleSession() {
+  let state;
+  try {
+    const saved = sessionStorage.getItem(GOOGLE_SESSION_KEY);
+    if (!saved) return;
+    state = JSON.parse(saved);
+    if (state?.version !== 1 || state.clientId !== GOOGLE_CLIENT_ID || state.scope !== FILE_SCOPE ||
+        typeof state.accessToken !== 'string' || !state.accessToken || state.accessToken.length > 16384 ||
+        !Number.isFinite(state.expiresAt) || state.expiresAt <= Date.now() || state.expiresAt > Date.now() + TAB_SESSION_MAX_SECONDS * 1000 ||
+        (state.fileId !== null && (typeof state.fileId !== 'string' || !/^[\w-]{1,512}$/.test(state.fileId))) ||
+        typeof state.worksheetId !== 'string' || !/^\d*$/.test(state.worksheetId)) {
+      forgetGoogleSession(); return;
+    }
+  } catch (_) { forgetGoogleSession(); return; }
+  googleToken = state.accessToken;
+  tokenDeadline = state.expiresAt; // Retain the original deadline; reload never extends access.
+  sessionSaved = true;
+  armGoogleExpiry();
+  connectionControls();
+  if (state.fileId) {
+    showStatus('Restoring this tab’s Google connection.');
+    await openPrivateSheet(state.fileId, sessionGeneration, state.worksheetId);
+  } else showStatus('Google connection restored. Choose your private sheet.');
+}
 
 function loadGoogleScript(url) {
   if (!scriptPromises.has(url)) {
@@ -37,6 +92,10 @@ function connectionControls() {
   document.getElementById('google-refresh').disabled = !signedIn || !selectedFile;
   document.getElementById('private-tab').disabled = !signedIn || !selectedFile;
   document.getElementById('google-disconnect').disabled = !signedIn && !oauthPending;
+  const info = document.getElementById('google-session-info');
+  if (info) info.textContent = signedIn ? (sessionSaved ? 'Refresh keeps this tab connected until ' +
+    new Date(tokenDeadline).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) + '. Unsaved changes are not restored.' :
+    'Tab storage is unavailable. Refresh will require reconnecting.') : 'Connect Google to open your private journal.';
 }
 
 function pickerKey() { return document.getElementById('picker-api-key').value.trim(); }
@@ -51,6 +110,7 @@ try { document.getElementById('picker-api-key').value = localStorage.getItem('tr
 function clearGoogleSession() {
   sessionGeneration++; readGeneration++;
   clearTimeout(expiryTimer);
+  forgetGoogleSession();
   googleToken = null; tokenDeadline = 0; selectedFile = null; worksheets = []; oauthPending = false;
   document.getElementById('private-tab').replaceChildren();
   if(window.JournalApp)JournalApp.clear();
@@ -87,10 +147,14 @@ async function connectGoogle() {
         oauthPending = false;
         if (response.error || !response.access_token) { connectionControls(); showStatus('Authorization was not granted. Try connecting again.', true); return; }
         if (!google.accounts.oauth2.hasGrantedAllScopes(response, FILE_SCOPE)) { connectionControls(); showStatus('File permission was not granted.', true); return; }
+        const lifetime = Number(response.expires_in);
+        if (!Number.isFinite(lifetime) || lifetime <= 30 || lifetime > 86400) {
+          connectionControls(); showStatus('Google returned an invalid access lifetime. Connect again.', true); return;
+        }
         googleToken = response.access_token;
-        const lifetime = Number(response.expires_in) || 3600;
-        tokenDeadline = Date.now() + Math.max(0, lifetime - 30) * 1000;
-        expiryTimer = setTimeout(() => { clearGoogleSession(); showStatus('Google access expired. Connect again to reload your data.', true); }, Math.max(0, lifetime - 30) * 1000);
+        tokenDeadline = Date.now() + (Math.min(lifetime, TAB_SESSION_MAX_SECONDS) - 30) * 1000;
+        armGoogleExpiry();
+        rememberGoogleSession();
         connectionControls();
         showStatus('Connected. Click Choose private sheet.');
       },
@@ -144,9 +208,10 @@ async function choosePrivateSheet() {
   } catch (error) { if (generation === sessionGeneration) showStatus(error.message, true); }
 }
 
-async function openPrivateSheet(fileId, generation) {
+async function openPrivateSheet(fileId, generation, preferredWorksheet = '') {
   const request = ++readGeneration;
   selectedFile = null; worksheets = [];
+  rememberGoogleSession();
   if(window.JournalApp)JournalApp.clear();
   document.getElementById('private-tab').replaceChildren();
   resetPrivateView(); connectionControls(); showStatus('Opening private spreadsheet.');
@@ -159,12 +224,14 @@ async function openPrivateSheet(fileId, generation) {
     for (const sheet of worksheets) { const option = document.createElement('option'); option.value = String(sheet.sheetId); option.textContent = sheet.title; select.append(option); }
     // Initial journal tab from the user's link, if it exists in the chosen file.
     if (worksheets.some(s => s.sheetId === 623391435)) select.value = '623391435';
-    selectedFile = fileId; connectionControls();
+    selectedFile = fileId;
+    rememberGoogleSession(); connectionControls();
     if(window.JournalApp)await JournalApp.connect(createJournalTransport());
     if(generation !== sessionGeneration)return;
     const legacyTitle=window.JournalApp?.legacyTitle?.()||'All Data';
     const legacySheet=worksheets.find(s=>s.title===legacyTitle);
     if(legacySheet)select.value=String(legacySheet.sheetId);
+    if(worksheets.some(s=>String(s.sheetId)===preferredWorksheet))select.value=preferredWorksheet;
     await loadPrivateTab();
   } catch (error) { if (request === readGeneration && generation === sessionGeneration) showStatus(error.message, true); }
 }
@@ -179,6 +246,7 @@ async function loadPrivateTab() {
     if (!selectedFile) throw new Error('Choose a private spreadsheet first.');
     const sheet = worksheets.find(s => String(s.sheetId) === document.getElementById('private-tab').value);
     if (!sheet) throw new Error('Choose a worksheet.');
+    rememberGoogleSession(); connectionControls();
     showStatus('Reading private worksheet.');
     const range = "'" + sheet.title.replace(/'/g, "''") + "'";
     const result = await googleRead(encodeURIComponent(selectedFile) + '/values/' + encodeURIComponent(range) + '?valueRenderOption=FORMATTED_VALUE&dateTimeRenderOption=FORMATTED_STRING', generation);
@@ -195,6 +263,7 @@ async function loadPrivateTab() {
   }
 }
 connectionControls();
+const googleRestoreReady = restoreGoogleSession();
 
 // A transport is bound to one selected file and one OAuth session. It cannot follow a later file switch.
 function createJournalTransport(){
