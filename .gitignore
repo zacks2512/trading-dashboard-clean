@@ -1,0 +1,25 @@
+# Local secrets, exports and development dependencies
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+node_modules/
+.vercel/
+coverage/
+playwright-report/
+test-results/
+.tmp/
+.DS_Store
+
+# Trading and spreadsheet exports must never be committed
+*.csv
+*.xlsx
+*.xls
+*.ods
+*.tsv
+*reconciliation*.json
+*journal-export*.json
+*sheet-export*.json
