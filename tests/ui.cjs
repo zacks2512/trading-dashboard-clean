@@ -110,6 +110,11 @@ function fillPackage(name,price='5',quantity='1'){
  w.loadFile({target:{files:[],value:''}});
  assert.equal(disconnects,0);
  const headerPicker = {files:[{name:'IBKR.CSV',size:csv.length,text:async()=>csv}],value:'selected'};
+ w.JournalApp.setLegacy([{
+  'Full name':'Original imported option','Symbol':'IMPORT','Entry Date':'01/02/2026',
+  'Exit Date':'20/03/2026','Net P&L':'-301','Net P&L (%)':'-100',
+  'strategy':'Technical Setup','comments':'Preserve my history note'
+ }],'migration-test');
  const tradesBeforeHeaderImport = saved('TJ_Trades').size;
  // Older cached import modules do not expose isCSV.
  delete w.IBKRImport.isCSV;
@@ -122,10 +127,21 @@ function fillPackage(name,price='5',quantity='1'){
  assert.equal(saved('TJ_Trades').size,tradesBeforeHeaderImport);
  set('Journal account',accountId);
  await settled();
+ assert.equal([...dialog().querySelectorAll('.journal-stat strong')][0].textContent,'0');
+ const matching = control('Match historical entry');
+ const legacyChoice = [...matching.options].find(option=>option.value.startsWith('legacy:'));
+ assert(legacyChoice);
+ matching.value=legacyChoice.value;
+ matching.dispatchEvent(new w.Event('change',{bubbles:true}));
+ await settled();
  assert(dialog().textContent.includes('1 new trades'));
  assert(![...saved('TJ_Trades').values()].some(t=>t.symbol==='IMPORT'));
  await save();
- assert([...saved('TJ_Trades').values()].some(t=>t.symbol==='IMPORT'));
+ const migrated = [...saved('TJ_Trades').values()].find(t=>t.symbol==='IMPORT');
+ assert(migrated);
+ assert.equal(migrated.legacyKey,'migration-test:2');
+ assert.equal(migrated.notes,'Preserve my history note');
+ assert.equal(w.trades.filter(t=>t.symbol==='IMPORT').length,1);
  assert([...saved('TJ_Actions').values()].some(a=>a.id==='ibkr:'+accountId+':2' && a.kind==='expire'));
  await previewIBKR();
  assert(dialog().querySelector('button[type="submit"]').disabled);
