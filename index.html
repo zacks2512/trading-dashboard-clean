@@ -803,6 +803,9 @@ function renderConf(){
 }
 
 function groupByPeriod(fn){var m={};trades.forEach(function(t){var d=t.exitDate||t.entryDate;if(!d)return;var k=fn(d);if(!m[k])m[k]={pnl:0,wins:0,total:0};m[k].pnl+=t.pnl;m[k].total++;if(t.pnl>0)m[k].wins++;});return m;}
+function performancePeriodKey(t,period){var d=t.exitDate||t.entryDate;return d?(period==='weekly'?fmtWeek(d):fmtMonth(d)):null;}
+function performanceStrategy(t){return t.strategy==='no strategy'?'Fat Finger Mistake':t.strategy;}
+function tradeDte(t){var start=calendarDay(t.entryDate),end=calendarDay(t.expiry);return start!==null&&end!==null?end-start:null;}
 function setPeriod(p){perfPeriod=p;document.getElementById('tog-monthly').className='btn sm'+(p==='monthly'?' active-tog':'');document.getElementById('tog-weekly').className='btn sm'+(p==='weekly'?' active-tog':'');renderPerf();}
 function renderPerf(){
   var fn=perfPeriod==='monthly'?fmtMonth:fmtWeek;var m=groupByPeriod(fn);var keys=Object.keys(m).sort();if(!keys.length)return;
@@ -814,10 +817,10 @@ function renderPerf(){
   var labels=keys.map(dK),pnls=keys.map(function(k){return Math.round(m[k].pnl);}),wrs=keys.map(function(k){return m[k].total?Math.round(m[k].wins/m[k].total*100):0;}),counts=keys.map(function(k){return m[k].total;});
   dc('perfPnl');CX.perfPnl=new Chart(document.getElementById('perfPnl'),{type:'bar',data:{labels:labels,datasets:[{data:pnls,backgroundColor:pnls.map(bc),borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return'$'+c.raw;}}}},scales:{x:{ticks:{color:TC,font:{size:10}}},y:{ticks:{color:TC,callback:function(v){return'$'+v;}},grid:{color:GC}}}}});
   dc('perfWR');CX.perfWR=new Chart(document.getElementById('perfWR'),{type:'line',data:{labels:labels,datasets:[{data:wrs,borderColor:B,backgroundColor:'rgba(52,152,219,.08)',fill:true,borderWidth:2,pointRadius:4,pointBackgroundColor:B,tension:.3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.raw+'%';},afterLabel:function(c){return counts[c.dataIndex]+' trades';}}}},scales:{x:{ticks:{color:TC,font:{size:10}}},y:{min:0,max:100,ticks:{color:TC,callback:function(v){return v+'%';}},grid:{color:GC}}}}});
-  dc('perfCount');CX.perfCount=new Chart(document.getElementById('perfCount'),{type:'bar',data:{labels:labels,datasets:[{data:counts,backgroundColor:'rgba(52,152,219,.6)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,onClick:function(evt,els){if(els.length){var idx=els[0].index;periodFilter={key:keys[idx],label:dK(keys[idx]),type:perfPeriod};sw('log');renderLogT();}},onHover:function(evt,els){evt.native.target.style.cursor=els.length?'pointer':'default';},plugins:{legend:{display:false}},scales:{x:{ticks:{color:TC,font:{size:10}}},y:{ticks:{color:TC},grid:{color:GC}}}}});
+  dc('perfCount');CX.perfCount=new Chart(document.getElementById('perfCount'),{type:'bar',data:{labels:labels,datasets:[{data:counts,backgroundColor:'rgba(52,152,219,.6)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:TC,font:{size:10}}},y:{ticks:{color:TC},grid:{color:GC}}}}});
 
   // ── Strategy Mix by Period ──
-  var allStrats=[...new Set(trades.map(function(t){return t.strategy==='no strategy'?'Fat Finger Mistake':t.strategy;}))].sort();
+  var allStrats=[...new Set(trades.map(performanceStrategy))].sort();
   var stratPalette=['#3498db','#f39c12','#9b59b6','#2ecc71','#e67e22','#1abc9c','#e74c3c','#00bcd4','#8bc34a','#ff5722'];
   var stratColorMap={};allStrats.forEach(function(s,i){stratColorMap[s]=stratPalette[i%stratPalette.length];});
   var mixDatasets=allStrats.map(function(s){
@@ -826,7 +829,7 @@ function renderPerf(){
       data:keys.map(function(k){
         return trades.filter(function(t){
           var d=t.exitDate||t.entryDate;
-          var ts=t.strategy==='no strategy'?'Fat Finger Mistake':t.strategy;
+          var ts=performanceStrategy(t);
           return d&&fn(d)===k&&ts===s;
         }).length;
       }),
@@ -883,14 +886,19 @@ function renderPerf(){
     var stratColor={};strats.forEach(function(s,i){stratColor[s]=palette[i%palette.length];});
 
     // Legend
-    document.getElementById('te-legend').innerHTML=DOMPurify.sanitize(strats.map(function(s){
-      return'<span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:'+stratColor[s]+';display:inline-block;"></span>'+s+'</span>';
-    }).join(''), {USE_PROFILES:{html:true},FORBID_TAGS:['img','svg','math','iframe','style','link','form','video','audio','object','embed']});
+    strats.forEach(function(s){
+      var button=document.createElement('button'),dot=document.createElement('span');
+      button.type='button';button.className='btn sm';button.style.cssText='display:flex;align-items:center;gap:4px;font-size:10px;';
+      dot.style.cssText='width:8px;height:8px;border-radius:50%;display:inline-block;';dot.style.backgroundColor=stratColor[s];
+      button.append(dot,document.createTextNode(s));button.addEventListener('click',function(){
+        JournalApp.openAnalytics({filter:{kind:'timeStrategy',strategy:s},title:'Time used — '+s});
+      });document.getElementById('te-legend').append(button);
+    });
 
     // Build datasets per strategy
     var datasets=strats.map(function(s){
       var pts=teData.filter(function(t){return t.strategy===s;}).map(function(t){
-        return{x:t.timeEff,y:t.pnl,label:t.name,strategy:t.strategy,days:t.days,sym:t.symbol};
+        return{x:t.timeEff,y:t.pnl,label:t.name,strategy:t.strategy,days:t.days,sym:t.symbol,trade:t};
       });
       var base=stratColor[s];
       return{
@@ -954,10 +962,8 @@ function renderPerf(){
   var dteBuckets=[{l:'0–7d',min:0,max:7},{l:'8–21d',min:8,max:21},{l:'22–45d',min:22,max:45},{l:'46–90d',min:46,max:90},{l:'90+d',min:91,max:Infinity}];
   var dteGroups=dteBuckets.map(function(b){
     var ts=trades.filter(function(t){
-      if(!t.entryDate||!t.expiry)return false;
-      var exp=parseDate(t.expiry);if(!exp)return false;
-      var dte=Math.round((exp-t.entryDate)/86400000);
-      return dte>=b.min&&dte<=b.max;
+      var dte=tradeDte(t);
+      return dte!==null&&dte>=b.min&&dte<=b.max;
     });
     var wins=ts.filter(function(t){return t.pnl>0;});
     return{l:b.l,n:ts.length,wr:ts.length?Math.round(wins.length/ts.length*100):null,ap:ts.length?Math.round(ts.reduce(function(a,t){return a+t.pnl;},0)/ts.length):null};
@@ -966,10 +972,33 @@ function renderPerf(){
   var dteWRs=dteGroups.map(function(g){return g.wr;});
   var dteAPs=dteGroups.map(function(g){return g.ap;});
   var dteCounts=dteGroups.map(function(g){return g.n;});
-  function onDteClick(evt,els){if(els.length){var b=dteBuckets[els[0].index];dteFilter={min:b.min,max:b.max,label:b.l};sw('log');renderLogT();}}
-  function onDteHover(evt,els){evt.native.target.style.cursor=els.length?'pointer':'default';}
-  dc('dteWR');CX.dteWR=new Chart(document.getElementById('dteWR'),{type:'bar',data:{labels:dteLabels,datasets:[{data:dteWRs,backgroundColor:'rgba(52,152,219,.7)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,onClick:onDteClick,onHover:onDteHover,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.raw!==null?c.raw+'%':'No data';},afterLabel:function(c){return dteCounts[c.dataIndex]+' trades';}}}},scales:{x:{ticks:{color:TC,font:{size:10}}},y:{min:0,max:100,ticks:{color:TC,callback:function(v){return v+'%';}},grid:{color:GC}}}}});
-  dc('dtePnl');CX.dtePnl=new Chart(document.getElementById('dtePnl'),{type:'bar',data:{labels:dteLabels,datasets:[{data:dteAPs,backgroundColor:dteAPs.map(function(v){return v===null?'#e2e8f0':bc(v);}),borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,onClick:onDteClick,onHover:onDteHover,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.raw!==null?'$'+c.raw:'No data';},afterLabel:function(c){return dteCounts[c.dataIndex]+' trades';}}}},scales:{x:{ticks:{color:TC,font:{size:10}}},y:{ticks:{color:TC,callback:function(v){return'$'+v;}},grid:{color:GC}}}}});
+  dc('dteWR');CX.dteWR=new Chart(document.getElementById('dteWR'),{type:'bar',data:{labels:dteLabels,datasets:[{data:dteWRs,backgroundColor:'rgba(52,152,219,.7)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.raw!==null?c.raw+'%':'No data';},afterLabel:function(c){return dteCounts[c.dataIndex]+' trades';}}}},scales:{x:{ticks:{color:TC,font:{size:10}}},y:{min:0,max:100,ticks:{color:TC,callback:function(v){return v+'%';}},grid:{color:GC}}}}});
+  dc('dtePnl');CX.dtePnl=new Chart(document.getElementById('dtePnl'),{type:'bar',data:{labels:dteLabels,datasets:[{data:dteAPs,backgroundColor:dteAPs.map(function(v){return v===null?'#e2e8f0':bc(v);}),borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.raw!==null?'$'+c.raw:'No data';},afterLabel:function(c){return dteCounts[c.dataIndex]+' trades';}}}},scales:{x:{ticks:{color:TC,font:{size:10}}},y:{ticks:{color:TC,callback:function(v){return'$'+v;}},grid:{color:GC}}}}});
+  if(window.OverviewDrill&&window.JournalApp){
+    var periodType=perfPeriod;
+    function openPeriod(i,strategy){
+      var filter={kind:'period',period:periodType,key:keys[i]};
+      if(strategy!==undefined)filter.strategy=strategy;
+      JournalApp.openAnalytics({filter:filter,title:(periodType==='weekly'?'Week: ':'Month: ')+dK(keys[i])+(strategy!==undefined?' · '+strategy:'')});
+    }
+    ['perfPnl','perfWR','perfCount'].forEach(function(id){
+      OverviewDrill.install(CX[id],{title:CX[id].canvas.closest('.cc').querySelector('.ct').textContent,axis:'x',open:function(i){openPeriod(i)}});
+    });
+    var mixItems=[];
+    mixDatasets.forEach(function(ds,datasetIndex){ds.data.forEach(function(n,index){if(n>0)mixItems.push({index:index,datasetIndex:datasetIndex,label:labels[index]+' · '+ds.label})})});
+    OverviewDrill.install(CX.stratMix,{title:'Strategy mix by period',axis:'x',items:mixItems,
+      open:function(i,di){openPeriod(i,mixDatasets[di].label)},categoryOpen:function(i){openPeriod(i)}});
+    if(CX.perfScatter){
+      var scatterItems=[];
+      datasets.forEach(function(ds,datasetIndex){ds.data.forEach(function(p,index){scatterItems.push({index:index,datasetIndex:datasetIndex,label:p.label})})});
+      OverviewDrill.install(CX.perfScatter,{title:'Time used vs P&L',items:scatterItems,open:function(i,di){
+        var point=datasets[di].data[i];JournalApp.openAnalytics({trade:point.trade,note:'Time used: '+point.x+'% · Net P&L: $'+point.y});
+      }});
+    }
+    ['dteWR','dtePnl'].forEach(function(id){OverviewDrill.install(CX[id],{title:'Days to expiry at entry',axis:'x',open:function(i){
+      var b=dteBuckets[i];JournalApp.openAnalytics({filter:{kind:'dte',min:b.min,max:b.max},title:'DTE at entry: '+b.l});
+    }})});
+  }
   renderComparison(m,keys,dK);
 }
 function renderComparison(m,keys,dK){
@@ -1094,8 +1123,8 @@ resetPrivateView();
 <script src="journal-store.js"></script>
 <script src="ibkr-import.js?v=20261109-reconcile"></script>
 <script src="ibkr-reconcile.js?v=20261109-reconcile"></script>
-<script src="overview-drill.js?v=20261109-drill"></script>
-<script src="journal-app.js?v=20261109-time"></script>
+<script src="overview-drill.js?v=20261109-perf-drill"></script>
+<script src="journal-app.js?v=20261109-perf-drill"></script>
 <script src="private-sheets.js?v=20261109-tab-session"></script>
 </body>
 </html>

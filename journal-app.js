@@ -252,7 +252,7 @@
   const d=openDialog(tradeLabel(t),true);d.classList.add('journal');let s;try{s=sum(t)}catch(error){d.append(notice(error.message,'error'));}
   const actions=node('div',{class:'journal-actions'},button('Edit trade',()=>tradeEditor(t)),button('History',()=>historyView(t.id)),button('Delete trade',()=>deleteRecord('trades',t)),button('Close',()=>d.close()));
   [...actions.children].find(b=>b.textContent==='Delete trade').classList.add('journal-danger');
-  if(analyticsContext)analyticsBack(d,analyticsContext.selection.field?'Back to results':'Back to Overview',()=>analyticsContext.selection.field?analyticsList():d.close());
+  if(analyticsContext)analyticsBack(d,analyticsHasGroup()?'Back to results':'Back to '+analyticsRootLabel(),()=>analyticsHasGroup()?analyticsList():d.close());
   if(s&&s.status!=='closed'&&!t.legacySummary)actions.prepend(button('Add execution',()=>actionEditor(t),true));
   if(s?.status==='open'&&!t.legacySummary)actions.prepend(button('Update prices',()=>quoteEditor(t)),button('Roll',()=>rollEditor(t)));
   d.append(node('small',{},accountName(t.accountId)+' · '+t.symbol+' · '+t.mode+' · '+(s?.status||'Needs repair')),actions);
@@ -297,20 +297,31 @@
   if(busy)return;
   if(selection.trade){
    const ref=analyticsRefs.get(selection.trade);if(!ref){showStatus('The chart data changed. Select the point again.',true);return;}
-   analyticsContext={epoch,selection:{note:selection.note||''},currentRef:ref};openAnalyticsRecord(ref);
-  }else if(['strategy','type','symbol','mistakes'].includes(selection.field)){
-   analyticsContext={epoch,selection:{field:selection.field,value:selection.value,title:selection.title},currentRef:null};analyticsList();
+   analyticsContext={epoch,page:document.body.dataset.page,selection:{note:selection.note||''},currentRef:ref};openAnalyticsRecord(ref);
+  }else if(['strategy','type','symbol','mistakes'].includes(selection.field)||['period','dte','timeStrategy'].includes(selection.filter?.kind)){
+   analyticsContext={epoch,page:document.body.dataset.page,selection:{field:selection.field,value:selection.value,title:selection.title,filter:selection.filter?{...selection.filter}:null},currentRef:null};analyticsList();
   }
+ }
+ function analyticsHasGroup(){return Boolean(analyticsContext?.selection.field||analyticsContext?.selection.filter)}
+ function analyticsRootLabel(){return analyticsContext?.page==='perf'?'Performance':'Overview'}
+ function analyticsMatches(t,selection){
+  if(selection.field)return t[selection.field]===selection.value;
+  const f=selection.filter;
+  if(f?.kind==='period')return performancePeriodKey(t,f.period)===f.key&&(!Object.hasOwn(f,'strategy')||performanceStrategy(t)===f.strategy);
+  if(f?.kind==='dte'){const dte=tradeDte(t);return dte!==null&&dte>=f.min&&dte<=f.max;}
+  if(f?.kind==='timeStrategy')return Number.isFinite(t.timeEff)&&t.strategy===f.strategy;
+  return false;
  }
  function analyticsList(){
   if(!analyticsContext||analyticsContext.epoch!==epoch)return;
   analyticsContext.currentRef=null;
   const selection=analyticsContext.selection;
-  const entries=selection.field?trades.filter(t=>t[selection.field]===selection.value):[];
+  const entries=trades.filter(t=>analyticsMatches(t,selection));
   const d=openDialog(selection.title||'Selected trade',true);d.classList.add('journal');
   const net=entries.reduce((n,t)=>n+t.pnl,0);
-  d.append(node('div',{class:'journal-stats'},stat('Trades',entries.length),stat('Net P&L',money(net),net)),
-   node('p',{class:'journal-help'},'These are the closed trades included in this chart category for the selected account. Open a trade or edit its strategy, emotions and notes.'),
+  d.append(node('div',{class:'journal-stats'},stat('Trades',entries.length),stat('Net P&L',money(net),net),
+    stat('Win rate',entries.length?pct(entries.filter(t=>t.pnl>0).length/entries.length*100):'—'),stat('Average net P&L',entries.length?money(net/entries.length):'—')),
+   node('p',{class:'journal-help'},'These are the closed trades included in this chart selection for the selected account. Open a trade or edit its strategy, emotions and notes.'),
    table(['Trade','Account','Closed','Net P&L','Actions'],entries.map(t=>{
     const ref=analyticsRefs.get(t),record=resolveAnalytics(ref),name=button(t.name,()=>openAnalyticsRecord(ref));name.classList.add('journal-trade-link');
     return node('tr',{},node('td',{class:'wrap'},name),node('td',{},accountName(record?.trade?.accountId||record?.legacy?.accountId)),
@@ -324,7 +335,7 @@
   analyticsContext.currentRef=ref;
   if(record.trade){detail(record.trade.id);if(analyticsContext.selection.note)dialog.append(notice(analyticsContext.selection.note));return;}
   const l=record.legacy,p=l.parsed,d=openDialog(p.name,true);d.classList.add('journal');
-  analyticsBack(d,analyticsContext.selection.field?'Back to results':'Back to Overview',()=>analyticsContext.selection.field?analyticsList():d.close());
+  analyticsBack(d,analyticsHasGroup()?'Back to results':'Back to '+analyticsRootLabel(),()=>analyticsHasGroup()?analyticsList():d.close());
   const edit=button('Edit trade',()=>editAnalyticsRecord(ref),true);edit.disabled=!store?.initialized||!l.accountId;
   d.append(node('small',{},accountName(l.accountId)+' · '+p.symbol+' · Historical summary'),node('div',{class:'journal-actions'},edit,button('Close',()=>d.close())),
    node('div',{class:'journal-stats'},stat('Net P&L',money(p.pnl),p.pnl),stat('Trade type',p.type)),

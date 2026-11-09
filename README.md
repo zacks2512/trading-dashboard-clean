@@ -39,6 +39,8 @@ In **Overview**, click a cumulative P&L or drawdown point to open its correspond
 
 Historical source summaries can be viewed through the same charts. Their first saved edit creates a revisioned managed summary, preserves the original row and prevents duplicate display; merely opening or cancelling does not write anything. No execution history is invented. Chart selection retains stable journal/source references independently of display names and ordering. Disconnect removes chart handlers and drawer state.
 
+**Performance** uses the same editable drawers: period P&L, win-rate and trade-count points show the selected month/week; a stacked strategy segment selects that strategy within the period; time-used scatter points open the individual trade; DTE bars show the corresponding entry-DTE bucket. The time-used strategy legend lists only trades eligible for that graph. Result summaries include count, net P&L, win rate and average P&L. Saving recalculates membership and supports returning to the same selection without leaving Performance. Multi-dataset clicks and keyboard selection retain the dataset as well as point index.
+
 Click an open trade for **Add execution**, **Update prices**, **Roll**, editing, history or deletion. Set a leg quantity to zero to skip it. Closings cannot exceed remaining quantities. Worthless expiry requires price zero. Exercise/assignment requires an option-only settlement price and a broker-evidence note; stock positions and later stock P&L are outside this version.
 
 **Roll** is a two-step draft: old closing fills, then a new linked trade with opening fills. Both sides and history are saved in one Google request only at the final click. A partial roll can leave the original trade open.
