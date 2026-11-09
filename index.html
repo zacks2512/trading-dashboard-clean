@@ -289,6 +289,7 @@ table.hm td.emp{background:var(--bg3);border:1px solid var(--border);}
         <div class="ct" style="margin-bottom:0;">% Time Used vs P&L — by Strategy</div>
         <div id="te-legend" style="display:flex;gap:10px;flex-wrap:wrap;font-size:10px;font-family:var(--m);color:var(--text3);"></div>
       </div>
+      <p id="te-coverage" class="journal-help" aria-live="polite"></p>
       <div style="position:relative;height:320px"><canvas id="perfScatter"></canvas></div>
     </div>
     <div class="stt" style="margin-top:4px;">Days to Expiry (DTE) Analysis</div>
@@ -384,7 +385,26 @@ function avg(a){return a.length?a.reduce(function(s,v){return s+v;},0)/a.length:
 function semo(s){return(s||'').split(',').map(function(x){return x.trim();}).filter(function(x){return x&&x!=='—'&&x.toLowerCase()!=='no emotion';});}
 function bc(v){return v>0?G:v<0?R:'#94a3b8';}
 function dc(id){if(CX[id]){CX[id].$journalDrillCleanup?.();CX[id].destroy();delete CX[id];}}
-function parseDate(s){if(!s)return null;var p=s.split('/');if(p.length!==3)return null;var day=+p[0],mon=+p[1]-1,yr=+p[2];if(yr<100)yr+=2000;return new Date(yr,mon,day);}
+function parseDate(s){
+  if(!s||typeof s!=='string')return null;
+  s=s.trim();
+  var iso=s.match(/^(\d{4})-(\d{2})-(\d{2})$/),parts=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/);
+  if(!iso&&!parts)return null;
+  var year=Number(iso?iso[1]:parts[3]),month=Number(iso?iso[2]:parts[2])-1,day=Number(iso?iso[3]:parts[1]);
+  if(!iso&&parts[3].length===2)year+=2000;
+  var date=new Date(year,month,day);
+  return date.getFullYear()===year&&date.getMonth()===month&&date.getDate()===day?date:null;
+}
+function calendarDay(value){
+  var date=value instanceof Date?value:parseDate(value);
+  return date&&Number.isFinite(date.getTime())?Date.UTC(date.getFullYear(),date.getMonth(),date.getDate())/86400000:null;
+}
+function timeUsedPercent(entry,exit,expiry){
+  var start=calendarDay(entry),end=calendarDay(exit),last=calendarDay(expiry);
+  // Calendar-day data cannot resolve an intraday percentage for 0DTE trades.
+  if(start===null||end===null||last===null||end<start||last<=start)return null;
+  return Math.min(100,Math.round((end-start)/(last-start)*100));
+}
 function fmtDate(d){if(!d)return'—';return d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear();}
 function fmtMonth(d){if(!d)return'?';return d.getFullYear()+'-'+(d.getMonth()+1<10?'0':'')+(d.getMonth()+1);}
 function weekStart(d){var s=new Date(d);s.setDate(s.getDate()-s.getDay());return s;}
@@ -404,8 +424,7 @@ function rtt(row){if(!row||typeof row!=='object')return null;row=Object.fromEntr
   if(!name&&!sym)return null;
   var pnlVal=pm(row[COL.pnl]||'');if(isNaN(pnlVal))return null;
   var entryD=parseDate(row[COL.entry_date]||''),exitD=parseDate(row[COL.exit_date]||''),expiryD=parseDate(row[COL.expiry]||'');
-  var timeEff=null;
-  if(entryD&&exitD&&expiryD){var mxD=(expiryD-entryD)/864e5,usD=(exitD-entryD)/864e5;if(mxD>0)timeEff=Math.min(Math.round(usD/mxD*100),100);}
+  var timeEff=timeUsedPercent(entryD,exitD,expiryD);
   return{name:name||sym,symbol:sym,type:row[COL.type]||'—',strategy:row[COL.strategy]||'—',pnl:pnlVal,pct:pm(row[COL.pct]||''),days:parseInt(row[COL.days])||0,mistakes:row[COL.mistakes]||'—',entry:row[COL.emotion_entry]||'—',exit:row[COL.emotion_exit]||'—',entryDate:entryD,exitDate:exitD,timeEff:timeEff,comments:row['comments']||'',confidence:row['confidence level (1-5)']||'',strike:row['Strike']||'',entryPrice:row['Entry Price']||'',exitPrice:row['Exit Price']||'',grossPnl:row['Gross P&L']||'',fees:row['Fees']||'',contracts:row['Contracts']||'',expiry:row[COL.expiry]||''};
 }
 
@@ -835,7 +854,13 @@ function renderPerf(){
     }
   });
   // ── Time Efficiency — enhanced ──
-  var teData=trades.filter(function(t){return t.timeEff!==null;});
+  var teData=trades.filter(function(t){return Number.isFinite(t.timeEff);});
+  dc('perfScatter');
+  document.getElementById('te-cards').replaceChildren();
+  document.getElementById('te-legend').replaceChildren();
+  document.getElementById('perfScatter').parentElement.hidden=!teData.length;
+  document.getElementById('te-coverage').textContent=teData.length+' of '+trades.length+' closed trades shown.'+
+    (teData.length<trades.length?' Missing or ambiguous expiry dates and same-day expiries are excluded.':'');
   if(teData.length){
     // Metric cards
     var teWins=teData.filter(function(t){return t.pnl>0;});
@@ -880,7 +905,6 @@ function renderPerf(){
 
     // Quadrant lines via annotation plugin fallback — use afterDraw plugin
     var avgPnlAll=avg(teData.map(function(t){return t.pnl;}));
-    dc('perfScatter');
     CX.perfScatter=new Chart(document.getElementById('perfScatter'),{
       type:'scatter',
       data:{datasets:datasets},
@@ -1050,7 +1074,7 @@ function resetPrivateView(){
   ['ov0','em0','cf0','pf0','gl0','lg0'].forEach(function(id){document.getElementById(id).style.display='block';});
   ['ov1','em1','cf1','pf1','gl1','lg1'].forEach(function(id){document.getElementById(id).style.display='none';});
   document.querySelectorAll('canvas').forEach(function(el){el.getContext('2d').clearRect(0,0,el.width,el.height);});
-  ['metrics','expectancy-card','emometrics','heatmap','insights','dow-cards','calib-card','conf-metrics','te-cards','te-legend','compCards','goalCards','goalCardsAll','goalMilestones','detail-panel','tlog','tfoot','streak-section','dte-chip','period-chip'].forEach(function(id){var el=document.getElementById(id);if(el)el.replaceChildren();});
+  ['metrics','expectancy-card','emometrics','heatmap','insights','dow-cards','calib-card','conf-metrics','te-cards','te-legend','te-coverage','compCards','goalCards','goalCardsAll','goalMilestones','detail-panel','tlog','tfoot','streak-section','dte-chip','period-chip'].forEach(function(id){var el=document.getElementById(id);if(el)el.replaceChildren();});
   ['srch-sym','srch-strat','srch-emo','cmp-a','cmp-b'].forEach(function(id){var el=document.getElementById(id);if(el)el.replaceChildren();});
   document.getElementById('badge').textContent='— No data loaded';
 }
@@ -1071,7 +1095,7 @@ resetPrivateView();
 <script src="ibkr-import.js?v=20261109-reconcile"></script>
 <script src="ibkr-reconcile.js?v=20261109-reconcile"></script>
 <script src="overview-drill.js?v=20261109-drill"></script>
-<script src="journal-app.js?v=20261109-labels"></script>
+<script src="journal-app.js?v=20261109-time"></script>
 <script src="private-sheets.js?v=20261109-tab-session"></script>
 </body>
 </html>

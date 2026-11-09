@@ -521,7 +521,14 @@
  }
  function syncAnalytics(){
   const normalized=legacyItems().map(l=>{analyticsRefs.set(l.parsed,{kind:'legacy',key:l.key});return l.parsed});
-  for(const t of activeTrades())try{const s=sum(t);if(s.status!=='closed')continue;const isoDate=iso=>iso?new Date(iso+'T12:00:00'):null;const parsed={name:tradeLabel(t),symbol:t.symbol,type:(t.legacySummary&&t.legacyType)||t.structure||'—',strategy:t.strategy||'—',pnl:s.realized,pct:s.premiumReturn,days:Math.max(0,Math.round((isoDate(s.closedDate)-isoDate(s.firstDate))/86400000)),mistakes:(t.mistakes||[]).join(', ')||'—',entry:(t.entryEmotions||[]).join(', ')||'—',exit:(t.exitEmotions||[]).join(', ')||'—',entryDate:isoDate(s.firstDate),exitDate:isoDate(s.closedDate),timeEff:null,comments:t.notes||'',confidence:t.confidence??'',strike:t.strike||'',entryPrice:'',exitPrice:'',grossPnl:s.gross,fees:s.fees,contracts:'',expiry:t.expiry||''};analyticsRefs.set(parsed,{kind:'managed',id:t.id});normalized.push(parsed);}catch(_){}
+  for(const t of activeTrades())try{
+   const s=sum(t);if(s.status!=='closed')continue;
+   const isoDate=iso=>iso?new Date(iso+'T12:00:00'):null,ls=related('legs',t.id);
+   let expiry=t.expiry||t.legacyOriginal?.expiry||'';
+   if(ls.length){const dates=ls.map(l=>calendarDay(l.expiry));expiry=!dates.includes(null)&&new Set(dates).size===1?ls[0].expiry:'';}
+   const parsed={name:tradeLabel(t),symbol:t.symbol,type:(t.legacySummary&&t.legacyType)||t.structure||'—',strategy:t.strategy||'—',pnl:s.realized,pct:s.premiumReturn,days:Math.max(0,Math.round((isoDate(s.closedDate)-isoDate(s.firstDate))/86400000)),mistakes:(t.mistakes||[]).join(', ')||'—',entry:(t.entryEmotions||[]).join(', ')||'—',exit:(t.exitEmotions||[]).join(', ')||'—',entryDate:isoDate(s.firstDate),exitDate:isoDate(s.closedDate),timeEff:timeUsedPercent(s.firstDate,s.closedDate,expiry),comments:t.notes||'',confidence:t.confidence??'',strike:t.strike||'',entryPrice:'',exitPrice:'',grossPnl:s.gross,fees:s.fees,contracts:'',expiry};
+   analyticsRefs.set(parsed,{kind:'managed',id:t.id});normalized.push(parsed);
+  }catch(_){}
   resetPrivateView();trades=normalized.sort((a,b)=>(a.exitDate||a.entryDate||0)-(b.exitDate||b.entryDate||0));
   if(trades.length){$('badge').textContent='— Private journal · '+trades.length+' closed trades';renderAll();}
  }
