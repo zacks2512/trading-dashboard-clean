@@ -1,6 +1,7 @@
 const assert = require('node:assert/strict');
 const {test} = require('node:test');
 const handler = require('../api/journal.js');
+const authConfig = require('../api/auth-config.js');
 
 function response() {
   return {
@@ -50,5 +51,25 @@ test('journal API rejects unauthenticated requests before database access', asyn
       if (previous[key] === undefined) delete process.env[key];
       else process.env[key] = previous[key];
     }
+  }
+});
+
+test('auth configuration exposes only the public branch auth URL', () => {
+  const previous = process.env.NEON_AUTH_BASE_URL;
+  try {
+    delete process.env.NEON_AUTH_BASE_URL;
+    const unavailable = response();
+    authConfig({method: 'GET'}, unavailable);
+    assert.equal(unavailable.statusCode, 503);
+
+    process.env.NEON_AUTH_BASE_URL = 'https://example.neon.tech/neondb/auth';
+    const ready = response();
+    authConfig({method: 'GET'}, ready);
+    assert.equal(ready.statusCode, 200);
+    assert.deepEqual(ready.body, {authBaseUrl: 'https://example.neon.tech/neondb/auth'});
+    assert.equal(ready.headers['Cache-Control'], 'no-store');
+  } finally {
+    if (previous === undefined) delete process.env.NEON_AUTH_BASE_URL;
+    else process.env.NEON_AUTH_BASE_URL = previous;
   }
 });

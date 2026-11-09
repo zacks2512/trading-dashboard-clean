@@ -13,6 +13,15 @@ Its read and save routes are not yet connected to the browser, and no private
 spreadsheet data has been imported. Keep production on Google Sheets until the
 frontend, migration checks, and backup procedure are complete.
 
+`auth-check.html` is a separate development check for Neon email OTP sign-in.
+It reads the branch-specific Auth URL from `/api/auth-config`, requests a code
+only after the owner submits their email, and never stores the code locally.
+It does not read or write trading data. The manually created `migration-dev`
+user has no password and was not automatically sent a verification email;
+the owner must request a sign-in code from this page on the matching branch.
+Vercel preview deployments may use separate Neon branches with different users,
+so verify the preview branch before configuring `JOURNAL_OWNER_ID` there.
+
 ## Architecture
 
 - Vercel hosts the static dashboard and server-side API.

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>בדיקת התחברות ליומן</title>
+  <style>
+    :root { font-family: system-ui, sans-serif; color-scheme: light; }
+    body { margin: 0; background: #f5f7fb; color: #17233a; }
+    main { max-width: 430px; margin: 8vh auto; padding: 32px; background: #fff; border: 1px solid #dce3ef; border-radius: 18px; box-shadow: 0 10px 30px #17233a14; }
+    h1 { margin-top: 0; font-size: 1.55rem; }
+    p { line-height: 1.5; }
+    label { display: block; margin: 18px 0 7px; font-weight: 600; }
+    input { box-sizing: border-box; width: 100%; padding: 12px; border: 1px solid #a9b5c9; border-radius: 8px; font: inherit; direction: ltr; }
+    button { width: 100%; margin-top: 15px; padding: 12px; border: 0; border-radius: 8px; background: #2b55cf; color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+    button:disabled { opacity: .55; cursor: wait; }
+    .secondary { background: #e8edfa; color: #17233a; }
+    [hidden] { display: none !important; }
+    #status { min-height: 1.5em; margin-top: 20px; }
+    #status.error { color: #a71e31; }
+    small { display: block; margin-top: 20px; color: #596579; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>בדיקת התחברות</h1>
+    <p>נשלח קוד חד־פעמי למייל שלך כדי לבדוק את החיבור לחשבון Neon. הפעולה אינה משנה נתוני מסחר.</p>
+    <form id="email-form">
+      <label for="email">כתובת מייל</label>
+      <input id="email" type="email" autocomplete="email" maxlength="254" required>
+      <button type="submit">שלח קוד כניסה</button>
+    </form>
+    <form id="code-form" hidden>
+      <label for="code">הקוד שקיבלת במייל</label>
+      <input id="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6,10}" maxlength="10" required>
+      <button type="submit">התחבר</button>
+      <button class="secondary" id="resend" type="button">שלח קוד חדש</button>
+    </form>
+    <section id="signed-in" hidden>
+      <p id="identity"></p>
+      <button class="secondary" id="sign-out" type="button">התנתק</button>
+    </section>
+    <p id="status" role="status" aria-live="polite"></p>
+    <small>אם המייל לא הגיע, בדוק גם ספאם והמתן לפני שליחת קוד נוסף.</small>
+  </main>
+  <script src="auth-check.js" defer></script>
+</body>
+</html>
