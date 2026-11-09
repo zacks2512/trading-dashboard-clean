@@ -133,7 +133,7 @@
    if(!summaries.has(t.id)) summaries.set(t.id,engine.summarize(t,legs.filter(l => l.tradeId === t.id),actionsFor(t.id)));
    return summaries.get(t.id);
   }
-  const usedLegacy = new Set(trades.map(t => t.legacyKey).filter(Boolean));
+  const usedLegacy = new Set(trades.flatMap(t => [t.legacyKey,...(t.legacyKeys||[])]).filter(Boolean));
   const linkCounts = new Map();
   for(const choice of Object.values(links)){
    if(choice && choice !== 'separate') linkCounts.set(choice,(linkCounts.get(choice)||0)+1);
@@ -146,7 +146,7 @@
      eligible:Boolean(t.key && t.end),legacy:t
     }));
    for(const trade of existingTrades){
-    if(trade.ibkrConid || String(trade.symbol).toUpperCase() !== symbol || trade.entryDate > end) continue;
+    if(trade.ibkrConid || trade.ibkrImported || String(trade.symbol).toUpperCase() !== symbol || trade.entryDate > end) continue;
     let closedDate = null;
     try{closedDate=summary(trade).closedDate;}catch(_){}
     if(closedDate && closedDate < start) continue;
@@ -298,7 +298,7 @@
    new RegExp('(?:^|,)\\s*"?' + key + '"?\\s*(?:,|$)').test(header));
  }
 
- const api = {readCSV,plan,isCSV};
+ const api = {readCSV,plan,isCSV,normalize,signature:row=>JSON.stringify(required.map(key=>row[key]))};
  if(typeof module !== 'undefined' && module.exports) module.exports = api;
  else root.IBKRImport = api;
 })(typeof window !== 'undefined' ? window : globalThis);

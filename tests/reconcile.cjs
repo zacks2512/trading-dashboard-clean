@@ -1,0 +1,44 @@
+const assert=require('node:assert/strict');
+const I=require('../ibkr-import'),R=require('../ibkr-reconcile'),engine=require('../journal-engine');
+const header='AssetClass,Symbol,Conid,UnderlyingSymbol,Multiplier,Strike,Expiry,Put/Call,Buy/Sell,CurrencyPrimary,TradeID,DateTime,Quantity,TradePrice,IBCommission,IBCommissionCurrency,Open/CloseIndicator,IBOrderID,IBExecID,Notes/Codes';
+const row=(id,day,quantity,price,conid=40,strike=50,code='')=>['OPT','TEST option',conid,'TEST',100,strike,'20/03/2026','C',quantity>0?'BUY':'SELL','USD',id,day+'/02/2026;10:00:00',quantity,price,price===0?0:-2,'USD',id<3?'O':'C',id<3?'100':'200','',code].join(',');
+const a={name:'Old first exit',symbol:'TEST',pnl:96,entryDate:'2026-01-31T22:00:00.000Z',exitDate:'2026-02-01T22:00:00.000Z',strike:'50',contracts:'1',expiry:'20/03/26',entryPrice:'3',exitPrice:'4'};
+const b={...a,name:'Old final exit',pnl:194,exitDate:'2026-02-02T22:00:00.000Z',contracts:'2'};
+const legacy=[a,b].map((source,i)=>({key:'source:'+i,source,title:source.name,symbol:'TEST',start:R.journalDate(source.entryDate),end:R.journalDate(source.exitDate),pnl:source.pnl,data:{notes:i?'Second annotation':'First annotation',entryEmotions:[i?'Patience':'Confidence'],confidence:3}}));
+const csv=[header,row(1,'01',3,3),row(3,'02',-1,4),row(4,'03',-2,4)].join('\n');
+const bundle={format:R.FORMAT,version:1,csv,groups:[{sources:[a,b],tradeIds:['1','3','4'],expectedNet:294}],preserved:[]};
+const options={accountId:'main',engine,legacy};
+const run=(bundle,extra={})=>R.plan(I.readCSV(bundle.csv),{...options,...extra},bundle);
+const tables=p=>Object.fromEntries(['trades','legs','actions'].map(table=>[table,p.mutations.filter(m=>m.table===table&&!m.deleted).map(m=>m.data)]));
+const first=run(bundle),data=tables(first),t=data.trades[0];
+assert.equal(first.newTrades,1);assert.equal(first.results.length,3);assert.equal(first.reconciliation.linkedSources,2);
+assert.deepEqual(t.legacyKeys,['source:0','source:1']);assert.equal(t.legacyOriginals.length,2);
+assert.equal(t.notes,'First annotation\n\nSecond annotation');assert.deepEqual(t.entryEmotions,['Confidence','Patience']);
+assert.equal(engine.summarize(t,[],data.actions).realized,294);
+assert.equal(engine.summarize(t,[],data.actions).fees,6);
+assert.equal(run(bundle,data).mutations.length,0);
+assert.equal(I.plan(I.readCSV(csv),{...options,...data}).mutations.length,0);
+assert.throws(()=>run({...bundle,groups:[{...bundle.groups[0],expectedNet:295}]}),/differs/);
+assert.throws(()=>run(bundle,{legacy:[]}),/source missing/);
+assert.throws(()=>run(bundle,{legacy:[...legacy,legacy[0]]}),/ambiguous/);
+assert.throws(()=>run(bundle,{actions:data.actions.slice(0,1)}),/partial or changed/);
+assert.throws(()=>R.read(JSON.stringify({...bundle,groups:[...bundle.groups,...bundle.groups]})),/more than once/);
+assert.throws(()=>run(bundle,{...data,actions:data.actions.map((a,i)=>i? a:{...a,ibkrSignature:'changed'})}),/changed/);
+// Account-specific execution IDs and source assignment prevent a wrong-account migration.
+assert.throws(()=>run(bundle,{accountId:'another',legacy:[]}),/source missing/);
+// Two adopted summaries become one revisioned position, retaining both legacy keys.
+const managed=legacy.map((l,i)=>({id:'managed'+i,accountId:'main',legacyKey:l.key,legacySummary:{pnl:l.pnl},notes:l.data.notes}));
+const adopted=run(bundle,{trades:managed});
+assert.equal(adopted.updatedTrades,1);assert.equal(tables(adopted).trades[0].id,'managed0');
+assert(adopted.mutations.some(m=>m.table==='trades'&&m.data.id==='managed1'&&m.deleted));
+// Explicit grouping handles a multi-leg order with commissions and zero-fee expiry.
+const spreadCSV=[header,row(1,'01',1,3,40,50),row(2,'01',-1,1,41,55),row(3,'20',-1,0,40,50,'Ep'),row(4,'20',1,0,41,55,'Ep')].join('\n');
+const spreadSource={...a,name:'Old spread',pnl:-204,exitDate:'2026-02-19T22:00:00.000Z'};
+const spread={...bundle,csv:spreadCSV,groups:[{sources:[spreadSource],tradeIds:['1','2','3','4'],expectedNet:-204}]};
+const spreadPlan=run(spread,{legacy:[{...legacy[0],source:spreadSource,title:'Old spread',pnl:-204}]});
+const sd=tables(spreadPlan);assert.equal(sd.trades[0].mode,'legs');assert.equal(sd.legs.length,2);
+assert.equal(engine.summarize(sd.trades[0],sd.legs,sd.actions).realized,-204);
+assert.equal(I.plan(I.readCSV(spreadCSV),{...options,...sd}).mutations.length,0);
+const held={...spread,heldTradeIds:['3']};assert.throws(()=>R.read(JSON.stringify(held)),/must not be allocated/);
+assert.equal(R.journalDate('2026-04-01T21:00:00.000Z'),'2026-04-02');
+console.log('PASS: bulk historical reconciliation, split exits, actual fees and zero-fee expiry, multiple legs, annotation preservation, original snapshots, one-to-one source/TradeID allocation, managed-summary merge, account isolation, conflicts and replay.');
