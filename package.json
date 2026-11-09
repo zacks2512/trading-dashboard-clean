@@ -3,13 +3,18 @@
   "version": "2.0.0",
   "private": true,
   "scripts": {
-    "test": "node --test tests/connection.cjs tests/journal.cjs tests/ibkr.cjs tests/reconcile.cjs",
+    "test": "node --test tests/api.cjs tests/connection.cjs tests/journal.cjs tests/ibkr.cjs tests/reconcile.cjs",
     "test:browser": "node tests/browser.cjs",
     "test:ui": "node tests/ui.cjs"
   },
   "devDependencies": {
     "chart.js": "4.4.1",
-    "playwright": "1.64.1",
-    "jsdom": "26.1.0"
+    "jsdom": "26.1.0",
+    "playwright": "1.64.1"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.2.0",
+    "jose": "^6.2.17",
+    "ws": "^8.22.2"
   }
 }
