@@ -8,8 +8,10 @@ Status: preparation only. The current Google Sheets journal remains authoritativ
 - Neon PostgreSQL stores revisioned journal records, audit history and a legacy
   All Data snapshot. The connection string is a Vercel server environment
   variable and must never be delivered to the browser.
-- Neon managed authentication identifies the sole owner. Every API request
-  must verify that identity before reading or writing. Disable public signup.
+- Neon managed authentication identifies the sole owner. Neon currently permits
+  public signup, so every API request must verify the token and allow only the
+  configured owner user ID before reading or writing. A newly signed-up user must
+  receive no journal access.
 - A save must check expected revisions and write all affected records and
   history in one PostgreSQL transaction. Reusing a transaction ID must return
   the prior result, never create a duplicate financial action.
