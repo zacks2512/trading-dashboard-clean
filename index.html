@@ -576,8 +576,8 @@ function renderOV(){
 }
 
 function renderEM(){
-  var eM={},xM={};
-  trades.forEach(function(t){semo(t.entry).forEach(function(e){if(!eM[e])eM[e]={pnls:[],wins:0};eM[e].pnls.push(t.pnl);if(t.pnl>0)eM[e].wins++;});semo(t.exit).forEach(function(e){if(!xM[e])xM[e]={pnls:[],wins:0};xM[e].pnls.push(t.pnl);if(t.pnl>0)xM[e].wins++;});});
+  var eM=Object.create(null),xM=Object.create(null);
+  trades.forEach(function(t){[...new Set(semo(t.entry))].forEach(function(e){if(!eM[e])eM[e]={pnls:[],wins:0};eM[e].pnls.push(t.pnl);if(t.pnl>0)eM[e].wins++;});[...new Set(semo(t.exit))].forEach(function(e){if(!xM[e])xM[e]={pnls:[],wins:0};xM[e].pnls.push(t.pnl);if(t.pnl>0)xM[e].wins++;});});
   var cT=trades.filter(function(t){return semo(t.entry).indexOf('Confidence')>=0;});var cWR=cT.length?Math.round(cT.filter(function(t){return t.pnl>0;}).length/cT.length*100):0;
   var fT=trades.filter(function(t){return semo(t.entry).indexOf('FOMO')>=0;});var fA=fT.length?Math.round(avg(fT.map(function(t){return t.pnl;}))):0;
   var pT=trades.filter(function(t){return semo(t.entry).indexOf('Patience')>=0;});var pWR=pT.length?Math.round(pT.filter(function(t){return t.pnl>0;}).length/pT.length*100):0;
@@ -590,6 +590,17 @@ function renderEM(){
   var NEG=['FOMO','Greed','Stress','Overconfidence','Fear','Impulsive','Boredom'];var nD=NEG.map(function(e){var v=eM[e];return v?Math.round(v.pnls.reduce(function(a,b){return a+b;},0)):0;});var nC=NEG.map(function(e){var v=eM[e];return v?v.pnls.length:0;});
   dc('neg');CX.neg=new Chart(document.getElementById('negEmo'),{type:'bar',data:{labels:NEG,datasets:[{data:nD,backgroundColor:nD.map(bc),borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return'$'+c.raw;},afterLabel:function(c){return'n='+nC[c.dataIndex];}}}},scales:{x:{ticks:{color:TC,font:{size:10}}},y:{ticks:{color:'#8891a4',callback:function(v){return'$'+v;}},grid:{color:GC}}}}});
   buildHM(eM);buildIns(eM,xM);renderDOW();
+  if(window.OverviewDrill&&window.JournalApp){
+    [['entryAvg','Entry emotion','entry'],['exitAvg','Exit emotion','exit'],['neg','Entry emotion','entry']].forEach(function(spec){
+      var chart=CX[spec[0]];
+      OverviewDrill.install(chart,{title:chart.canvas.closest('.cc').querySelector('.ct').textContent,axis:spec[0]==='neg'?'x':'y',open:function(i){
+        var emotion=chart.data.labels[i];JournalApp.openAnalytics({filter:{kind:'emotion',phase:spec[2],emotion:emotion},title:spec[1]+': '+emotion});
+      }});
+    });
+    OverviewDrill.install(CX.ewr,{title:'Win rate by entry emotion',axis:'y',open:function(i){
+      var emotion=wE[i][0];JournalApp.openAnalytics({filter:{kind:'emotion',phase:'entry',emotion:emotion},title:'Entry emotion: '+emotion});
+    }});
+  }
 }
 function heatmapTradeType(value){
   var label=String(value||'').trim();
@@ -779,6 +790,11 @@ function renderDOW(){
       scales:{x:{ticks:{color:TC}},y:{ticks:{color:TC},grid:{color:GC}}}
     }
   });
+  if(window.OverviewDrill&&window.JournalApp){
+    ['dowPnl','dowCount'].forEach(function(id){OverviewDrill.install(CX[id],{title:'Day of week at entry',axis:'x',open:function(i){
+      JournalApp.openAnalytics({filter:{kind:'weekday',day:i+1},title:'Entry day: '+DAYS[i]});
+    }})});
+  }
 }
 
 function renderConf(){
@@ -1141,7 +1157,7 @@ resetPrivateView();
 <script src="ibkr-import.js?v=20261109-reconcile"></script>
 <script src="ibkr-reconcile.js?v=20261109-reconcile"></script>
 <script src="overview-drill.js?v=20261109-perf-drill"></script>
-<script src="journal-app.js?v=20261109-heatmap"></script>
+<script src="journal-app.js?v=20261109-emotions-drill"></script>
 <script src="private-sheets.js?v=20261109-tab-session"></script>
 </body>
 </html>
