@@ -43,6 +43,8 @@ Historical source summaries can be viewed through the same charts. Their first s
 
 The **Emotions heatmap** normalizes Buy/Sell Call/Put aliases to Long/Short Call/Put for display and matching, preserving stored types. Additional observed trade types and entry emotions appear dynamically. Each nonempty cell is a keyboard-accessible button opening the exact emotion/type intersection for the active account. Counts deduplicate repeated labels within a trade; multiple distinct emotions can place the same trade in different rows. Editing refreshes the cell and result membership while remaining in Emotions. Zero average P&L remains distinct from an empty cell.
 
+All six **Emotions** canvas charts also support the same drawers. Entry-average, entry-win-rate and negative-emotion charts select the entry tag; exit-average selects the exit tag. Weekday average/count charts select the entry weekday. Repeated tags count once per trade, so chart means, win rates and totals reconcile with the member list. Existing minimum sample thresholds remain unchanged. Tick labels and keyboard activation are supported, edits refresh membership, and account filters apply throughout.
+
 Click an open trade for **Add execution**, **Update prices**, **Roll**, editing, history or deletion. Set a leg quantity to zero to skip it. Closings cannot exceed remaining quantities. Worthless expiry requires price zero. Exercise/assignment requires an option-only settlement price and a broker-evidence note; stock positions and later stock P&L are outside this version.
 
 **Roll** is a two-step draft: old closing fills, then a new linked trade with opening fills. Both sides and history are saved in one Google request only at the final click. A partial roll can leave the original trade open.

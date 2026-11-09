@@ -298,7 +298,7 @@
   if(selection.trade){
    const ref=analyticsRefs.get(selection.trade);if(!ref){showStatus('The chart data changed. Select the point again.',true);return;}
    analyticsContext={epoch,page:document.body.dataset.page,selection:{note:selection.note||''},currentRef:ref};openAnalyticsRecord(ref);
-  }else if(['strategy','type','symbol','mistakes'].includes(selection.field)||['period','dte','timeStrategy','heatmap'].includes(selection.filter?.kind)){
+  }else if(['strategy','type','symbol','mistakes'].includes(selection.field)||['period','dte','timeStrategy','heatmap','emotion','weekday'].includes(selection.filter?.kind)){
    analyticsContext={epoch,page:document.body.dataset.page,selection:{field:selection.field,value:selection.value,title:selection.title,filter:selection.filter?{...selection.filter}:null},currentRef:null};analyticsList();
   }
  }
@@ -311,6 +311,8 @@
   if(f?.kind==='dte'){const dte=tradeDte(t);return dte!==null&&dte>=f.min&&dte<=f.max;}
   if(f?.kind==='timeStrategy')return Number.isFinite(t.timeEff)&&t.strategy===f.strategy;
   if(f?.kind==='heatmap')return heatmapTradeType(t.type)===f.tradeType&&semo(t.entry).includes(f.emotion);
+  if(f?.kind==='emotion')return semo(f.phase==='exit'?t.exit:t.entry).includes(f.emotion);
+  if(f?.kind==='weekday')return t.entryDate?.getDay()===f.day;
   return false;
  }
  function analyticsList(){

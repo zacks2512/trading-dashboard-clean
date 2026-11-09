@@ -345,9 +345,42 @@ function fillPackage(name,price='5',quantity='1'){
  neutral.click();assert.equal(dialog().querySelectorAll('.journal-trade-link').length,1);click('Neutral heatmap',dialog());assert(buttons('← Back to results',dialog()).length);click('Close',dialog());
  const hf=d.getElementById('journal-account');hf.value=otherAccount;hf.dispatchEvent(new w.Event('change',{bubbles:true}));assert(!heatCell('Focus <calm>','Custom <spread>'));assert(!heatCell('Confidence','Long Call'));
  hf.value=accountId;hf.dispatchEvent(new w.Event('change',{bubbles:true}));assert(heatCell('Focus <calm>','Custom <spread>'));hf.value='';hf.dispatchEvent(new w.Event('change',{bubbles:true}));w.sw('overview');
+ // All Emotions canvases drill into the matching entry/exit emotion or entry
+ // weekday. Chart aggregates deduplicate labels just like the result lists.
+ const negativeSources=[
+  {'Full name':'Emotion loss','Symbol':'EMO','trade type':'Buy Put','Net P&L':'-20','Entry Date':'01/06/2026','Exit Date':'03/06/2026','Expiry':'20/06/2026','Emotion (Entry)':'FOMO, FOMO','Emotion (Exite)':'Discipline, Focus (steady)'},
+  {'Full name':'Emotion gain','Symbol':'EMO','trade type':'Buy Put','Net P&L':'10','Entry Date':'02/06/2026','Exit Date':'03/06/2026','Expiry':'20/06/2026','Emotion (Entry)':'FOMO, Curiosity','Emotion (Exite)':'Discipline, Focus (steady)'}
+ ];
+ w.renderAll=()=>{if(w.trades.length){w.renderOV();w.renderPerf();w.renderEM()}};
+ w.JournalApp.setLegacy([...heatSources,...negativeSources],'heatmap-test');w.sw('emotions');
+ const emotionClick=(canvas,emotion)=>{
+  const chart=Object.values(w.CX).find(c=>c.canvas.id===canvas),i=chart.data.labels.findIndex(label=>label===emotion||label.startsWith(emotion+' ('));
+  assert(i>=0,'Emotion missing from '+canvas);chartClick(canvas,i);assert.equal(d.body.dataset.page,'emotions');return chart;
+ };
+ for(const [canvas,emotion,phase]of [['entryAvg','FOMO','entry'],['entryWR','Curiosity','entry'],['exitAvg','Focus (steady)','exit'],['negEmo','FOMO','entry']]){
+  const chart=emotionClick(canvas,emotion),expected=w.trades.filter(t=>w.semo(t[phase]).includes(emotion));
+  assert.equal(dialog().querySelectorAll('.journal-trade-link').length,expected.length);
+  const net=expected.reduce((n,t)=>n+t.pnl,0),i=chart.data.labels.findIndex(label=>label===emotion||label.startsWith(emotion+' ('));
+  const number=canvas==='entryWR'?Math.round(expected.filter(t=>t.pnl>0).length/expected.length*100):canvas==='negEmo'?Math.round(net):Math.round(net/expected.length);
+  assert.equal(chart.data.datasets[0].data[i],number);click('Close',dialog());
+ }
+ assert(w.CX.ewr.data.labels.includes('Confidence (2)')); // two unique trades, not three tag occurrences
+ assert.equal(w.CX.entryAvg.data.datasets[0].data[w.CX.entryAvg.data.labels.indexOf('Confidence')],20);
+ for(const id of ['dowPnl','dowCount']){
+  chartClick(id,0);const expected=w.trades.filter(t=>t.entryDate?.getDay()===1);
+  assert.equal(dialog().querySelectorAll('.journal-trade-link').length,expected.length);
+  assert(dialog().textContent.includes('Emotion loss'));assert(!dialog().textContent.includes('Emotion gain'));click('Close',dialog());
+ }
+ const fomoIndex=w.CX.entryAvg.data.labels.indexOf('FOMO');d.getElementById('entryAvg').dispatchEvent(new w.MouseEvent('click',{clientX:30,clientY:21+fomoIndex*20,bubbles:true}));
+ assert.equal(dialog().querySelectorAll('.journal-trade-link').length,2);
+ click('Emotion loss',dialog());click('Edit trade');assert(control('Entry emotions').selectedValues().includes('FOMO'));click('FOMO',control('Entry emotions'));submit();await settled();click('← Back to results');
+ assert.equal(dialog().querySelectorAll('.journal-trade-link').length,1);assert(dialog().textContent.includes('Emotion gain'));assert.equal(d.body.dataset.page,'emotions');click('Close',dialog());
+ assert.equal(w.CX.neg.data.datasets[0].data[w.CX.neg.data.labels.indexOf('FOMO')],10);
+ hf.value=otherAccount;hf.dispatchEvent(new w.Event('change',{bubbles:true}));emotionClick('negEmo','FOMO','entry');assert.equal(dialog().querySelectorAll('.journal-trade-link').length,0);click('Close',dialog());hf.value='';hf.dispatchEvent(new w.Event('change',{bubbles:true}));
+ const emotionCanvas=d.getElementById('negEmo');emotionCanvas.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Home',bubbles:true}));emotionCanvas.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Enter',bubbles:true}));assert(dialog().querySelector('h2').textContent.includes('FOMO'));click('Close',dialog());w.sw('overview');
  // Repeated rerenders replace handlers; disconnected charts cannot reopen data.
  let opens=0;const openAnalytics=w.JournalApp.openAnalytics;w.JournalApp.openAnalytics=s=>{opens++;return openAnalytics(s)};
  w.JournalApp.render();w.JournalApp.render();chartClick('cumulChart',pointIndex('One Call'));assert.equal(opens,1);click('Close',dialog());
  assert.equal(errors.length,0);w.JournalApp.clear();assert(!d.body.textContent.includes('One Call'));chartClick('cumulChart',0);assert(!dialog());assert.equal(opens,1);
- console.log('PASS: DOM integration — journal forms, accounting, revisions and imports; Overview and Performance chart drawers; Heatmap old/new type aliases, deduplicated emotion counts, average/member agreement, custom text labels, zero-P&L cells, edit/back flow and account isolation; readable labels, short dates, handler and disconnect cleanup. Charts and Sheets mocked; visual/browser QA not covered.');dom.window.close();
+ console.log('PASS: DOM integration — journal forms, accounting, revisions and imports; Overview, Performance and all Emotions chart drawers; entry/exit selection, mean/win-rate/total agreement, entry weekdays, Heatmap aliases, deduplicated labels, custom text, edit/back flow, account isolation and keyboard activation; handler and disconnect cleanup. Charts and Sheets mocked; visual/browser QA not covered.');dom.window.close();
 })().catch(e=>{console.error(e);dom.window.close();process.exit(1)});
