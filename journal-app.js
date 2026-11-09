@@ -18,6 +18,7 @@
  function stat(label,value,amount=null){return node('div',{class:'journal-stat'},node('small',{},label),node('strong',{class:typeof amount==='number'?tone(amount):''},value));}
  function section(title,content,open=false){const summary=node('summary',{},title),body=node('div',{class:'journal-section-body'},content);const d=node('details',{class:'journal-section'},summary,body);d.open=open;return d;}
  let store=null,legacy=[],accountFilter='',epoch=0,search='',dialog=null,busy=false,selectedId=null,tradeStatus='open',symbolFilter='',strategyFilter='';
+ let analyticsRefs=new WeakMap(),analyticsContext=null,dialogTransition=false;
  function records(table){return store?.all(table)||[];}
  function setting(id,fallback){return store?.get('settings',id)?.value??fallback;}
  function accountName(id){return store?.get('accounts',id)?.name||'Unassigned';}
@@ -40,16 +41,16 @@
  function multi(group,current=[]){return tags(group,current);}
  function choices(n){return n.selectedValues();}
  function openDialog(title,drawer=false){
-  if(dialog)dialog.close();
-  const d=node('dialog',{class:'journal-dialog'+(drawer?' journal-drawer':'')}),heading=node('h2',{id:'journal-dialog-title'},title);dialog=d;
+  dialogTransition=true;try{if(dialog)dialog.close()}finally{dialogTransition=false}
+  const d=node('dialog',{class:'journal-dialog'+(drawer||analyticsContext?' journal-drawer':'')}),heading=node('h2',{id:'journal-dialog-title'},title);dialog=d;
   const close=button('×',()=>{if(!busy)d.close()});close.classList.add('journal-dismiss');close.setAttribute('aria-label','Close dialog');
   d.setAttribute('aria-labelledby',heading.id);d.append(node('header',{class:'journal-dialog-header'},heading,close));document.body.append(d);
-  d.addEventListener('close',()=>{d.remove();if(dialog===d){dialog=null;selectedId=null;}});
+  d.addEventListener('close',()=>{d.remove();if(dialog===d){dialog=null;selectedId=null;if(!dialogTransition)analyticsContext=null;}});
   d.addEventListener('cancel',event=>{if(busy)event.preventDefault();});d.showModal();return d;
  }
  function errorIn(d,error){let area=d.querySelector('.journal-error');if(!area){area=node('div',{class:'journal-error',role:'alert'});const footer=d.querySelector('footer');if(footer)footer.before(area);else d.append(area)}area.textContent=error.message||String(error);for(const parent of [area.closest('details')].filter(Boolean))parent.open=true;area.scrollIntoView({block:'nearest'});}
  function formFooter(d,form,label='Save'){
-  const save=node('button',{class:'btn p',type:'submit'},label),cancel=button('Cancel',()=>d.close());form.append(node('footer',{},cancel,save));return save;
+  const save=node('button',{class:'btn p',type:'submit'},label),cancel=button('Cancel',()=>{if(analyticsContext?.currentRef)openAnalyticsRecord(analyticsContext.currentRef);else d.close()});form.append(node('footer',{},cancel,save));return save;
  }
  function validateState(db,mutations){
   const data={};for(const name of ['trades','legs','actions','quotes']){data[name]=new Map(db.all(name).map(x=>[x.id,x]));for(const m of mutations.filter(m=>m.table===name)){if(m.deleted)data[name].delete(m.id);else data[name].set(m.id,m.data);}}
@@ -59,19 +60,21 @@
   }
  }
  async function saveChanges(mutations,options={},d=dialog){
-  if(busy)return false;busy=true;const generation=epoch,db=store;
+  if(busy)return false;busy=true;const generation=epoch,db=store,context=analyticsContext;
   if($('journal-save-state'))$('journal-save-state').textContent='Saving…';
   if(d)d.querySelectorAll('button').forEach(b=>b.disabled=true);
   try{await db.commit(mutations,{...options,validate:(latest,changes)=>{
    options.preflight?.(latest);
    validateState(latest,changes);
-  }});if(generation!==epoch)return false;if(d)d.close();render();showStatus('Saved to your private Google Sheet.');return true;}
+  }});if(generation!==epoch)return false;if(d)d.close();render();showStatus('Saved to your private Google Sheet.');
+   if(context&&context.epoch===epoch){analyticsContext=context;if(context.currentRef)openAnalyticsRecord(context.currentRef);else analyticsList()}
+   return true;}
   catch(error){if(generation===epoch){if(d)errorIn(d,error);else showStatus(error.message,true);}return false;}
   finally{busy=false;if(generation===epoch&&$('journal-save-state'))$('journal-save-state').textContent='';if(d?.isConnected)d.querySelectorAll('button').forEach(b=>b.disabled=false);}
  }
- function clear(){epoch++;store=null;legacy=[];selectedId=null;accountFilter='';search='';symbolFilter='';strategyFilter='';tradeStatus='open';if(dialog)dialog.close();render();}
+ function clear(){epoch++;analyticsContext=null;analyticsRefs=new WeakMap();store=null;legacy=[];selectedId=null;accountFilter='';search='';symbolFilter='';strategyFilter='';tradeStatus='open';if(dialog)dialog.close();render();}
  async function connect(transport){
-  epoch++;const generation=epoch;store=new S.Store(transport);legacy=[];accountFilter='';
+  epoch++;analyticsContext=null;analyticsRefs=new WeakMap();const generation=epoch;store=new S.Store(transport);legacy=[];accountFilter='';
   try{await store.load();if(generation!==epoch)return;render();}catch(error){if(generation===epoch)showStatus(error.message,true);}
  }
  function requireSetup(){if(!store?.initialized){showStatus('Connect your private sheet, then choose Set up journal tabs.',true);return false;}return true;}
@@ -135,9 +138,11 @@
    delete action.feeRecorded;action.feeRecorded=E.feeOf(action,trade,legs,0);return action;
   }};
  }
- function tradeEditor(existing=null,roll=null){
+ function tradeEditor(existing=null,roll=null,legacySource=null){
   if(!requireSetup())return;
   const id=existing?.id||uuid(),d=openDialog(roll?'Roll — new linked trade':existing?'Edit trade':'New options trade'),form=node('form',{class:'journal-trade-form'});
+  if(analyticsContext?.currentRef)analyticsBack(d,'Back to trade',()=>openAnalyticsRecord(analyticsContext.currentRef));
+  const legacySnapshot=legacySource?JSON.stringify(legacySource.parsed):null;
   const accounts=records('accounts').filter(a=>!a.archived||a.id===existing?.accountId),hasActions=existing&&related('actions',id).length>0;
   if(!accounts.length){d.append(notice('Add an active account first.'));return;}
   const defaults=existing||roll?.trade||{},account=select(accounts.map(a=>[a.id,a.name]),existing?.accountId||roll?.trade.accountId||setting('defaultAccount',accounts[0].id));
@@ -184,11 +189,17 @@
   form.onsubmit=event=>{event.preventDefault();try{
    const t=readTrade(),ls=readLegs();if(t.mode==='legs'&&!ls.length)throw new Error('Add at least one leg.');ls.forEach(E.cleanLeg);
    if(existingSummary)t.legacySummary={pnl:Number(legacyPnl.value),pct:legacyPct.value===''?null:Number(legacyPct.value),exitDate:E.date(legacyExit.value)};
+   if(existingSummary&&fields.structure.value!==defaults.structure)delete t.legacyType;
    const mutations=[mutation('trades',t),...ls.map(l=>mutation('legs',l))];
    for(const l of oldLegs)if(!ls.some(x=>x.id===l.id))mutations.push(mutation('legs',l,true));
    if(!existing){if(!initialBuilder)throw new Error('Complete the option leg details before saving.');const a=initialBuilder.read();a.date=t.entryDate;a.kind='open';mutations.push(mutation('actions',a));if(closingBuilder){const c=closingBuilder.read();c.kind='close';c.order=a.order+1;mutations.push(mutation('actions',c));const summary=E.summarize(t,ls,[a,c]);if(summary.status!=='closed')throw new Error('Close all opening quantities for a historical closed trade.');}}
    const guards=tradeGuard?[tradeGuard]:[];if(roll){mutations.push(mutation('actions',roll.action));guards.push(roll.guard)}
-   saveChanges(mutations,{guards,note:roll?'Rolled position into linked trade':existing?'Trade edited':'Trade created'},d);
+   saveChanges(mutations,{guards,note:roll?'Rolled position into linked trade':existing?'Trade edited':'Trade created',
+    preflight:legacySource?latest=>{
+     if(!legacy.some(l=>l.key===legacySource.key&&JSON.stringify(l.parsed)===legacySnapshot)||
+      latest.all('trades',true).some(x=>x.id!==t.id&&(x.legacyKey===legacySource.key||(x.legacyKeys||[]).includes(legacySource.key))))
+      throw new Error('This historical source changed or was adopted elsewhere. Reopen it before saving.');
+    }:undefined},d);
   }catch(error){errorIn(d,error)}};
  }
  function actionEditor(t,existing=null){
@@ -221,6 +232,8 @@
   const t=store.get('trades',id);if(!t||t._deleted)return;selectedId=id;
   const d=openDialog(t.title,true);d.classList.add('journal');let s;try{s=sum(t)}catch(error){d.append(notice(error.message,'error'));}
   const actions=node('div',{class:'journal-actions'},button('Edit trade',()=>tradeEditor(t)),button('History',()=>historyView(t.id)),button('Delete trade',()=>deleteRecord('trades',t)),button('Close',()=>d.close()));
+  [...actions.children].find(b=>b.textContent==='Delete trade').classList.add('journal-danger');
+  if(analyticsContext)analyticsBack(d,analyticsContext.selection.field?'Back to results':'Back to Overview',()=>analyticsContext.selection.field?analyticsList():d.close());
   if(s&&s.status!=='closed'&&!t.legacySummary)actions.prepend(button('Add execution',()=>actionEditor(t),true));
   if(s?.status==='open'&&!t.legacySummary)actions.prepend(button('Update prices',()=>quoteEditor(t)),button('Roll',()=>rollEditor(t)));
   d.append(node('small',{},accountName(t.accountId)+' · '+t.symbol+' · '+t.mode+' · '+(s?.status||'Needs repair')),actions);
@@ -250,10 +263,73 @@
   const account=setting('legacyAccount',setting('defaultAccount',''));
   return legacy.filter(l=>!accountFilter||accountFilter===account).filter(l=>!(store?.all('trades',true)||[]).some(t=>t.legacyKey===l.key||(t.legacyKeys||[]).includes(l.key))).map(l=>({...l,accountId:account}));
  }
+ function analyticsBack(d,label,action){const back=button('← '+label,action);back.classList.add('journal-drill-back');d.querySelector('header').after(back)}
+ function resolveAnalytics(ref){
+  if(!ref||analyticsContext?.epoch!==epoch)return null;
+  const t=ref.kind==='managed'?store?.get('trades',ref.id):records('trades').find(t=>t.legacyKey===ref.key||(t.legacyKeys||[]).includes(ref.key));
+  if(t)return !t._deleted&&(!accountFilter||t.accountId===accountFilter)?{trade:t}:null;
+  if(ref.kind==='legacy'){
+   if((store?.all('trades',true)||[]).some(t=>t.legacyKey===ref.key||(t.legacyKeys||[]).includes(ref.key)))return null;
+   const l=legacyItems().find(l=>l.key===ref.key);if(l)return{legacy:l};
+  }
+  return null;
+ }
+ function openAnalytics(selection){
+  if(busy)return;
+  if(selection.trade){
+   const ref=analyticsRefs.get(selection.trade);if(!ref){showStatus('The chart data changed. Select the point again.',true);return;}
+   analyticsContext={epoch,selection:{note:selection.note||''},currentRef:ref};openAnalyticsRecord(ref);
+  }else if(['strategy','type','symbol','mistakes'].includes(selection.field)){
+   analyticsContext={epoch,selection:{field:selection.field,value:selection.value,title:selection.title},currentRef:null};analyticsList();
+  }
+ }
+ function analyticsList(){
+  if(!analyticsContext||analyticsContext.epoch!==epoch)return;
+  analyticsContext.currentRef=null;
+  const selection=analyticsContext.selection;
+  const entries=selection.field?trades.filter(t=>t[selection.field]===selection.value):[];
+  const d=openDialog(selection.title||'Selected trade',true);d.classList.add('journal');
+  const net=entries.reduce((n,t)=>n+t.pnl,0);
+  d.append(node('div',{class:'journal-stats'},stat('Trades',entries.length),stat('Net P&L',money(net),net)),
+   node('p',{class:'journal-help'},'These are the closed trades included in this chart category for the selected account. Open a trade or edit its strategy, emotions and notes.'),
+   table(['Trade','Account','Closed','Net P&L','Actions'],entries.map(t=>{
+    const ref=analyticsRefs.get(t),record=resolveAnalytics(ref),name=button(t.name,()=>openAnalyticsRecord(ref));name.classList.add('journal-trade-link');
+    return node('tr',{},node('td',{class:'wrap'},name),node('td',{},accountName(record?.trade?.accountId||record?.legacy?.accountId)),
+     node('td',{},t.exitDate?fmtDate(t.exitDate):'—'),currencyCell(t.pnl),node('td',{},button('Edit',()=>editAnalyticsRecord(ref))));
+   })),button('Close',()=>d.close()));
+ }
+ function openAnalyticsRecord(ref){
+  if(!analyticsContext)return;
+  const record=resolveAnalytics(ref);
+  if(!record){analyticsList();return;}
+  analyticsContext.currentRef=ref;
+  if(record.trade){detail(record.trade.id);if(analyticsContext.selection.note)dialog.append(notice(analyticsContext.selection.note));return;}
+  const l=record.legacy,p=l.parsed,d=openDialog(p.name,true);d.classList.add('journal');
+  analyticsBack(d,analyticsContext.selection.field?'Back to results':'Back to Overview',()=>analyticsContext.selection.field?analyticsList():d.close());
+  const edit=button('Edit trade',()=>editAnalyticsRecord(ref),true);edit.disabled=!store?.initialized||!l.accountId;
+  d.append(node('small',{},accountName(l.accountId)+' · '+p.symbol+' · Historical summary'),node('div',{class:'journal-actions'},edit,button('Close',()=>d.close())),
+   node('div',{class:'journal-stats'},stat('Net P&L',money(p.pnl),p.pnl),stat('Trade type',p.type)),
+   notice('This is a historical summary. Editing saves a managed journal record; the original worksheet row stays untouched and is not counted twice. No executions are invented.'),
+   node('p',{},'Opened: '+fmtDate(p.entryDate)+' · Closed: '+fmtDate(p.exitDate)),
+   node('p',{},'Strategy: '+p.strategy),node('p',{},'Entry emotions: '+p.entry),node('p',{},'Exit emotions: '+p.exit),
+   node('p',{},'Mistakes: '+p.mistakes),node('p',{class:'journal-history'},p.comments||''));
+  if(edit.disabled)d.append(notice('Connect your private sheet, set up the journal and assign the historical account before editing.'));
+  if(analyticsContext.selection.note)d.append(notice(analyticsContext.selection.note));
+ }
+ function editAnalyticsRecord(ref){
+  if(!analyticsContext||!requireSetup())return;
+  const record=resolveAnalytics(ref);if(!record){analyticsList();return;}
+  analyticsContext.currentRef=ref;
+  if(record.trade)tradeEditor(record.trade);
+  else if(record.legacy.accountId)tradeEditor(draftLegacyTrade(record.legacy),null,record.legacy);
+ }
+ function draftLegacyTrade(l){
+  const p=l.parsed,iso=d=>d?new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10):today();
+  return{id:uuid(),accountId:l.accountId,title:p.name,symbol:p.symbol,entryDate:iso(p.entryDate),mode:'package',side:'long',structure:'Other',multiplier:100,contractsPerPackage:1,strategy:p.strategy,confidence:p.confidence,entryEmotions:semo(p.entry),exitEmotions:semo(p.exit),mistakes:p.mistakes==='—'?[]:[p.mistakes],notes:p.comments,legacyKey:l.key,legacyType:p.type,legacyOriginal:JSON.parse(JSON.stringify(p)),legacySummary:{pnl:p.pnl,pct:p.pct,exitDate:iso(p.exitDate||p.entryDate)},manual:true};
+ }
  function importLegacy(l){
   if(!requireSetup())return;const p=l.parsed;if(!l.accountId){showStatus('Choose the legacy account in Journal settings first.',true);return;}
-  const iso=d=>d?new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10):today();
-  const t={id:uuid(),accountId:l.accountId,title:p.name,symbol:p.symbol,entryDate:iso(p.entryDate),mode:'package',side:'long',structure:'Other',multiplier:100,contractsPerPackage:1,strategy:p.strategy,confidence:p.confidence,entryEmotions:semo(p.entry),exitEmotions:semo(p.exit),mistakes:p.mistakes==='—'?[]:[p.mistakes],notes:p.comments,legacyKey:l.key,legacySummary:{pnl:p.pnl,pct:p.pct,exitDate:iso(p.exitDate||p.entryDate)},manual:true};
+  const t=draftLegacyTrade(l);
   const d=openDialog('Manage historical summary');d.append(notice('This creates an editable historical summary in TJ_Trades. The original All Data row is left untouched and excluded from duplicate display while this record exists. No execution history is invented.'));
   d.append(button('Create managed summary',()=>saveChanges([mutation('trades',t)],{note:'Legacy summary adopted'},d),true),button('Cancel',()=>d.close()));
  }
@@ -425,8 +501,8 @@
   target.append(notice('Sheets is append-only for journal revisions. Use the dashboard for edits, not manual row sorting/deletion in TJ_ tabs. Concurrent saves are checked before writing, but Google Sheets is not a transactional database with conditional locks. Use one editing window per trade; conflicting revisions are retained for repair.','warn'));
  }
  function syncAnalytics(){
-  const normalized=legacyItems().map(l=>l.parsed);
-  for(const t of activeTrades())try{const s=sum(t);if(s.status!=='closed')continue;const isoDate=iso=>iso?new Date(iso+'T12:00:00'):null;normalized.push({name:t.title,symbol:t.symbol,type:t.structure||'—',strategy:t.strategy||'—',pnl:s.realized,pct:s.premiumReturn,days:Math.max(0,Math.round((isoDate(s.closedDate)-isoDate(s.firstDate))/86400000)),mistakes:(t.mistakes||[]).join(', ')||'—',entry:(t.entryEmotions||[]).join(', ')||'—',exit:(t.exitEmotions||[]).join(', ')||'—',entryDate:isoDate(s.firstDate),exitDate:isoDate(s.closedDate),timeEff:null,comments:t.notes||'',confidence:t.confidence||'',strike:t.strike||'',entryPrice:'',exitPrice:'',grossPnl:s.gross,fees:s.fees,contracts:'',expiry:t.expiry||''});}catch(_){}
+  const normalized=legacyItems().map(l=>{analyticsRefs.set(l.parsed,{kind:'legacy',key:l.key});return l.parsed});
+  for(const t of activeTrades())try{const s=sum(t);if(s.status!=='closed')continue;const isoDate=iso=>iso?new Date(iso+'T12:00:00'):null;const parsed={name:t.title,symbol:t.symbol,type:(t.legacySummary&&t.legacyType)||t.structure||'—',strategy:t.strategy||'—',pnl:s.realized,pct:s.premiumReturn,days:Math.max(0,Math.round((isoDate(s.closedDate)-isoDate(s.firstDate))/86400000)),mistakes:(t.mistakes||[]).join(', ')||'—',entry:(t.entryEmotions||[]).join(', ')||'—',exit:(t.exitEmotions||[]).join(', ')||'—',entryDate:isoDate(s.firstDate),exitDate:isoDate(s.closedDate),timeEff:null,comments:t.notes||'',confidence:t.confidence??'',strike:t.strike||'',entryPrice:'',exitPrice:'',grossPnl:s.gross,fees:s.fees,contracts:'',expiry:t.expiry||''};analyticsRefs.set(parsed,{kind:'managed',id:t.id});normalized.push(parsed);}catch(_){}
   resetPrivateView();trades=normalized.sort((a,b)=>(a.exitDate||a.entryDate||0)-(b.exitDate||b.entryDate||0));
   if(trades.length){$('badge').textContent='— Private journal · '+trades.length+' closed trades';renderAll();}
  }
@@ -449,5 +525,5 @@
  const filters=node('div',{class:'journal-filters'},searchInput,symbolSelect,strategySelect,button('Clear filters',()=>{search='';symbolFilter='';strategyFilter='';accountFilter='';searchInput.value='';render()}));
  const updateFilters=()=>{searchInput.value=search;for(const [control,key,label,value]of [[symbolSelect,'symbol','All symbols',symbolFilter],[strategySelect,'strategy','All strategies',strategyFilter]]){const values=[...new Set([...records('trades').map(t=>t[key]),...legacy.map(l=>l.parsed[key])].filter(Boolean))].sort();control.replaceChildren(node('option',{value:''},label),...values.map(v=>node('option',{value:v},v)));control.value=value;}const page=$('page-open-trades');const tabs=page?.querySelector('.journal-status-tabs');if(tabs)tabs.after(filters);};
  const originalListPage=listPage;listPage=function(){const focused=document.activeElement,restoreFocus=filters.contains(focused),selection=focused===searchInput?[searchInput.selectionStart,searchInput.selectionEnd]:null;originalListPage();updateFilters();if(restoreFocus&&focused.isConnected){focused.focus({preventScroll:true});if(selection)searchInput.setSelectionRange(...selection)}};
- window.JournalApp={connect,clear,setLegacy,clearLegacy,reload,setup,render,tradeEditor,detail,setTradeStatus,importIBKR,legacyTitle:()=>setting('legacyTab','All Data')};render();
+ window.JournalApp={connect,clear,setLegacy,clearLegacy,reload,setup,render,tradeEditor,detail,setTradeStatus,importIBKR,openAnalytics,legacyTitle:()=>setting('legacyTab','All Data')};render();
 })();

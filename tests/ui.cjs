@@ -17,6 +17,7 @@ const timers=new Map();let nextTimer=0;w.setTimeout=(fn,ms)=>{const id=++nextTim
 w.renderAll=()=>{};
 w.eval(fs.readFileSync(path.join(root,'ibkr-import.js'),'utf8'));
 w.eval(fs.readFileSync(path.join(root,'ibkr-reconcile.js'),'utf8'));
+w.eval(fs.readFileSync(path.join(root,'overview-drill.js'),'utf8'));
 w.eval(fs.readFileSync(path.join(root,'journal-app.js'),'utf8'));
 const rows=new Map(),headers=['id','revision','change_id','updated_at','deleted','data'];let lastWrite=[];
 const transport={request:async(endpoint,options={})=>{
@@ -183,6 +184,62 @@ function fillPackage(name,price='5',quantity='1'){
   assert.equal([...dialog().querySelectorAll('.journal-stat strong')][2].textContent,'3');
   assert.equal(saved('TJ_Actions').size,afterBulk);click('Cancel',dialog());
  }
- assert.equal(errors.length,0);w.JournalApp.clear();assert(!d.body.textContent.includes('One Call'));
- console.log('PASS: DOM integration — consolidated account/connection toolbar, menu containment/outside-click/Escape, temporary success and persistent errors, setup, immediate opening fields, cash preview, single/multiple tags, selection persistence, drawer sections, marks, net P&L and zero colors, focused search, filters, closing and actual commissions, short defaults, detailed legs and fill preservation, edit, revisioned delete/restore, header IBKR route preserves session and waits for account/confirmation, IBKR preview, commit and repeat import, disconnect. Sheets mocked; visual/browser QA not covered.');dom.window.close();
+ // Chart drawing is stubbed here; real click/keyboard events, chart selection
+ // adapters, accounting, side drawers and revisioned saves run unchanged.
+ class ChartMock{
+  constructor(canvas,config){this.canvas=canvas;this.data=config.data;this.options=config.options;this.chartArea={left:100,right:500,top:20,bottom:220};this.scales={x:{bottom:250,getValueForPixel:x=>Math.round((x-100)/30)},y:{left:0,getValueForPixel:y=>Math.floor((y-20)/20)}};if(config.type==='doughnut')this.legend={legendHitBoxes:this.data.labels.map((_,i)=>({left:520,top:20+i*20,width:100,height:18})),legendItems:this.data.labels.map((_,index)=>({index}))};}
+  getElementsAtEventForMode(e){return e.clientY===0&&e.clientX>0?[{index:e.clientX-1,datasetIndex:0}]:[]}
+  destroy(){this.destroyed=true}
+ }
+ ChartMock.helpers={getRelativePosition:e=>({x:e.clientX,y:e.clientY})};w.Chart=ChartMock;
+ w.renderAll=()=>{if(w.trades.length)w.renderOV()};w.JournalApp.render();
+ const chartClick=(id,index)=>d.getElementById(id).dispatchEvent(new w.MouseEvent('click',{clientX:index+1,clientY:0,bubbles:true}));
+ const pointIndex=name=>w.trades.findIndex(t=>t.name===name);
+ const actionsBeforeDrill=saved('TJ_Actions').size;
+ w.sw('overview');chartClick('cumulChart',pointIndex('One Call'));
+ assert(dialog().classList.contains('journal-drawer'));assert(dialog().querySelector('h2').textContent==='One Call');
+ assert.equal(d.body.dataset.page,'overview');click('Edit trade');assert(dialog().classList.contains('journal-drawer'));
+ click('Volatility Play',control('Strategy'));click('Curiosity',control('Entry emotions'));set('Trade notes','Completed from Overview');
+ submit();await settled();assert(dialog().querySelector('h2').textContent==='One Call');
+ let edited=[...saved('TJ_Trades').values()].find(t=>t.title==='One Call');assert.equal(edited.strategy,'Volatility Play');assert(edited.entryEmotions.includes('Curiosity'));assert.equal(edited.notes,'Completed from Overview');
+ assert.equal(saved('TJ_Actions').size,actionsBeforeDrill);assert.equal(d.body.dataset.page,'overview');click('Close',dialog());
+ let strategyIndex=w.CX.stratChart.data.labels.indexOf('Volatility Play');
+ chartClick('stratChart',strategyIndex);assert(dialog().querySelector('h2').textContent==='Strategy: Volatility Play');
+ assert(dialog().textContent.includes('One Call'));assert(dialog().textContent.includes('$98.00'));
+ click('Edit',dialog());click('Technical Setup',control('Strategy'));submit();await settled();click('← Back to results');
+ assert(dialog().querySelector('h2').textContent==='Strategy: Volatility Play');assert(dialog().textContent.includes('No records yet.'));click('Close',dialog());
+ // Category tick labels are clickable, not just the bar rectangles.
+ strategyIndex=w.CX.stratChart.data.labels.indexOf('Technical Setup');
+ d.getElementById('stratChart').dispatchEvent(new w.MouseEvent('click',{clientX:30,clientY:21+strategyIndex*20,bubbles:true}));
+ const expectedGroup=w.trades.filter(t=>t.strategy==='Technical Setup');
+ assert.equal(dialog().querySelectorAll('tbody tr').length,expectedGroup.length);
+ const net=expectedGroup.reduce((n,t)=>n+t.pnl,0);assert(dialog().textContent.includes(new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(net)));click('Close',dialog());
+ for(const [canvas,chart,key]of [['typeChart','typeChart','type'],['symChart','sym','symbol'],['mistakeChart','mk','mistakes']]){
+  const value=w.CX[chart].data.labels[0];chartClick(canvas,0);
+  assert.equal(dialog().querySelectorAll('tbody tr').length,w.trades.filter(t=>t[key]===value).length);click('Close',dialog());
+ }
+ d.getElementById('mistakeChart').dispatchEvent(new w.MouseEvent('click',{clientX:530,clientY:25,bubbles:true}));assert(dialog().querySelector('h2').textContent.startsWith('Mistakes:'));click('Close',dialog());
+ chartClick('drawdownChart',pointIndex('One Call'));assert.equal(dialog().querySelector('h2').textContent,'One Call');click('Close',dialog());
+ // Keyboard activation opens the same trade as the corresponding chart point.
+ const canvas=d.getElementById('cumulChart');canvas.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Home',bubbles:true}));canvas.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Enter',bubbles:true}));assert.equal(dialog().querySelector('h2').textContent,w.trades[0].name);click('Close',dialog());
+ // Historical summaries can be annotated on Save, without invented executions.
+ const managedBeforeLegacy=saved('TJ_Trades').size;
+ chartClick('cumulChart',pointIndex('Preserved old option'));assert.equal(saved('TJ_Trades').size,managedBeforeLegacy);click('Edit trade');click('Cancel',dialog());
+ assert.equal(saved('TJ_Trades').size,managedBeforeLegacy);click('Edit trade');click('Volatility Play',control('Strategy'));set('Trade notes','Historical note from Overview');submit();await settled();
+ assert.equal(w.trades.filter(t=>t.symbol==='OLD').length,1);assert.equal(w.trades.find(t=>t.symbol==='OLD').pnl,185);
+ assert.equal(saved('TJ_Actions').size,actionsBeforeDrill);assert.equal([...saved('TJ_Trades').values()].find(t=>t.symbol==='OLD').notes,'Historical note from Overview');click('Close',dialog());
+ // Drilldowns use the same account-filtered data as the charts.
+ d.querySelector('.tab[data-page="journal-settings"]').click();click('Add account');set('Account name','Other account');await save();
+ const otherAccount=[...saved('TJ_Accounts').values()].find(a=>a.name==='Other account').id;
+ w.sw('overview');chartClick('cumulChart',pointIndex('Bulk partial'));click('Edit trade');set('Account',otherAccount);submit();await settled();click('Close',dialog());
+ const accountFilter=d.getElementById('journal-account');accountFilter.value=accountId;accountFilter.dispatchEvent(new w.Event('change',{bubbles:true}));
+ assert(!w.trades.some(t=>t.symbol==='BULK'));
+ chartClick('stratChart',w.CX.stratChart.data.labels.indexOf('Technical Setup'));
+ assert(!dialog().textContent.includes('Bulk partial'));assert(!dialog().textContent.includes('Other account'));click('Close',dialog());
+ accountFilter.value='';accountFilter.dispatchEvent(new w.Event('change',{bubbles:true}));assert(w.trades.some(t=>t.symbol==='BULK'));
+ // Repeated rerenders replace handlers; disconnected charts cannot reopen data.
+ let opens=0;const openAnalytics=w.JournalApp.openAnalytics;w.JournalApp.openAnalytics=s=>{opens++;return openAnalytics(s)};
+ w.JournalApp.render();w.JournalApp.render();chartClick('cumulChart',pointIndex('One Call'));assert.equal(opens,1);click('Close',dialog());
+ assert.equal(errors.length,0);w.JournalApp.clear();assert(!d.body.textContent.includes('One Call'));chartClick('cumulChart',0);assert(!dialog());assert.equal(opens,1);
+ console.log('PASS: DOM integration — journal forms, accounting, revisions and imports; all six Overview chart routes, tick labels/legend/keyboard, drawer editing and back navigation, live group membership and totals, historical summary editing without execution invention/duplicates, account isolation, replaced listeners and disconnect cleanup. Charts and Sheets mocked; visual/browser QA not covered.');dom.window.close();
 })().catch(e=>{console.error(e);dom.window.close();process.exit(1)});
