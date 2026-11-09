@@ -35,10 +35,12 @@ test('journal API fails closed without server configuration', async () => {
 });
 
 test('journal API rejects unauthenticated requests before database access', async () => {
-  const keys = ['DATABASE_URL', 'NEON_AUTH_JWKS_URL', 'NEON_AUTH_ISSUER', 'JOURNAL_OWNER_ID'];
+  const keys = ['DATABASE_URL', 'NEON_AUTH_BASE_URL', 'JOURNAL_OWNER_ID'];
   const previous = Object.fromEntries(keys.map(key => [key, process.env[key]]));
   try {
-    for (const key of keys) process.env[key] = 'placeholder';
+    process.env.DATABASE_URL = 'placeholder';
+    process.env.NEON_AUTH_BASE_URL = 'https://example.neon.tech/neondb/auth';
+    process.env.JOURNAL_OWNER_ID = 'owner';
     const res = response();
     await handler({method: 'GET', headers: {}}, res);
     assert.equal(res.statusCode, 401);

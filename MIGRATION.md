@@ -7,7 +7,7 @@ Vercel Functions are configured for `fra1` (Frankfurt); this takes effect on
 the next deployment. The existing production site has not been switched.
 
 `api/journal.js` is a server-only API prototype. It requires `DATABASE_URL`,
-`NEON_AUTH_JWKS_URL`, `NEON_AUTH_ISSUER`, and `JOURNAL_OWNER_ID` before it will
+`NEON_AUTH_BASE_URL`, and `JOURNAL_OWNER_ID` before it will
 serve requests. The owner ID must be the signed-in Neon Auth user's exact `sub`.
 Its read and save routes are not yet connected to the browser, and no private
 spreadsheet data has been imported. Keep production on Google Sheets until the
@@ -47,6 +47,6 @@ frontend, migration checks, and backup procedure are complete.
 
 ## Configuration
 
-Required for the API: `DATABASE_URL`, `NEON_AUTH_JWKS_URL`,
-`NEON_AUTH_ISSUER`, and `JOURNAL_OWNER_ID`. These values belong in Vercel
+Required for the API: `DATABASE_URL`, `NEON_AUTH_BASE_URL`, and
+`JOURNAL_OWNER_ID`. These values belong in Vercel
 environment settings and local ignored `.env` files, never in committed code.

@@ -15,10 +15,14 @@ function fail(status, message) {
 }
 
 function requiredConfig() {
-  const {DATABASE_URL, NEON_AUTH_JWKS_URL, NEON_AUTH_ISSUER, JOURNAL_OWNER_ID} = process.env;
-  if (![DATABASE_URL, NEON_AUTH_JWKS_URL, NEON_AUTH_ISSUER, JOURNAL_OWNER_ID].every(Boolean))
+  const {DATABASE_URL, NEON_AUTH_BASE_URL, JOURNAL_OWNER_ID} = process.env;
+  if (![DATABASE_URL, NEON_AUTH_BASE_URL, JOURNAL_OWNER_ID].every(Boolean))
     fail(503, 'Journal server is not configured.');
-  return {DATABASE_URL, NEON_AUTH_JWKS_URL, NEON_AUTH_ISSUER, JOURNAL_OWNER_ID};
+  let authBase;
+  try { authBase = new URL(NEON_AUTH_BASE_URL); } catch (_) { fail(503, 'Journal server is not configured.'); }
+  if (authBase.protocol !== 'https:') fail(503, 'Journal server is not configured.');
+  const jwks = new URL(authBase.href.replace(/\/$/, '') + '/.well-known/jwks.json');
+  return {DATABASE_URL, jwks, issuer: authBase.origin, JOURNAL_OWNER_ID};
 }
 
 async function ownerFromRequest(req, config) {
@@ -26,8 +30,8 @@ async function ownerFromRequest(req, config) {
   if (!match) fail(401, 'Sign in to access the journal.');
   try {
     const {createRemoteJWKSet, jwtVerify} = await import('jose');
-    const jwks = createRemoteJWKSet(new URL(config.NEON_AUTH_JWKS_URL));
-    const {payload} = await jwtVerify(match[1], jwks, {issuer: config.NEON_AUTH_ISSUER});
+    const jwks = createRemoteJWKSet(config.jwks);
+    const {payload} = await jwtVerify(match[1], jwks, {issuer: config.issuer});
     if (!payload.sub || payload.sub !== config.JOURNAL_OWNER_ID) fail(403, 'Journal access denied.');
     return payload.sub;
   } catch (error) {
