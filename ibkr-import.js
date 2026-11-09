@@ -83,9 +83,10 @@
   };
  }
 
- function plan(rows,{accountId,trades=[],actions=[],legs=[],legacy=[],engine}){
+ function plan(rows,{accountId,trades=[],actions=[],legs=[],legacy=[],links={},engine}){
   const options = rows.filter(row => row.AssetClass === 'OPT');
   const ignored = rows.length - options.length;
+  const matches = [];
   const results = [], mutations = [], existingTrades = trades.filter(t => t.accountId === accountId && !t._deleted);
   const known = new Map(actions.map(a => [a.id,a]));
   const groups = new Map(), orderContracts = new Map(), badContracts = new Set();
@@ -132,14 +133,34 @@
    if(!summaries.has(t.id)) summaries.set(t.id,engine.summarize(t,legs.filter(l => l.tradeId === t.id),actionsFor(t.id)));
    return summaries.get(t.id);
   }
-  const overlaps = (symbol,start,end) => {
-   if(legacy.some(t => t.symbol === symbol && (!t.start || t.start <= end) && (!t.end || t.end >= start))) return true;
-   return existingTrades.some(t => {
-    if(t.ibkrConid || String(t.symbol).toUpperCase() !== symbol || t.entryDate > end) return false;
-    try{ return !summary(t).closedDate || summary(t).closedDate >= start; }
-    catch(_){ return true; }
-   });
-  };
+  const usedLegacy = new Set(trades.map(t => t.legacyKey).filter(Boolean));
+  const linkCounts = new Map();
+  for(const choice of Object.values(links)){
+   if(choice && choice !== 'separate') linkCounts.set(choice,(linkCounts.get(choice)||0)+1);
+  }
+  function overlapCandidates(symbol,start,end){
+   const sources = legacy.filter(t => t.symbol === symbol &&
+    (!t.start || t.start <= end) && (!t.end || t.end >= start) &&
+    (!t.key || !usedLegacy.has(t.key))).map(t => ({
+     id:t.key ? 'legacy:'+t.key : '',title:t.title || t.symbol,start:t.start,end:t.end,pnl:t.pnl,
+     eligible:Boolean(t.key && t.end),legacy:t
+    }));
+   for(const trade of existingTrades){
+    if(trade.ibkrConid || String(trade.symbol).toUpperCase() !== symbol || trade.entryDate > end) continue;
+    let closedDate = null;
+    try{closedDate=summary(trade).closedDate;}catch(_){}
+    if(closedDate && closedDate < start) continue;
+    sources.push({
+     id:'trade:'+trade.id,title:trade.title,start:trade.entryDate,end:closedDate,
+     pnl:trade.legacySummary?.pnl,
+     eligible:Boolean(trade.legacySummary && !actionsFor(trade.id).length &&
+      !legs.some(l => l.tradeId === trade.id && !l._deleted)),
+     trade
+    });
+   }
+   return sources;
+  }
+
 
   for(const group of groups.values()){
    group.sort((a,b) => a.order - b.order || a.line - b.line);
@@ -210,28 +231,65 @@
      if(!cycle.entries.length) continue;
      const {trade,entries,existing} = cycle;
      const state = engine.summarize(trade,[],[...actionsFor(trade.id),...entries.map(x => x.action)]);
-     if(overlaps(trade.symbol,trade.entryDate,state.closedDate || '9999-12-31')){
-      cycle.problem = 'Possible overlap with a manual or historical journal trade.';
+     const candidates = overlapCandidates(trade.symbol,trade.entryDate,state.closedDate || '9999-12-31');
+     if(!candidates.length) continue;
+     const choice = links[trade.id] || '';
+     matches.push({
+      id:trade.id,title:trade.title,start:trade.entryDate,end:state.closedDate,
+      pnl:state.status === 'closed' ? state.realized : null,
+      candidates:candidates.map(({id,title,start,end,pnl,eligible}) => ({
+       id,title,start,end,pnl,eligible:eligible && state.status === 'closed'
+      })),choice
+     });
+     if(choice === 'separate') continue;
+     const selected = candidates.find(candidate => candidate.id && candidate.id === choice);
+     if(!selected?.eligible || state.status !== 'closed'){
+      cycle.problem = 'Possible overlap with a manual or historical journal trade. Confirm a match below.';
+      continue;
      }
+     if(linkCounts.get(choice) !== 1){
+      cycle.problem = 'The same historical entry was selected for multiple imported trades. Review the grouping.';
+      continue;
+     }
+     const original = selected.trade || selected.legacy.data || {};
+     const journalTrade = {...trade};
+     for(const key of ['strategy','entryReason','notes','confidence','entryEmotions',
+      'exitEmotions','mistakes','targetProfit','lossLimit','capitalBasis','riskBasis']){
+      if(original[key] != null) journalTrade[key] = original[key];
+     }
+     journalTrade.title = selected.title || trade.title;
+     journalTrade.legacyOriginal = selected.trade?.legacySummary || {
+      pnl:selected.pnl,entryDate:selected.start,exitDate:selected.end
+     };
+     if(selected.trade){
+      journalTrade.id = selected.trade.id;
+      if(selected.trade.legacyKey) journalTrade.legacyKey = selected.trade.legacyKey;
+      cycle.existing = true;
+     }else{
+      journalTrade.legacyKey = selected.legacy.key;
+     }
+     cycle.trade = journalTrade;
+     cycle.linked = true;
+     for(const entry of entries) entry.action.tradeId = journalTrade.id;
     }
    }catch(error){
     const reported = new Set(results.map(result => result.line));
     for(const x of group) if(!reported.has(x.row.line)) addResult(x.row,'review',error.message);
     continue;
    }
-   for(const {trade,entries,existing,problem} of cycles){
+   for(const {trade,entries,existing,problem,linked} of cycles){
     if(!entries.length) continue;
     if(!problem){
-     if(!existing) mutations.push({table:'trades',data:trade});
+     if(!existing || linked) mutations.push({table:'trades',data:trade});
      (existing ? updatedTrades : newTrades).add(trade.id);
     }
     for(const {row,action} of entries){
-     addResult(row,problem?'review':'ready',problem || (existing?'Update existing trade':'Import new trade'));
+     addResult(row,problem?'review':'ready',problem || (linked?'Replace linked historical summary':existing?'Update existing trade':'Import new trade'));
      if(!problem) mutations.push({table:'actions',data:action});
     }
    }
   }
-  return {ignored,results:results.sort((a,b) => a.line-b.line),mutations,newTrades:newTrades.size,updatedTrades:updatedTrades.size};
+  return {ignored,matches,results:results.sort((a,b) => a.line-b.line),mutations,newTrades:newTrades.size,updatedTrades:updatedTrades.size};
  }
 
  function isCSV(text){

@@ -279,6 +279,8 @@
 
   const db = store, generation = epoch;
   let request = 0, prepared = null;
+  let historicalLinks = {};
+  const legacySnapshot = () => JSON.stringify(legacy);
   const snapshot = current => JSON.stringify(['accounts','trades','actions','legs'].map(
    name => current.all(name,true).map(r => [r.id,S.version(r)]).sort((a,b) => a[0].localeCompare(b[0]))
   ));
@@ -299,10 +301,14 @@
     const sourceAccounts = new Set(rows.filter(r => r.AssetClass === 'OPT' && r.AccountId).map(r => r.AccountId));
     if(sourceAccounts.size > 1) throw new Error('Export one IBKR account per file.');
     const historical = accountId === setting('legacyAccount',setting('defaultAccount','')) ?
-     legacy.map(({parsed:p}) => ({symbol:String(p.symbol).toUpperCase(),start:iso(p.entryDate),end:iso(p.exitDate)})) : [];
+     legacy.map(({parsed:p,key}) => ({
+      key,title:p.name,symbol:String(p.symbol).toUpperCase(),start:iso(p.entryDate),end:iso(p.exitDate),pnl:p.pnl,
+      data:{strategy:p.strategy,notes:p.comments,confidence:p.confidence,
+       entryEmotions:semo(p.entry),exitEmotions:semo(p.exit),mistakes:p.mistakes === '—'?[]:[p.mistakes]}
+     })) : [];
     const plan = IBKRImport.plan(rows,{
-     accountId,engine:E,trades:db.all('trades'),actions:db.all('actions',true),
-     legs:db.all('legs'),legacy:historical
+     accountId,engine:E,trades:db.all('trades',true),actions:db.all('actions',true),
+     legs:db.all('legs'),legacy:historical,links:historicalLinks
     });
     const counts = Object.fromEntries(['ready','review','duplicate'].map(status => [
      status,plan.results.filter(r => r.status === status).length
@@ -311,11 +317,30 @@
      stat('Ready executions',counts.ready),stat('Needs review',counts.review),
      stat('Already recorded / repeated',counts.duplicate),stat('Other assets skipped',plan.ignored)));
     preview.append(node('p',{},plan.newTrades+' new trades · '+plan.updatedTrades+' trades to update'));
+    if(plan.matches.length){
+     const matching = node('div',{},notice('For each possible overlap, choose the historical entry for this same trade. Its displayed summary will be replaced by IBKR execution totals, retaining notes and tags. Compare dates and net P&L before choosing. Choose Separate trade only for a distinct position.'));
+     for(const match of plan.matches){
+      const candidates = match.candidates.filter(candidate => candidate.eligible);
+      const options = [['','Skip until reviewed'],...candidates.map(candidate => [
+       candidate.id,candidate.title+' | '+(candidate.start || '?')+' – '+(candidate.end || '?')+' | net '+money(candidate.pnl)
+      ]),['separate','Separate trade — keep historical entries']];
+      const choice = select(options,match.choice,{'aria-label':'Historical match for '+match.title});
+      choice.addEventListener('change',()=>{
+       historicalLinks[match.id] = choice.value;
+       inspect();
+      });
+      matching.append(node('div',{class:'journal-notice'},
+       node('strong',{},match.title),node('p',{},match.start+' – '+(match.end || 'Open')+' | Imported net '+money(match.pnl)),
+       field('Match historical entry',choice),
+       !candidates.length ? node('small',{},'No replaceable closed summary matches this period. Review the position before choosing Separate trade.') : null));
+     }
+     preview.append(section('Match historical entries',matching,true));
+    }
     if(counts.review) preview.append(notice('Rows marked for review will be skipped. Import any missing opening history or review these events in IBKR before recording them manually.','warn'));
     if(plan.results.length) preview.append(section('Execution details',table(['CSV row','Contract','Time','Status','Details'],
      [...plan.results].sort((a,b) => Number(b.status === 'review') - Number(a.status === 'review')).map(r => node('tr',{},node('td',{},r.line),node('td',{class:'wrap'},r.symbol),
       node('td',{},r.date),node('td',{},r.status),node('td',{class:'wrap'},r.reason)))),Boolean(counts.review)));
-    prepared = {plan,state:snapshot(db)};
+    prepared = {plan,state:snapshot(db),legacyState:legacySnapshot()};
     save.disabled = !counts.ready;
    }catch(error){
     if(current === request && d.open && generation === epoch) errorIn(d,error);
@@ -323,19 +348,20 @@
   }
   file.addEventListener('change',()=>{
    suppliedFile = null;
+   historicalLinks = {};
    fileName.textContent = file.files?.[0] ? 'Selected file: '+file.files[0].name : '';
    inspect();
   });
-  account.addEventListener('change',inspect);
+  account.addEventListener('change',()=>{historicalLinks = {};inspect()});
   form.onsubmit = async event => {
    event.preventDefault();
    if(busy || !prepared?.plan.mutations.length || generation !== epoch) return;
-   const {plan,state} = prepared;
+   const {plan,state,legacyState} = prepared;
    file.disabled = account.disabled = true;
    const success = await saveChanges(plan.mutations.map(m => mutation(m.table,m.data)),{
     note:'IBKR Activity Flex import',
     preflight:latest=>{
-     if(snapshot(latest) !== state) throw new Error('The journal changed after preview. Recheck the file before importing.');
+     if(snapshot(latest) !== state || legacySnapshot() !== legacyState) throw new Error('The journal changed after preview. Recheck the file before importing.');
     }
    },d);
    if(!success && d.open){
