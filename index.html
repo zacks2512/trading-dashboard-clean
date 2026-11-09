@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Trading Journal Dashboard</title>
-<link rel="stylesheet" href="journal.css">
+<link rel="stylesheet" href="journal.css?v=20261109-drill">
 <script src="vendor/purify.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -383,7 +383,7 @@ function pm(s){var str=String(s||'').trim();var neg=str.charAt(0)==='('&&str.cha
 function avg(a){return a.length?a.reduce(function(s,v){return s+v;},0)/a.length:0;}
 function semo(s){return(s||'').split(',').map(function(x){return x.trim();}).filter(function(x){return x&&x!=='—'&&x.toLowerCase()!=='no emotion';});}
 function bc(v){return v>0?G:v<0?R:'#94a3b8';}
-function dc(id){if(CX[id]){CX[id].destroy();delete CX[id];}}
+function dc(id){if(CX[id]){CX[id].$journalDrillCleanup?.();CX[id].destroy();delete CX[id];}}
 function parseDate(s){if(!s)return null;var p=s.split('/');if(p.length!==3)return null;var day=+p[0],mon=+p[1]-1,yr=+p[2];if(yr<100)yr+=2000;return new Date(yr,mon,day);}
 function fmtDate(d){if(!d)return'—';return d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear();}
 function fmtMonth(d){if(!d)return'?';return d.getFullYear()+'-'+(d.getMonth()+1<10?'0':'')+(d.getMonth()+1);}
@@ -461,6 +461,7 @@ function renderAll(){
 }
 
 function renderOV(){
+  var overviewTrades=trades.slice();
   var total=trades.reduce(function(s,t){return s+t.pnl;},0);
   var wins=trades.filter(function(t){return t.pnl>0;}),losses=trades.filter(function(t){return t.pnl<=0;});
   var wr=trades.length?(wins.length/trades.length):0;
@@ -540,6 +541,19 @@ function renderOV(){
   dc('sym');CX.sym=new Chart(document.getElementById('symChart'),{type:'bar',data:{labels:ss.map(function(x){return x[0];}),datasets:[{data:ss.map(function(x){return Math.round(x[1]);}),backgroundColor:ss.map(function(x){return bc(x[1]);}),borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return'$'+c.raw;}}}},scales:{x:{ticks:{color:TC,font:{size:10}}},y:{ticks:{color:'#8891a4',callback:function(v){return'$'+v;}},grid:{color:GC}}}}});
   var mk={};trades.forEach(function(t){mk[t.mistakes]=(mk[t.mistakes]||0)+1;});var me=Object.entries(mk).sort(function(a,b){return b[1]-a[1];});
   dc('mk');CX.mk=new Chart(document.getElementById('mistakeChart'),{type:'doughnut',data:{labels:me.map(function(x){return x[0];}),datasets:[{data:me.map(function(x){return x[1];}),backgroundColor:[G,R,B,AM,'#9b59b6','#e67e22','#1abc9c','#d35400'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'right',labels:{color:'#8891a4',font:{size:10},boxWidth:10,padding:6}}}}});
+  if(window.OverviewDrill&&window.JournalApp){
+    [['cum','Cumulative Net P&L'],['dd','Drawdown from Peak']].forEach(function(pair){
+      OverviewDrill.install(CX[pair[0]],{title:pair[1],axis:'x',open:function(i){
+        JournalApp.openAnalytics({trade:overviewTrades[i],note:pair[1]+': this point belongs to this trade. The chart value also depends on earlier trades.'});
+      }});
+    });
+    [['stratChart','strategy','Strategy','y'],['typeChart','type','Trade type','y'],['sym','symbol','Symbol','x'],['mk','mistakes','Mistakes',null]].forEach(function(spec){
+      var chart=CX[spec[0]];
+      OverviewDrill.install(chart,{title:spec[2],axis:spec[3],open:function(i){
+        JournalApp.openAnalytics({field:spec[1],value:chart.data.labels[i],title:spec[2]+': '+chart.data.labels[i]});
+      }});
+    });
+  }
 }
 
 function renderEM(){
@@ -1056,7 +1070,8 @@ resetPrivateView();
 <script src="journal-store.js"></script>
 <script src="ibkr-import.js?v=20261109-reconcile"></script>
 <script src="ibkr-reconcile.js?v=20261109-reconcile"></script>
-<script src="journal-app.js?v=20261109-reconcile"></script>
+<script src="overview-drill.js?v=20261109-drill"></script>
+<script src="journal-app.js?v=20261109-drill"></script>
 <script src="private-sheets.js?v=20261109-tab-session"></script>
 </body>
 </html>
