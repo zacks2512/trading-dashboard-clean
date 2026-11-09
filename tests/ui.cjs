@@ -111,6 +111,8 @@ function fillPackage(name,price='5',quantity='1'){
  assert.equal(disconnects,0);
  const headerPicker = {files:[{name:'IBKR.CSV',size:csv.length,text:async()=>csv}],value:'selected'};
  const tradesBeforeHeaderImport = saved('TJ_Trades').size;
+ // Older cached import modules do not expose isCSV.
+ delete w.IBKRImport.isCSV;
  w.loadFile({target:headerPicker});
  await settled();
  assert.equal(disconnects,0);

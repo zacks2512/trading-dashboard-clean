@@ -424,12 +424,17 @@ function loadFile(evt){
   reader.onload=function(event){
     var text=event.target.result;
     try{
-      if(!file.name.toLowerCase().endsWith('.json') && window.IBKRImport?.isCSV(text)){
+      var isJSON=file.name.toLowerCase().endsWith('.json');
+      var csvHeaders=text.replace(/^\uFEFF/,'').split(/\r?\n/,1)[0].split(',').map(function(header){
+        return header.trim().replace(/^"|"$/g,'');
+      });
+      var isIBKR=!isJSON && ['AssetClass','TradeID'].every(function(header){return csvHeaders.includes(header);});
+      if(isIBKR){
         if(!window.JournalApp?.importIBKR)throw new Error('Reload the dashboard to enable IBKR import.');
         JournalApp.importIBKR(file);
         return;
       }
-      var data=file.name.toLowerCase().endsWith('.json')?JSON.parse(text):parseCSV(text);
+      var data=isJSON?JSON.parse(text):parseCSV(text);
       var rows=Array.isArray(data)?data:data.trades||[];
       if(window.disconnectGoogle)disconnectGoogle();
       ingest(rows,file.name);
@@ -1047,8 +1052,8 @@ resetPrivateView();
 </script>
 <script src="journal-engine.js"></script>
 <script src="journal-store.js"></script>
-<script src="ibkr-import.js"></script>
-<script src="journal-app.js"></script>
+<script src="ibkr-import.js?v=20261109-route2"></script>
+<script src="journal-app.js?v=20261109-route2"></script>
 <script src="private-sheets.js"></script>
 </body>
 </html>
