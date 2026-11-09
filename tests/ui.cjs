@@ -188,7 +188,7 @@ function fillPackage(name,price='5',quantity='1'){
  // adapters, accounting, side drawers and revisioned saves run unchanged.
  class ChartMock{
   constructor(canvas,config){this.canvas=canvas;this.data=config.data;this.options=config.options;this.chartArea={left:100,right:500,top:20,bottom:220};this.scales={x:{bottom:250,getValueForPixel:x=>Math.round((x-100)/30)},y:{left:0,getValueForPixel:y=>Math.floor((y-20)/20)}};if(config.type==='doughnut')this.legend={legendHitBoxes:this.data.labels.map((_,i)=>({left:520,top:20+i*20,width:100,height:18})),legendItems:this.data.labels.map((_,index)=>({index}))};}
-  getElementsAtEventForMode(e){return e.clientY===0&&e.clientX>0?[{index:e.clientX-1,datasetIndex:0}]:[]}
+  getElementsAtEventForMode(e){return e.clientY===0&&e.clientX>0?[{index:e.clientX-1,datasetIndex:e.detail||0}]:[]}
   destroy(){this.destroyed=true}
  }
  ChartMock.helpers={getRelativePosition:e=>({x:e.clientX,y:e.clientY})};w.Chart=ChartMock;
@@ -278,9 +278,51 @@ function fillPackage(name,price='5',quantity='1'){
  const oldScatter=w.CX.perfScatter;w.trades=w.trades.filter(t=>t.name==='mixed fixture');w.renderPerf();
  assert(oldScatter.destroyed);assert(!w.CX.perfScatter);assert(d.getElementById('te-coverage').textContent.startsWith('0 of 1'));
  assert(d.getElementById('perfScatter').parentElement.hidden);w.JournalApp.render();
+ // Every Performance graph opens a drawer on the same page. Multi-dataset
+ // hits retain both dataset and point indices instead of opening the wrong row.
+ w.renderAll=()=>{if(w.trades.length){w.renderOV();w.renderPerf()}};w.JournalApp.render();w.sw('perf');
+ const perfClick=(id,index,datasetIndex=0)=>{
+  const chart=Object.values(w.CX).find(c=>c.canvas.id===id);
+  chart.options.onClick?.({native:{target:chart.canvas}},[{index,datasetIndex}]);
+  chart.canvas.dispatchEvent(new w.MouseEvent('click',{clientX:index+1,clientY:0,detail:datasetIndex,bubbles:true}));
+  assert.equal(d.body.dataset.page,'perf');assert(dialog().classList.contains('journal-drawer'));
+ };
+ const periodKeys=()=>[...new Set(w.trades.map(t=>w.performancePeriodKey(t,w.perfPeriod)))].sort();
+ for(const id of ['perfPnl','perfWR','perfCount']){
+  const key=periodKeys()[0],expected=w.trades.filter(t=>w.performancePeriodKey(t,'monthly')===key);
+  perfClick(id,0);assert.equal(dialog().querySelectorAll('.journal-trade-link').length,expected.length);
+  assert(dialog().textContent.includes('Win rate'));assert(dialog().textContent.includes('Average net P&L'));click('Close',dialog());
+ }
+ w.setPeriod('weekly');const week=periodKeys()[0];perfClick('perfCount',0);
+ assert.equal(dialog().querySelectorAll('.journal-trade-link').length,w.trades.filter(t=>w.performancePeriodKey(t,'weekly')===week).length);click('Close',dialog());w.setPeriod('monthly');
+ const scatterDI=w.CX.perfScatter.data.datasets.findIndex((ds,i)=>i>0&&ds.data.length);
+ assert(scatterDI>0);const scatterPoint=w.CX.perfScatter.data.datasets[scatterDI].data[0];
+ perfClick('perfScatter',0,scatterDI);assert.equal(dialog().querySelector('h2').textContent,scatterPoint.label);
+ click('Edit trade');set('Trade notes','Edited from Performance');submit();await settled();
+ assert.equal(dialog().querySelector('h2').textContent,scatterPoint.label);assert.equal(d.body.dataset.page,'perf');click('← Back to Performance');assert(!dialog());
+ const timeStrategy=w.CX.perfScatter.data.datasets[0].label;
+ click(timeStrategy,d.getElementById('te-legend'));
+ assert.equal(dialog().querySelectorAll('.journal-trade-link').length,w.trades.filter(t=>t.strategy===timeStrategy&&Number.isFinite(t.timeEff)).length);click('Close',dialog());
+ const mixDI=w.CX.stratMix.data.datasets.findIndex(ds=>ds.label==='Volatility Play');
+ const mixIndex=w.CX.stratMix.data.datasets[mixDI].data.findIndex(n=>n>0),mixKey=periodKeys()[mixIndex];
+ perfClick('stratMix',mixIndex,mixDI);
+ const mixExpected=()=>w.trades.filter(t=>w.performancePeriodKey(t,'monthly')===mixKey&&w.performanceStrategy(t)==='Volatility Play');
+ assert.equal(dialog().querySelectorAll('.journal-trade-link').length,mixExpected().length);
+ click('Edit',dialog());click('Technical Setup',control('Strategy'));submit();await settled();click('← Back to results');
+ assert.equal(dialog().querySelectorAll('.journal-trade-link').length,mixExpected().length);assert.equal(d.body.dataset.page,'perf');click('Close',dialog());
+ for(const id of ['dteWR','dtePnl']){
+  perfClick(id,0);assert.equal(dialog().querySelectorAll('.journal-trade-link').length,w.trades.filter(t=>w.tradeDte(t)!==null&&w.tradeDte(t)>=0&&w.tradeDte(t)<=7).length);click('Close',dialog());
+ }
+ const mainFilter=d.getElementById('journal-account');mainFilter.value=accountId;mainFilter.dispatchEvent(new w.Event('change',{bubbles:true}));
+ perfClick('perfPnl',0);assert(!dialog().textContent.includes('Other account'));click('Close',dialog());mainFilter.value='';mainFilter.dispatchEvent(new w.Event('change',{bubbles:true}));
+ d.getElementById('perfScatter').dispatchEvent(new w.KeyboardEvent('keydown',{key:'Home',bubbles:true}));d.getElementById('perfScatter').dispatchEvent(new w.KeyboardEvent('keydown',{key:'Enter',bubbles:true}));
+ assert.equal(dialog().querySelector('h2').textContent,w.CX.perfScatter.data.datasets[0].data[0].label);click('Close',dialog());
+ // A stacked chart's period tick opens the full period, not a guessed segment.
+ d.getElementById('stratMix').dispatchEvent(new w.MouseEvent('click',{clientX:100,clientY:240,bubbles:true}));
+ assert.equal(dialog().querySelectorAll('.journal-trade-link').length,w.trades.filter(t=>w.performancePeriodKey(t,'monthly')===periodKeys()[0]).length);click('Close',dialog());w.sw('overview');
  // Repeated rerenders replace handlers; disconnected charts cannot reopen data.
  let opens=0;const openAnalytics=w.JournalApp.openAnalytics;w.JournalApp.openAnalytics=s=>{opens++;return openAnalytics(s)};
  w.JournalApp.render();w.JournalApp.render();chartClick('cumulChart',pointIndex('One Call'));assert.equal(opens,1);click('Close',dialog());
  assert.equal(errors.length,0);w.JournalApp.clear();assert(!d.body.textContent.includes('One Call'));chartClick('cumulChart',0);assert(!dialog());assert.equal(opens,1);
- console.log('PASS: DOM integration — journal forms, accounting, revisions and imports; all six Overview chart routes, tick labels/legend/keyboard, drawer editing and back navigation, live group membership and totals, historical summary editing without execution invention/duplicates, account isolation, readable IBKR labels and short dates without changing stored titles or P&L, replaced listeners and disconnect cleanup. Charts and Sheets mocked; visual/browser QA not covered.');dom.window.close();
+ console.log('PASS: DOM integration — journal forms, accounting, revisions and imports; all six Overview and all seven Performance chart routes, monthly/weekly and stacked-segment filtering, scatter dataset selection, Performance edit/back flow, tick labels/legend/keyboard, drawer editing and back navigation, live group membership and totals, historical summary editing without execution invention/duplicates, account isolation, readable IBKR labels and short dates without changing stored titles or P&L, replaced listeners and disconnect cleanup. Charts and Sheets mocked; visual/browser QA not covered.');dom.window.close();
 })().catch(e=>{console.error(e);dom.window.close();process.exit(1)});
