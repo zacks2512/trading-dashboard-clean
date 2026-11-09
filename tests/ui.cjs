@@ -43,7 +43,9 @@ function fillPackage(name,price='5',quantity='1'){
 (async()=>{
  assert.equal(d.querySelectorAll('.workspace-toolbar').length,1);assert.equal(d.querySelectorAll('#journal-account').length,1);assert(!d.querySelector('.journal-toolbar'));
  assert.equal(d.querySelector('#journal-account').closest('.workspace-toolbar'),d.querySelector('#google-refresh').closest('.workspace-toolbar'));
- for(const id of ['google-connect','google-pick','private-tab','google-disconnect'])assert(d.querySelector('#connection-menu').contains(d.getElementById(id)));
+ for(const id of ['google-connect','google-pick','private-tab'])assert(d.querySelector('#connection-menu').contains(d.getElementById(id)));
+ assert(d.querySelector('.workspace-connection').contains(d.getElementById('google-disconnect')));
+ assert(!d.querySelector('#connection-menu').contains(d.getElementById('google-disconnect')));
  assert(!d.querySelector('#connection-menu').open);
  const menu=d.querySelector('#connection-menu');menu.open=true;d.querySelector('.logo').click();assert(!menu.open);menu.open=true;d.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));assert(!menu.open);assert.equal(d.activeElement,menu.querySelector('summary'));
  const statusBox=d.querySelector('#loadStatus');w.showStatus('Success');assert.equal(statusBox.style.display,'block');assert.equal([...timers.values()][0].ms,5000);

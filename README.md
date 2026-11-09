@@ -68,7 +68,9 @@ Reimporting either the package or the ordinary annual CSV skips the recorded exe
 
 ## Integrity and privacy
 
-Tokens, drafts, legacy rows and journal data stay in page memory. Only the restricted public Picker key is saved in localStorage. No client secret/service-account key is used. Disconnect, expiry and file switch clear journal/chart data and close the editor. Late requests cannot repopulate another file/session.
+Drafts, legacy rows and journal data stay in page memory. The restricted public Picker key is saved in localStorage. The short-lived Google access token, its original expiry and the chosen spreadsheet/worksheet are kept in sessionStorage for this tab, allowing reload to restore authorization and read fresh data from Google. No client secret, service-account key or refresh token is used. The app caps each authorization session at one hour, or Google's shorter lifetime, with a 30-second safety margin. Reload never extends that deadline; reconnect after expiry. Browser tab/session storage behavior applies; a new independent tab does not share this session. Blocked storage falls back to an in-memory connection and displays that limitation.
+
+The visible **Disconnect** button clears both the in-memory and saved tab connection and loaded data. Expiry and HTTP 401 also discard it. File switches clear journal/chart data and close the editor; late requests cannot repopulate another file/session. Reload does not restore unsaved forms, selected import files or review previews. A reload restoration only reads Google data and never submits writes automatically.
 
 Each save atomically appends entity revisions and history via Sheets batchUpdate. Literal stringValue cells prevent formula interpretation. Unknown reserved schemas stop setup without overwriting data. Lost responses are checked against history; an unconfirmed save blocks further writes until reload.
 
