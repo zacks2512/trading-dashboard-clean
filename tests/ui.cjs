@@ -16,6 +16,7 @@ const timers=new Map();let nextTimer=0;w.setTimeout=(fn,ms)=>{const id=++nextTim
 // Analytics canvas drawing is covered separately by the browser suite, not emulated here.
 w.renderAll=()=>{};
 w.eval(fs.readFileSync(path.join(root,'ibkr-import.js'),'utf8'));
+w.eval(fs.readFileSync(path.join(root,'ibkr-reconcile.js'),'utf8'));
 w.eval(fs.readFileSync(path.join(root,'journal-app.js'),'utf8'));
 const rows=new Map(),headers=['id','revision','change_id','updated_at','deleted','data'];let lastWrite=[];
 const transport={request:async(endpoint,options={})=>{
@@ -147,6 +148,39 @@ function fillPackage(name,price='5',quantity='1'){
  assert(dialog().querySelector('button[type="submit"]').disabled);
  assert.equal([...dialog().querySelectorAll('.journal-stat strong')][2].textContent,'2');
  click('Cancel',dialog());
+ // A private reconciliation package uses the connected import route and links
+ // two historical exits to one position without exposing broker data in source.
+ const bulkCSV=[csv.split('\n')[0],
+  'OPT,Bulk option,456,BULK,100,50,20/03/2026,C,BUY,USD,101,01/02/2026;10:00:00,3,3,-6,USD,O,101,,',
+  'OPT,Bulk option,456,BULK,100,50,20/03/2026,C,SELL,USD,102,02/02/2026;10:00:00,-1,4,-2,USD,C,102,,',
+  'OPT,Bulk option,456,BULK,100,50,20/03/2026,C,SELL,USD,103,03/02/2026;10:00:00,-2,4,-4,USD,C,103,,'
+ ].join('\n');
+ const sources=[
+  {name:'Bulk partial',symbol:'BULK',pnl:96,entryDate:'2026-01-31T22:00:00.000Z',exitDate:'2026-02-01T22:00:00.000Z',strike:'50',contracts:'1',expiry:'20/03/26',entryPrice:'3',exitPrice:'4'},
+  {name:'Bulk final',symbol:'BULK',pnl:192,entryDate:'2026-01-31T22:00:00.000Z',exitDate:'2026-02-02T22:00:00.000Z',strike:'50',contracts:'2',expiry:'20/03/26',entryPrice:'3',exitPrice:'4'}
+ ];
+ const rawBulk=sources.map((s,i)=>({'Full name':s.name,'Symbol':'BULK','Entry Date':'01/02/2026','Exit Date':i?'03/02/2026':'02/02/2026','Net P&L':String(s.pnl),'Strike':s.strike,'Contracts':s.contracts,'Expiry':s.expiry,'Entry Price':s.entryPrice,'Exit Price':s.exitPrice,'comments':i?'Second original note':'First original note','strategy':'Technical Setup'}));
+ w.JournalApp.setLegacy([...rawBulk,{'Full name':'Preserved old option','Symbol':'OLD','Entry Date':'01/08/2025','Exit Date':'14/01/2026','Net P&L':'185'}],'bulk-test');
+ const bundle={format:w.IBKRReconcile.FORMAT,version:1,csv:bulkCSV,groups:[{sources,tradeIds:['101','102','103'],expectedNet:288}],preserved:[{name:'Preserved old option'}]};
+ const bundleText=JSON.stringify(bundle),bundleFile={name:'Approved-history.json',size:bundleText.length,text:async()=>bundleText};
+ const beforeBulk=saved('TJ_Actions').size;
+ w.loadFile({target:{files:[bundleFile],value:'selected'}});await settled();set('Journal account',accountId);await settled();
+ assert.equal(disconnects,0);assert(dialog().textContent.includes('2 historical summaries to reconcile'));
+ assert.equal(saved('TJ_Actions').size,beforeBulk);click('Cancel',dialog());
+ w.loadFile({target:{files:[bundleFile],value:'selected'}});await settled();set('Journal account',accountId);await settled();await save();
+ const bulk=[...saved('TJ_Trades').values()].find(t=>t.symbol==='BULK');
+ assert.equal(bulk.legacyKeys.length,2);assert.equal(bulk.legacyOriginals.length,2);
+ assert.equal(bulk.notes,'First original note\n\nSecond original note');
+ assert.equal(w.trades.filter(t=>t.symbol==='BULK').length,1);assert.equal(w.trades.find(t=>t.symbol==='BULK').pnl,288);
+ assert.equal(w.trades.find(t=>t.symbol==='OLD').pnl,185);
+ const afterBulk=saved('TJ_Actions').size;
+ // Replaying either the bundle or the ordinary annual CSV performs no writes.
+ for(const file of [bundleFile,{name:'Annual.csv',size:bulkCSV.length,text:async()=>bulkCSV}]){
+  w.loadFile({target:{files:[file],value:'selected'}});await settled();set('Journal account',accountId);await settled();
+  assert(dialog().querySelector('button[type="submit"]').disabled);
+  assert.equal([...dialog().querySelectorAll('.journal-stat strong')][2].textContent,'3');
+  assert.equal(saved('TJ_Actions').size,afterBulk);click('Cancel',dialog());
+ }
  assert.equal(errors.length,0);w.JournalApp.clear();assert(!d.body.textContent.includes('One Call'));
  console.log('PASS: DOM integration — consolidated account/connection toolbar, menu containment/outside-click/Escape, temporary success and persistent errors, setup, immediate opening fields, cash preview, single/multiple tags, selection persistence, drawer sections, marks, net P&L and zero colors, focused search, filters, closing and actual commissions, short defaults, detailed legs and fill preservation, edit, revisioned delete/restore, header IBKR route preserves session and waits for account/confirmation, IBKR preview, commit and repeat import, disconnect. Sheets mocked; visual/browser QA not covered.');dom.window.close();
 })().catch(e=>{console.error(e);dom.window.close();process.exit(1)});

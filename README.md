@@ -47,6 +47,14 @@ All Data stays summarized; no fills are invented. **Manage summary** adopts a hi
 
 Use stable, unique `No.` values on historical rows. If absent, the app falls back to row numbers: rearranging those original rows can break adopted-summary links. Keep historical rows stable once adopted. Full reconstruction of legacy fills is not automatic.
 
+### Approved IBKR history reconciliation
+
+The connected **Import file** picker also accepts a private reconciliation JSON (`trading-journal-ibkr-reconciliation`, version 1). The file contains the broker CSV and reviewed allocations of its TradeIDs to historical source records. Choose the journal account, inspect the preview and click **Import ready executions**. No changes occur before confirmation.
+
+Each group can replace several historical summaries with one position and can contain several option legs. Sources must match the loaded legacy tab uniquely. Full closed quantities, contract terms, execution IDs and the approved broker net result are validated before any write. Original summaries and annotations are retained on the managed trade; source rows stay untouched and are excluded from duplicate display. Actual `IBCommission` values are used, including zero commission at expiry, with no extra estimated fee.
+
+Reimporting either the package or the ordinary annual CSV skips the recorded execution IDs. Changed signatures, partial existing allocations, missing opening history and unsupported settlement events require review. Held historical positions remain unchanged. Broker reports without an account identifier require explicit selection of the correct journal account. Reconciliation files contain private trading history and must never be committed to this public repository.
+
 ## Calculations
 
 - Cash flow = quoted price × multiplier × quantity. Default multiplier is 100; adjusted contracts can use another value.
