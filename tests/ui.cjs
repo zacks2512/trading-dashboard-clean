@@ -101,7 +101,25 @@ function fillPackage(name,price='5',quantity='1'){
   file.dispatchEvent(new w.Event('change',{bubbles:true}));
   await settled();
  }
- await previewIBKR();
+ // Drive the header file picker that previously disconnected Google.
+ let disconnects = 0;
+ w.disconnectGoogle = ()=>{disconnects++;w.JournalApp.clear()};
+ w.FileReader = class {
+  readAsText(file){file.text().then(text=>this.onload({target:{result:text}}))}
+ };
+ w.loadFile({target:{files:[],value:''}});
+ assert.equal(disconnects,0);
+ const headerPicker = {files:[{name:'IBKR.CSV',size:csv.length,text:async()=>csv}],value:'selected'};
+ const tradesBeforeHeaderImport = saved('TJ_Trades').size;
+ w.loadFile({target:headerPicker});
+ await settled();
+ assert.equal(disconnects,0);
+ assert.equal(headerPicker.value,'');
+ assert(dialog().textContent.includes('Selected file: IBKR.CSV'));
+ assert(!d.querySelector('#badge').textContent.includes('391'));
+ assert.equal(saved('TJ_Trades').size,tradesBeforeHeaderImport);
+ set('Journal account',accountId);
+ await settled();
  assert(dialog().textContent.includes('1 new trades'));
  assert(![...saved('TJ_Trades').values()].some(t=>t.symbol==='IMPORT'));
  await save();
@@ -112,5 +130,5 @@ function fillPackage(name,price='5',quantity='1'){
  assert.equal([...dialog().querySelectorAll('.journal-stat strong')][2].textContent,'2');
  click('Cancel',dialog());
  assert.equal(errors.length,0);w.JournalApp.clear();assert(!d.body.textContent.includes('One Call'));
- console.log('PASS: DOM integration — consolidated account/connection toolbar, menu containment/outside-click/Escape, temporary success and persistent errors, setup, immediate opening fields, cash preview, single/multiple tags, selection persistence, drawer sections, marks, net P&L and zero colors, focused search, filters, closing and actual commissions, short defaults, detailed legs and fill preservation, edit, revisioned delete/restore, IBKR preview, commit and repeat import, disconnect. Sheets mocked; visual/browser QA not covered.');dom.window.close();
+ console.log('PASS: DOM integration — consolidated account/connection toolbar, menu containment/outside-click/Escape, temporary success and persistent errors, setup, immediate opening fields, cash preview, single/multiple tags, selection persistence, drawer sections, marks, net P&L and zero colors, focused search, filters, closing and actual commissions, short defaults, detailed legs and fill preservation, edit, revisioned delete/restore, header IBKR route preserves session and waits for account/confirmation, IBKR preview, commit and repeat import, disconnect. Sheets mocked; visual/browser QA not covered.');dom.window.close();
 })().catch(e=>{console.error(e);dom.window.close();process.exit(1)});

@@ -1,12 +1,14 @@
 const assert = require('node:assert/strict');
 const engine = require('../journal-engine');
-const {plan,readCSV} = require('../ibkr-import');
+const {plan,readCSV,isCSV} = require('../ibkr-import');
 const header = 'AssetClass,Symbol,Conid,UnderlyingSymbol,Multiplier,Strike,Expiry,Put/Call,Buy/Sell,CurrencyPrimary,TradeID,DateTime,Quantity,TradePrice,IBCommission,IBCommissionCurrency,Open/CloseIndicator,IBOrderID,IBExecID,Notes/Codes';
 const row = (id,day,quantity,price,code='',contract=41,order=id) =>
  ['OPT','Example, Inc. option',contract,'TEST',100,50,'20/03/2026','C',quantity>0?'BUY':'SELL',
   'USD',id,day+'/02/2026;10:00:00',quantity,price,price===0?0:-1,'USD',quantity>0?'O':'C',order,'',code]
   .map(value => '"'+value+'"').join(',');
 const parse = (...lines) => readCSV('\uFEFF'+[header,...lines].join('\r\n'));
+assert(isCSV('\uFEFF"AssetClass","TradeID"\r\nOPT,1'));
+assert(!isCSV('Symbol,Quantity\nAAPL,1'));
 const opening = row(1,'01',2,3), partial = row(2,'02',-1,4), expired = row(3,'20',-1,0,'Ep');
 const first = plan(parse(opening,partial,expired),{engine,accountId:'test'});
 const trade = first.mutations.find(m=>m.table==='trades').data;
