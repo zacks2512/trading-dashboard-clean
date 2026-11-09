@@ -320,9 +320,34 @@ function fillPackage(name,price='5',quantity='1'){
  // A stacked chart's period tick opens the full period, not a guessed segment.
  d.getElementById('stratMix').dispatchEvent(new w.MouseEvent('click',{clientX:100,clientY:240,bubbles:true}));
  assert.equal(dialog().querySelectorAll('.journal-trade-link').length,w.trades.filter(t=>w.performancePeriodKey(t,'monthly')===periodKeys()[0]).length);click('Close',dialog());w.sw('overview');
+ // Heatmap aliases share one canonical column; each cell and its drawer use
+ // the same emotion/type intersection, with no duplicate emotion counting.
+ w.renderAll=()=>{if(w.trades.length){w.renderOV();w.renderPerf();w.buildHM()}};
+ w.JournalApp.detail([...saved('TJ_Trades').values()].find(t=>t.title==='One Call').id);click('Edit trade');
+ assert(!control('Entry emotions').selectedValues().includes('Confidence'));click('Confidence',control('Entry emotions'));await save();
+ const heatSources=[
+  {'Full name':'Legacy heatmap','Symbol':'HEAT','trade type':'Buy Call','Net P&L':'40','Entry Date':'01/06/2026','Exit Date':'02/06/2026','Expiry':'20/06/2026','Emotion (Entry)':'Confidence, Confidence, Curiosity'},
+  {'Full name':'Custom heatmap','Symbol':'HEAT','trade type':'Custom <spread>','Net P&L':'-10','Entry Date':'01/06/2026','Exit Date':'02/06/2026','Expiry':'20/06/2026','Emotion (Entry)':'Focus <calm>'},
+  {'Full name':'Neutral heatmap','Symbol':'HEAT','trade type':'Sell Put','Net P&L':'0','Entry Date':'01/06/2026','Exit Date':'02/06/2026','Expiry':'20/06/2026','Emotion (Entry)':'Confidence'}
+ ];
+ w.JournalApp.setLegacy(heatSources,'heatmap-test');w.sw('emotions');
+ const heatCell=(emotion,type)=>[...d.querySelectorAll('#heatmap .hm-open')].find(b=>b.dataset.emotion===emotion&&b.dataset.tradeType===type);
+ for(const [oldName,newName]of [['Buy Call','Long Call'],['Sell Call','Short Call'],['Buy Put','Long Put'],['Sell Put','Short Put']])assert.equal(w.heatmapTradeType(oldName),newName);
+ const columns=[...d.querySelectorAll('#heatmap thead th')].map(th=>th.textContent);assert(columns.includes('Long Call'));assert(!columns.includes('Buy Call'));
+ assert.equal(heatCell('Confidence','Long Call').querySelector('.cn').textContent,'n=2');assert.equal(heatCell('Confidence','Long Call').querySelector('.ca').textContent,'+$69');
+ heatCell('Confidence','Long Call').click();assert.equal(dialog().querySelectorAll('.journal-trade-link').length,2);assert(dialog().textContent.includes('$69.00'));assert.equal(d.body.dataset.page,'emotions');
+ [...dialog().querySelectorAll('.journal-trade-link')].find(b=>b.textContent==='One Call').click();click('Edit trade');click('Confidence',control('Entry emotions'));submit();await settled();click('← Back to results');
+ assert.equal(dialog().querySelectorAll('.journal-trade-link').length,1);assert(dialog().textContent.includes('Legacy heatmap'));assert(!dialog().textContent.includes('One Call'));assert.equal(d.body.dataset.page,'emotions');click('Close',dialog());
+ assert.equal(heatCell('Confidence','Long Call').querySelector('.cn').textContent,'n=1');assert.equal(heatCell('Confidence','Long Call').querySelector('.ca').textContent,'+$40');
+ assert(heatCell('Focus <calm>','Custom <spread>'));assert(!d.querySelector('#heatmap spread, #heatmap calm'));
+ heatCell('Focus <calm>','Custom <spread>').click();assert(dialog().textContent.includes('Custom heatmap'));assert.equal(dialog().querySelectorAll('.journal-trade-link').length,1);click('Close',dialog());
+ const neutral=heatCell('Confidence','Short Put');assert.equal(neutral.querySelector('.ca').textContent,'+$0');assert(!neutral.closest('td').classList.contains('emp'));
+ neutral.click();assert.equal(dialog().querySelectorAll('.journal-trade-link').length,1);click('Neutral heatmap',dialog());assert(buttons('← Back to results',dialog()).length);click('Close',dialog());
+ const hf=d.getElementById('journal-account');hf.value=otherAccount;hf.dispatchEvent(new w.Event('change',{bubbles:true}));assert(!heatCell('Focus <calm>','Custom <spread>'));assert(!heatCell('Confidence','Long Call'));
+ hf.value=accountId;hf.dispatchEvent(new w.Event('change',{bubbles:true}));assert(heatCell('Focus <calm>','Custom <spread>'));hf.value='';hf.dispatchEvent(new w.Event('change',{bubbles:true}));w.sw('overview');
  // Repeated rerenders replace handlers; disconnected charts cannot reopen data.
  let opens=0;const openAnalytics=w.JournalApp.openAnalytics;w.JournalApp.openAnalytics=s=>{opens++;return openAnalytics(s)};
  w.JournalApp.render();w.JournalApp.render();chartClick('cumulChart',pointIndex('One Call'));assert.equal(opens,1);click('Close',dialog());
  assert.equal(errors.length,0);w.JournalApp.clear();assert(!d.body.textContent.includes('One Call'));chartClick('cumulChart',0);assert(!dialog());assert.equal(opens,1);
- console.log('PASS: DOM integration — journal forms, accounting, revisions and imports; all six Overview and all seven Performance chart routes, monthly/weekly and stacked-segment filtering, scatter dataset selection, Performance edit/back flow, tick labels/legend/keyboard, drawer editing and back navigation, live group membership and totals, historical summary editing without execution invention/duplicates, account isolation, readable IBKR labels and short dates without changing stored titles or P&L, replaced listeners and disconnect cleanup. Charts and Sheets mocked; visual/browser QA not covered.');dom.window.close();
+ console.log('PASS: DOM integration — journal forms, accounting, revisions and imports; Overview and Performance chart drawers; Heatmap old/new type aliases, deduplicated emotion counts, average/member agreement, custom text labels, zero-P&L cells, edit/back flow and account isolation; readable labels, short dates, handler and disconnect cleanup. Charts and Sheets mocked; visual/browser QA not covered.');dom.window.close();
 })().catch(e=>{console.error(e);dom.window.close();process.exit(1)});
