@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Trading Journal Dashboard</title>
-<link rel="stylesheet" href="journal.css?v=20261109-drill">
+<link rel="stylesheet" href="journal.css?v=20261109-heatmap">
 <script src="vendor/purify.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -591,15 +591,25 @@ function renderEM(){
   dc('neg');CX.neg=new Chart(document.getElementById('negEmo'),{type:'bar',data:{labels:NEG,datasets:[{data:nD,backgroundColor:nD.map(bc),borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return'$'+c.raw;},afterLabel:function(c){return'n='+nC[c.dataIndex];}}}},scales:{x:{ticks:{color:TC,font:{size:10}}},y:{ticks:{color:'#8891a4',callback:function(v){return'$'+v;}},grid:{color:GC}}}}});
   buildHM(eM);buildIns(eM,xM);renderDOW();
 }
-function buildHM(eM){
-  var EMO=['Confidence','Patience','Curiosity','Boredom','Acceptance','Greed','Fear','Overconfidence','FOMO','Stress','Impulsive'];
-  var TYP=['Sell Call','Sell Put','Buy Call','Bull Call','Bear Put','Buy Put'];
-  var mat={};EMO.forEach(function(e){mat[e]={};TYP.forEach(function(t){mat[e][t]={sum:0,n:0};});});
-  trades.forEach(function(tr){semo(tr.entry).forEach(function(e){if(mat[e]&&mat[e][tr.type]!==undefined){mat[e][tr.type].sum+=tr.pnl;mat[e][tr.type].n++;}});});
+function heatmapTradeType(value){
+  var label=String(value||'').trim();
+  switch(label.toLowerCase()){
+    case 'buy call':case 'long call':return 'Long Call';
+    case 'sell call':case 'short call':return 'Short Call';
+    case 'buy put':case 'long put':return 'Long Put';
+    case 'sell put':case 'short put':return 'Short Put';
+    default:return !label||label==='—'?'Other':label;
+  }
+}
+function buildHM(){
+  var EMO=[...new Set(['Confidence','Patience','Curiosity','Discipline','Boredom','Acceptance','Greed','Fear','Overconfidence','FOMO','Stress','Impulsive'].concat(trades.flatMap(function(t){return semo(t.entry);})))];
+  var TYP=[...new Set(['Short Call','Short Put','Long Call','Bull Call','Bear Put','Long Put'].concat(trades.map(function(t){return heatmapTradeType(t.type);})))];
+  var mat=new Map(EMO.map(function(e){return[e,new Map(TYP.map(function(t){return[t,{sum:0,n:0}];}))];}));
+  trades.forEach(function(tr){[...new Set(semo(tr.entry))].forEach(function(e){var c=mat.get(e).get(heatmapTradeType(tr.type));c.sum+=tr.pnl;c.n++;});});
 
   // Find max absolute avg for relative scaling
   var maxAbs=0;
-  EMO.forEach(function(e){TYP.forEach(function(t){var c=mat[e][t];if(c.n){var a=Math.abs(c.sum/c.n);if(a>maxAbs)maxAbs=a;}});});
+  EMO.forEach(function(e){TYP.forEach(function(t){var c=mat.get(e).get(t);if(c.n){var a=Math.abs(c.sum/c.n);if(a>maxAbs)maxAbs=a;}});});
   if(maxAbs===0)maxAbs=1;
 
   function cbg(s,n){
@@ -617,19 +627,26 @@ function buildHM(eM){
     return s/n>0?'#116638':s/n<0?'#a82133':'#475569';
   }
 
-  var h='<table class="hm"><thead><tr><th class="rl"></th>';
-  TYP.forEach(function(t){h+='<th>'+t+'</th>';});h+='</tr></thead><tbody>';
+  var table=document.createElement('table'),head=document.createElement('thead'),header=document.createElement('tr'),corner=document.createElement('th'),body=document.createElement('tbody');
+  table.className='hm';corner.className='rl';header.append(corner);
+  TYP.forEach(function(t){var th=document.createElement('th');th.scope='col';th.textContent=t;header.append(th);});head.append(header);table.append(head,body);
   EMO.forEach(function(e){
-    h+='<tr><td class="rl">'+e+'</td>';
+    var row=document.createElement('tr'),heading=document.createElement('th');heading.scope='row';heading.className='rl';heading.textContent=e;row.append(heading);
     TYP.forEach(function(t){
-      var c=mat[e][t];
-      if(!c.n){h+='<td class="cell emp"></td>';return;}
+      var c=mat.get(e).get(t),cell=document.createElement('td');cell.className='cell';row.append(cell);
+      if(!c.n){cell.classList.add('emp');return;}
       var bg=cbg(c.sum,c.n),tc=ctc(c.sum,c.n),a=Math.round(c.sum/c.n);
-      h+='<td class="cell" style="background:'+bg+'"><div class="ca" style="color:'+tc+'">'+(a>=0?'+':'')+'$'+a+'</div><div class="cn" style="color:'+tc+'">n='+c.n+'</div></td>';
+      cell.style.background=bg;
+      var button=document.createElement('button'),average=document.createElement('div'),count=document.createElement('div');
+      button.type='button';button.className='hm-open';button.dataset.emotion=e;button.dataset.tradeType=t;
+      button.setAttribute('aria-label',e+' × '+t+': average net P&L $'+(c.sum/c.n).toFixed(2)+' across '+c.n+' trades. Open trades.');
+      average.className='ca';average.style.color=tc;average.textContent=(a>=0?'+':'')+'$'+a;
+      count.className='cn';count.style.color=tc;count.textContent='n='+c.n;button.append(average,count);cell.append(button);
+      button.addEventListener('click',function(){JournalApp.openAnalytics({filter:{kind:'heatmap',emotion:e,tradeType:t},title:e+' × '+t});});
     });
-    h+='</tr>';
+    body.append(row);
   });
-  document.getElementById('heatmap').innerHTML=DOMPurify.sanitize(h+'</tbody></table>', {USE_PROFILES:{html:true},FORBID_TAGS:['img','svg','math','iframe','style','link','form','video','audio','object','embed']});
+  document.getElementById('heatmap').replaceChildren(table);
 }
 function buildIns(eM,xM){
   var overallWR=trades.length?trades.filter(function(t){return t.pnl>0;}).length/trades.length*100:0;
@@ -1124,7 +1141,7 @@ resetPrivateView();
 <script src="ibkr-import.js?v=20261109-reconcile"></script>
 <script src="ibkr-reconcile.js?v=20261109-reconcile"></script>
 <script src="overview-drill.js?v=20261109-perf-drill"></script>
-<script src="journal-app.js?v=20261109-perf-drill"></script>
+<script src="journal-app.js?v=20261109-heatmap"></script>
 <script src="private-sheets.js?v=20261109-tab-session"></script>
 </body>
 </html>
