@@ -69,6 +69,7 @@ Reimporting either the package or the ordinary annual CSV skips the recorded exe
 - Dollar net P&L, return on allocated capital, return on maximum-risk basis and return relative to net opening premium are separate. Detail views display denominators. No averaging of unlike percentage bases into a portfolio return.
 - Automatic risk is based on the **first opening**, for supported packages or same-expiry leg payoffs. Unlimited-loss short calls have no automatic risk denominator. Additional opening fills or uneven remaining leg balances require a manually reviewed risk basis. Position changes, exercise and assignment need review.
 - Historical percentages retain their original legacy meaning. Missing new denominators stay blank.
+- Time used is calendar days from the first opening to the final closing, divided by calendar days from opening to expiry, rounded to a percent and capped at 100%. Managed/imported trades derive this at render time; no reimport or data write is needed. Detailed legs must share one valid expiry. Missing/invalid dates, a closing before opening, and same-day expiry (no intraday timestamps in this calculation) are excluded rather than treated as zero; the performance chart reports coverage. A same-day exit before a later expiry is a valid 0% point.
 
 ## Integrity and privacy
 

@@ -247,6 +247,38 @@ function fillPackage(name,price='5',quantity='1'){
  chartClick('symChart',w.CX.sym.data.labels.indexOf('IMPORT'));
  assert(dialog().textContent.includes(readable));assert(dialog().textContent.includes('20/03/2026'));assert(!dialog().textContent.includes('GMT'));click('Close',dialog());
  // Repeated rerenders replace handlers; disconnected charts cannot reopen data.
+ // Time-used analytics derive calendar-day percentages for imported packages
+ // and same-expiry legs, preserving null for ambiguous/undefined durations.
+ assert.equal(w.timeUsedPercent('2026-01-01','2026-01-06','2026-01-21'),25);
+ assert.equal(w.timeUsedPercent('2026-01-01','2026-01-01','2026-01-21'),0);
+ assert.equal(w.timeUsedPercent('2026-01-01','2026-01-21','2026-01-21'),100);
+ assert.equal(w.timeUsedPercent('2026-01-01','2026-01-22','2026-01-21'),100);
+ assert.equal(w.timeUsedPercent('2026-01-01','2026-01-01','2026-01-01'),null);
+ assert.equal(w.timeUsedPercent('2026-01-02','2026-01-01','2026-01-21'),null);
+ assert.equal(w.timeUsedPercent('2026-01-01','2026-01-06',''),null);
+ assert.equal(w.timeUsedPercent('2026-01-01','2026-01-06','2026-02-30'),null);
+ assert.equal(w.timeUsedPercent('26/03/26','28/03/26','30/03/26'),50);
+ assert.equal(w.trades.find(t=>t.symbol==='IMPORT').timeEff,100);
+ assert.equal(w.trades.find(t=>t.name==='One Call').timeEff,0);
+ const fixture=new w.JournalStore.Store(transport);await fixture.load();const changes=[];
+ for(const id of ['timed','mixed','0dte']){
+  const detailed=id!=='0dte',t={id,accountId,title:id+' fixture',symbol:'TIME',entryDate:'2026-01-01',mode:detailed?'legs':'package',side:'long',structure:detailed?'Other':'Long Call',multiplier:100,contractsPerPackage:detailed?2:1,strike:50,expiry:detailed?'':'2026-01-01',strategy:'Volatility Play'};
+  changes.push({table:'trades',data:t});
+  if(detailed)for(let i=0;i<2;i++)changes.push({table:'legs',data:{id:id+'leg'+i,tradeId:id,kind:'Call',side:i?'short':'long',strike:50+i*5,expiry:id==='mixed'&&i?'2026-02-21':'2026-01-21',ratio:1,multiplier:100}});
+  for(const close of [false,true])changes.push({table:'actions',data:{id:id+(close?'close':'open'),tradeId:id,date:close&&detailed?'2026-01-06':'2026-01-01',order:close?2:1,kind:close?'close':'open',feeMode:'actual',fee:detailed?4:2,fills:detailed?[{unitId:id+'leg0',quantity:1,price:close?4:3},{unitId:id+'leg1',quantity:1,price:1}]:[{unitId:'package',quantity:1,price:close?4:3}]}});
+ }
+ await fixture.commit(changes.map(m=>({...m,id:m.data.id,expected:''})),{note:'Time-analysis fixtures'});await w.JournalApp.reload();
+ assert.equal(w.trades.find(t=>t.name==='timed fixture').timeEff,25);
+ assert.equal(w.trades.find(t=>t.name==='mixed fixture').timeEff,null);
+ assert.equal(w.trades.find(t=>t.name==='0dte fixture').timeEff,null);
+ w.renderPerf();let plotted=w.CX.perfScatter.data.datasets.flatMap(ds=>ds.data);
+ assert(plotted.some(p=>p.label==='timed fixture'&&p.x===25&&p.y===92));assert(plotted.some(p=>p.sym==='IMPORT'&&p.x===100));
+ assert(!plotted.some(p=>p.label==='mixed fixture'||p.label==='0dte fixture'));
+ assert(d.getElementById('te-coverage').textContent.startsWith(plotted.length+' of '+w.trades.length+' closed trades shown.'));
+ const oldScatter=w.CX.perfScatter;w.trades=w.trades.filter(t=>t.name==='mixed fixture');w.renderPerf();
+ assert(oldScatter.destroyed);assert(!w.CX.perfScatter);assert(d.getElementById('te-coverage').textContent.startsWith('0 of 1'));
+ assert(d.getElementById('perfScatter').parentElement.hidden);w.JournalApp.render();
+ // Repeated rerenders replace handlers; disconnected charts cannot reopen data.
  let opens=0;const openAnalytics=w.JournalApp.openAnalytics;w.JournalApp.openAnalytics=s=>{opens++;return openAnalytics(s)};
  w.JournalApp.render();w.JournalApp.render();chartClick('cumulChart',pointIndex('One Call'));assert.equal(opens,1);click('Close',dialog());
  assert.equal(errors.length,0);w.JournalApp.clear();assert(!d.body.textContent.includes('One Call'));chartClick('cumulChart',0);assert(!dialog());assert.equal(opens,1);
