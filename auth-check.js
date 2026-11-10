@@ -61,6 +61,31 @@
     } catch (error) { message(error.message, true); }
     finally { setBusy(false); }
   });
+  $('check-access').addEventListener('click', async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const sessionResponse = await fetch(base + '/get-session', {
+        credentials: 'include', cache: 'no-store', referrerPolicy: 'no-referrer'
+      });
+      if (!sessionResponse.ok) throw new Error('לא ניתן לקרוא את ההתחברות. התחבר שוב.');
+      const session = await sessionResponse.json();
+      const token = sessionResponse.headers.get('set-auth-jwt') || session?.session?.token;
+      if (!token || !/^[A-Za-z0-9_.-]+$/.test(token))
+        throw new Error('לא התקבל אסימון גישה. התחבר שוב.');
+      const response = await fetch('/api/journal', {
+        headers: {Authorization: 'Bearer ' + token}, cache: 'no-store'
+      });
+      if (response.status === 503) throw new Error('ה־API עדיין אינו מוגדר בסביבת הבדיקה.');
+      if (response.status === 403) throw new Error('החשבון הזה עדיין לא הוגדר כבעל היומן.');
+      if (response.status === 401) throw new Error('האימות פג תוקף. התחבר שוב.');
+      if (!response.ok) throw new Error('בדיקת היומן נכשלה (' + response.status + ').');
+      const result = await response.json();
+      if (!Array.isArray(result.records)) throw new Error('התקבלה תשובה לא צפויה מהיומן.');
+      message('הגישה ליומן תקינה. נמצאו ' + result.records.length + ' רשומות בבדיקה.');
+    } catch (error) { message(error.message, true); }
+    finally { setBusy(false); }
+  });
   $('sign-out').addEventListener('click', async () => {
     if (busy) return;
     setBusy(true);

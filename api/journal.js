@@ -31,7 +31,9 @@ async function ownerFromRequest(req, config) {
   try {
     const {createRemoteJWKSet, jwtVerify} = await import('jose');
     const jwks = createRemoteJWKSet(config.jwks);
-    const {payload} = await jwtVerify(match[1], jwks, {issuer: config.issuer});
+    const {payload} = await jwtVerify(match[1], jwks, {
+      algorithms: ['EdDSA'], issuer: config.issuer, audience: config.issuer
+    });
     if (!payload.sub || payload.sub !== config.JOURNAL_OWNER_ID) fail(403, 'Journal access denied.');
     return payload.sub;
   } catch (error) {
