@@ -85,7 +85,7 @@
   try{await db.commit(mutations,{...options,validate:(latest,changes)=>{
    options.preflight?.(latest);
    validateState(latest,changes);
-  }});if(generation!==epoch)return false;if(d)d.close();render();showStatus('Saved to your private Google Sheet.');
+  }});if(generation!==epoch)return false;if(d)d.close();render();showStatus(db.backend==='neon'?'Saved to your private Neon database.':'Saved to your private Google Sheet.');
    if(context&&context.epoch===epoch){analyticsContext=context;if(context.currentRef)openAnalyticsRecord(context.currentRef);else analyticsList()}
    return true;}
   catch(error){if(generation===epoch){if(d)errorIn(d,error);else showStatus(error.message,true);}return false;}
@@ -93,7 +93,7 @@
  }
  function clear(){epoch++;analyticsContext=null;analyticsRefs=new WeakMap();store=null;legacy=[];selectedId=null;accountFilter='';search='';symbolFilter='';strategyFilter='';tradeStatus='open';if(dialog)dialog.close();render();}
  async function connect(transport){
-  epoch++;analyticsContext=null;analyticsRefs=new WeakMap();const generation=epoch;store=new S.Store(transport);legacy=[];accountFilter='';
+  epoch++;analyticsContext=null;analyticsRefs=new WeakMap();const generation=epoch;store=transport&&typeof transport.load==='function'&&typeof transport.commit==='function'?transport:new S.Store(transport);legacy=[];accountFilter='';
   try{await store.load();if(generation!==epoch)return;render();}catch(error){if(generation===epoch)showStatus(error.message,true);}
  }
  function requireSetup(){if(!store?.initialized){showStatus('Connect your private sheet, then choose Set up journal tabs.',true);return false;}return true;}
@@ -531,7 +531,7 @@
   form.onsubmit=e=>{e.preventDefault();try{const values={defaultAccount:defaultSelect.value,legacyAccount:legacySelect.value,feeRate:E.number(rate.value,'Fee rate'),legacyTab:legacyTab.value.trim()};saveChanges(Object.entries(values).map(([id,value])=>mutation('settings',{id,value})),{note:'Journal settings updated'},null)}catch(error){showStatus(error.message,true)}};
   target.append(form,notice('Fee changes affect future entries only: each action stores the rate used at the time. Current currency is USD for every account.'),node('h2',{},'Accounts'),table(['Name','Status','Edit'],accounts.map(a=>node('tr',{},node('td',{},a.name),node('td',{},a.archived?'Archived':a.id===setting('defaultAccount','')?'Default':'Active'),node('td',{},button('Edit',()=>accountEditor(a)))))));
   for(const group of ['strategy','emotion','mistake']){target.append(node('h2',{},group[0].toUpperCase()+group.slice(1)+' values'),button('Add '+group,()=>listEditor(group)),table(['Label','Status','Edit'],records('lists').filter(l=>l.group===group).map(l=>node('tr',{},node('td',{},l.label),node('td',{},l.archived?'Archived':'Available'),node('td',{},button('Edit',()=>listEditor(group,l)))))));}
-  target.append(notice('Sheets is append-only for journal revisions. Use the dashboard for edits, not manual row sorting/deletion in TJ_ tabs. Concurrent saves are checked before writing, but Google Sheets is not a transactional database with conditional locks. Use one editing window per trade; conflicting revisions are retained for repair.','warn'));
+  target.append(store.backend==='neon'?notice(store.readOnly?'Neon preview is read-only while we verify and import your journal.':'Neon saves are transactional. Reload before editing records changed in another window.','warn'):notice('Sheets is append-only for journal revisions. Use the dashboard for edits, not manual row sorting/deletion in TJ_ tabs. Concurrent saves are checked before writing, but Google Sheets is not a transactional database with conditional locks. Use one editing window per trade; conflicting revisions are retained for repair.','warn'));
  }
  function syncAnalytics(){
   const normalized=legacyItems().map(l=>{analyticsRefs.set(l.parsed,{kind:'legacy',key:l.key});return l.parsed});

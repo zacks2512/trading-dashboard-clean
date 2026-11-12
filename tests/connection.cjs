@@ -4,14 +4,14 @@ const KEY='trading-dashboard-clean.googleTabSession.v1';
 const clock={now:Date.now()};
 class ClockDate extends Date{constructor(...args){super(...(args.length?args:[clock.now]))}static now(){return clock.now}}
 const storage=map=>({getItem:k=>map.get(k)??null,setItem:(k,v)=>map.set(k,String(v)),removeItem:k=>map.delete(k)});
-function page({saved=new Map(),local=new Map(),denied=false,mode='normal',lifetime=3600}={}){
+function page({saved=new Map(),local=new Map(),denied=false,mode='normal',lifetime=3600,search=''}={}){
  const elements=new Map(),timers=new Map();let sequence=0;
  function element(id){if(!elements.has(id))elements.set(id,{value:'',disabled:false,textContent:'',children:[],replaceChildren(){this.children=[];this.value=''},append(x){this.children.push(x);if(!this.value)this.value=x.value}});return elements.get(id)}
  const state={mode,pending:[],ingested:[],authorizations:0,requests:[],scope:null,revoked:0};
- const ctx={console,Map,Date:ClockDate,Number,String,Boolean,Error,Object,JSON,encodeURIComponent,Promise,
+ const ctx={console,Map,Date:ClockDate,Number,String,Boolean,Error,Object,JSON,URLSearchParams,encodeURIComponent,Promise,
   localStorage:storage(local),sessionStorage:denied?{getItem(){throw Error('blocked')},setItem(){throw Error('blocked')},removeItem(){throw Error('blocked')}}:storage(saved),
   setTimeout(fn,ms){const id=++sequence;timers.set(id,{fn,ms});return id},clearTimeout:id=>timers.delete(id),
-  location:{origin:'https://zacks2512.github.io'},COL:{name:'Full name',symbol:'Symbol'},
+  location:{origin:'https://zacks2512.github.io',search},COL:{name:'Full name',symbol:'Symbol'},
   resetPrivateView(){state.ingested=[]},ingest(rows){state.ingested=rows},sw(){},showStatus(msg){state.status=msg},
   document:{getElementById:element,createElement:()=>({}),head:{append(s){s.onload()}}},
   fetch:async(url,options)=>{
@@ -38,6 +38,9 @@ async function run(){
  assert.equal(p.element('connection-state').textContent,'Select a sheet');
  await p.open('test-file');assert.equal(p.state.ingested.length,1);assert.equal(p.element('connection-state').textContent,'Connected');
  const first=JSON.parse(p.saved.get(KEY));
+ const neonPreview=page({saved:p.saved,search:'?journal=neon'});await neonPreview.ready;
+ assert.equal(neonPreview.state.requests.length,0);
+ assert.equal(neonPreview.element('connection-state').textContent,'Disconnected');
  assert.equal(first.accessToken,'TEST_TOKEN');assert.equal(first.fileId,'test-file');assert(!('trades' in first));assert.equal(p.local.size,0);
  assert.equal(first.expiresAt,clock.now+3570000);assert.equal(p.timers.size,1);
  p.element('private-tab').value='12';await p.ctx.loadPrivateTab();assert.equal(JSON.parse(p.saved.get(KEY)).worksheetId,'12');

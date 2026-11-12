@@ -263,7 +263,7 @@ async function loadPrivateTab() {
   }
 }
 connectionControls();
-const googleRestoreReady = restoreGoogleSession();
+const googleRestoreReady = new URLSearchParams(location.search).get('journal') === 'neon' ? Promise.resolve() : restoreGoogleSession();
 
 // A transport is bound to one selected file and one OAuth session. It cannot follow a later file switch.
 function createJournalTransport(){
